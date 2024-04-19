@@ -4,6 +4,8 @@ import os
 from markdownify import markdownify as md
 import re
 import shutil
+import unidecode
+
 os.system('clear')
 
 load_dotenv()
@@ -29,8 +31,8 @@ conn = mysql.connector.connect(
     buffered=True
 )
 
-new_img_dir = os.getenv('NEW_IMG_DIR')
 old_img_dir = os.getenv('OLD_IMG_DIR')
+img_sub_dir = os.getenv('IMG_SUB_DIR')
 
 def get_export_filepath(post, export_dir):
     filename = post['post_name']+".md"
@@ -45,70 +47,141 @@ def get_export_filepath(post, export_dir):
     else:
         return False
 
+def tag_format(tag):
+    tag = unidecode.unidecode(tag.strip())
+    tag = tag.lower()
+    tag = tag.replace(" ", "_")
+    return tag
 
 def tags_line(post):
     line = ""
 
     tags = post.get('tags')
     if tags is not None:
-        line += "#" + " #".join(tag.strip().replace(" ","_") for tag in tags.split(","))
+        line += "#" + " #".join(tag_format(tag) for tag in tags.split(","))
 
     cats = post.get('categories')
     if cats is not None:
-        line += " #" + " #".join(cat.strip().replace(" ","_") for cat in cats.split(","))
+        line += " #" + " #".join(tag_format(cat) for cat in cats.split(","))
 
-    line += f" #{post['post_date'].year}-{post['post_date'].month}-{post['post_date'].day}"
+    line += f" #{post['post_date'].year}-{post['post_date'].month}-{post['post_date'].day} #y{post['post_date'].year}"
     
     line=line.replace("  "," ")
 
     return line
 
+def clean_image_markdown(text):
+    pattern = re.compile(r'(!\[.*?\])\((.*?)(\s+".*?")?\)')
+    cleaned_text = pattern.sub(r'\1(\2)', text)
+    return cleaned_text
 
-def my_markdown(post):
+def ensure_newlines_after_images(text):
+    pattern = re.compile(r'(\[!\[.*?\]\(.*?\)\](?:\(.*?\))?)(?!\n\n)')
+    
+    def add_newlines(match):
+        return match.group(1) + '\n\n'
+    
+    return pattern.sub(add_newlines, text)
+
+
+def simplify_image_links(text):
+    pattern = re.compile(r'\[\!\[([^\]]+)\]\(([^)]+)\)\]\(([^)]+)\)')
+
+    def replace_link(match):
+        alt_text = match.group(1)
+        image_path = match.group(2)
+        link_target = match.group(3)
+        
+        image_filename = os.path.splitext(os.path.basename(image_path))[0]
+        
+        if image_filename.lower() in link_target.lower():
+            return f'![{alt_text}]({image_path})'
+        else:
+            return match.group(0)
+
+    return pattern.sub(replace_link, text)
+
+def my_markdown(post,path_dir):
     text = re.sub(r'<sup>(.*?)</sup>', r'[[SUP:\1]]', post['post_content'])
     text = md(text)
     text = re.sub(r'\[\[SUP:(.*?)\]\]', r'<sup>\1</sup>', text)
-    text = text.replace('\n', '\n\n')
-    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    text = text.replace(")\n!",")\n\n!")
+    text = text.replace(")\n#",")\n\n#")
+    text = text.replace(".\n#",".\n\n#")
+    
+    text = re.sub(r"\r", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    #text = re.sub(r"\n{3,}", "\n\n", text)
     text = text.replace("'", "’")
 
-    text = process_image_urls(text)
+    text = clean_image_markdown(text)
+    text = process_image_urls(text,path_dir)
+    text = simplify_image_links(text)
+
+    text = process_internal_urls(text, path_dir)
+    text = process_internal_tagurls(text)
+    text = process_internal_pageurls(text, path_dir)
+
+    text = ensure_newlines_after_images(text)
 
     line = tags_line(post)
 
-    return text+f"\n\n{line}"
+    final = f"# {post['post_title']}\n\n"
+    final += get_thumbnail_info(post['thumbnail_id'],path_dir)
+    final += f"{text}\n\n{line}\n"
+
+    return final
 
 
-def find_highest_resolution_image(current_image_path, source_images_dir=old_img_dir, target_images_dir=new_img_dir):
-    relative_image_path = current_image_path.lstrip('/')
-    relative_image_path = relative_image_path.replace('//','/')
-    image_directory = os.path.join(source_images_dir, os.path.dirname(relative_image_path))
+def clean_relative_img_url(url):
+    if url:
+        new_url = url.lstrip('/')
+        new_url = new_url.replace('//','/')
+        return new_url
+    return url
+
+
+def find_highest_resolution_image(current_image_path, path_dir):
+
+    relative_image_path = clean_relative_img_url(current_image_path)
+    image_directory = os.path.join(old_img_dir, os.path.dirname(relative_image_path))
+
+    target_dir = os.path.join(path_dir,img_sub_dir)
 
     if not os.path.isdir(image_directory):
         return None
 
-    base_name = re.sub(r'-\d+x\d+|\.png|\.jpg|\.jpeg|\.gif|\.webp', '', os.path.basename(relative_image_path))
+    base_name = re.sub(r'(-\d+x\d+)(?=\.(?:png|jpg|jpeg|gif|webp)$)', '', os.path.basename(relative_image_path))
+
     files = [f for f in os.listdir(image_directory) if f.startswith(base_name)]
     if len(files)==0:
         return None
     elif len(files)==1:
         highest_res_file = files[0]
     else:
-        highest_res_file = max(files, key=lambda f: os.path.getsize(os.path.join(image_directory, f)))
+        highest_res_file = min(files, key=lambda f: (len(f), os.path.getsize(os.path.join(image_directory, f))))
 
     biggest = os.path.join(os.path.dirname(relative_image_path), highest_res_file)
-    source = os.path.join(source_images_dir, biggest)
-    target = os.path.join(target_images_dir, biggest)
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    shutil.copy2(source, target)
-    return biggest
+    source = os.path.join(old_img_dir, biggest)
+    target_file = os.path.join(img_sub_dir, highest_res_file)
+    target = os.path.join(target_dir, highest_res_file)
+
+    if not os.path.exists(target):
+        os.makedirs(target_dir, exist_ok=True)
+        shutil.copy2(source, target)
+    elif os.path.isfile(target) and os.stat(source).st_mtime > os.stat(target).st_mtime:
+        shutil.copy2(source, target)
+    return target_file
 
 
-def process_image_urls(text, base_url='http://localhost:8000'):
-    pattern = re.compile(r'(!\[.*?\]\()((https?://[^/]+)?(/[^)]+?\.(jpg|jpeg|png|gif)))(\))')
+def process_image_urls(text,path_dir):
+    pattern = re.compile(r'(!\[.*?\]\()((https?://[^/]+)?(/[^)]+?\.(jpg|jpeg|png|gif|webp)))(\))')
 
-    def replace_url(match):
+    def replace_urls(match):
+
         full_url = match.group(2)  # URL complète capturée
+
         if match.group(3):
             # C'est un chemin absolu avec domaine, remplacer le domaine
             relatif = match.group(4)
@@ -116,19 +189,76 @@ def process_image_urls(text, base_url='http://localhost:8000'):
             # C'est un chemin relatif, préserver tel quel
             relatif = full_url
 
-        #Vérifier relatif is the biggest images, sinon remplacé par the bigest
-        relatif = find_highest_resolution_image(relatif)
-
-        new_url = f'{base_url}/{relatif}'
-        new_url = new_url.replace("//","/")
+        relatif = find_highest_resolution_image(relatif,path_dir)
+        if not relatif:
+            pass
+            #print(match)
+            #exit()
+        relatif = clean_relative_img_url(relatif)
+        new_url = relatif
         
         return f'{match.group(1)}{new_url}{match.group(6)}'
+    
+    return pattern.sub(replace_urls, text)
+
+
+def relativise_url(link, path_dir):
+    target_path = os.path.normpath(link)
+
+    # Construire le chemin complet du répertoire actuel
+    current_dir_path = os.path.normpath(path_dir.replace(export_folder,""))
+    relative_path = os.path.relpath(target_path, current_dir_path)
+    return relative_path
+
+def process_internal_urls(text, path_dir):
+    pattern = re.compile(r'\[([^\]]+)\]\((https?:\/\/(?:blog\.)?tcrouzet\.com)(\/\d{4}\/\d{2}\/\d{2}\/[^)]+)\)')
+
+    def replace_url(match):
+        full_url = match.group(3)  # URL complète capturée sans le domaine
+        obsidian_link = full_url.strip('/')
+        pattern = re.compile(r'(\d{4})/(\d{2})/\d{2}/')
+        obsidian_link = pattern.sub(lambda m: f"{m.group(1)}/{int(m.group(2))}/", obsidian_link)
+
+        obsidian_link = relativise_url(obsidian_link,path_dir)
+
+        return f'[{match.group(1)}]({obsidian_link}.md)'
+
+    # Appliquer la fonction replace_url sur toutes les occurrences
+    return pattern.sub(replace_url, text)
+
+def process_internal_tagurls(text):
+    pattern = re.compile(r'\[([^\]]+)\]\(https?:\/\/(?:blog\.)?tcrouzet\.com\/tag\/([^)]+)\)')
+
+    def replace_url(match):
+        link_text = match.group(1)
+        tag_name = match.group(2)
+        tag_name = tag_name.strip("/")
+        return f'{link_text} #{tag_name}'
 
     # Appliquer la fonction replace_url sur toutes les occurrences
     return pattern.sub(replace_url, text)
 
 
-def get_thumbnail_info(thumbnail_id):
+def process_internal_pageurls(text, path_dir):
+    pattern = re.compile(r'\[([^\]]+)\]\(https?:\/\/(?:blog\.)?tcrouzet\.com\/([^)]+\/)\)')
+
+    def replace_url(match):
+        link_text = match.group(1)
+        if link_text.startswith('*') and link_text.endswith('*'):
+            star = "*"
+        else:
+            star = ""
+        link_text = link_text.strip("*")
+        page_path = match.group(2)
+        page_path = page_path.strip("/")
+
+        obsidian_link = relativise_url(f"page/{page_path}",path_dir)
+
+        return f'{star}[{link_text}]({obsidian_link}){star}'
+
+    return pattern.sub(replace_url, text)
+
+def get_thumbnail_info(thumbnail_id,path_dir):
     r = ""
     if thumbnail_id:
         new_cursor = conn.cursor(dictionary=True)
@@ -147,10 +277,15 @@ def get_thumbnail_info(thumbnail_id):
         new_cursor.execute(query)
         result = new_cursor.fetchone()
         if result:
-            r =  f"![{result['description']}]({result['file_path']})\n\n"
+            description = result.get('description', '')
+            if description is not None:
+                description = description.strip()
+            else:
+                description = ''
+            r =  f"![{description}]({result['file_path']})\n\n"
             new_cursor.close()
             
-    return process_image_urls(r)
+    return process_image_urls(r,path_dir)
 
 cursor = conn.cursor(dictionary=True)
 
@@ -183,11 +318,18 @@ for post in cursor:
     #exit()
     path = get_export_filepath(post, export_folder)
     if path:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        path_dir = os.path.dirname(path)
+        markdown = my_markdown(post, path_dir)
+
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as existing_file:
+                existing_content = existing_file.read()
+            if existing_content == markdown:
+                continue
+        
+        os.makedirs(path_dir, exist_ok=True)
         with open(path, "w", encoding="utf-8") as file:
-            file.write(f"# {post['post_title']}\n\n")
-            file.write(get_thumbnail_info(post['thumbnail_id']))
-            file.write(my_markdown(post)+"\n")
+            file.write(markdown)
         
         creation = post['post_date'].timestamp()
         update = post['post_modified'].timestamp()
