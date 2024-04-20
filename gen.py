@@ -7,16 +7,14 @@ import tools.web
 os.system('clear')
 
 with open('site.yml', 'r') as file:
-    data = yaml.safe_load(file)
+    config = yaml.safe_load(file)
 
 #Load new posts if False (all post if True)
-#tools.db.db_builder(data['vault'],False)
+#tools.db.db_builder(config['vault'],False)
 
 posts = tools.db.get_posts_updated()
 
-layout = tools.layout.Layout(data)
+layout = tools.layout.Layout(config)
 
 for post in posts:
-    post = dict(post)
-    post['url'] = tools.web.url(post)
-    layout.single(post)
+    layout.single( tools.web.supercharge_post(post, config) )

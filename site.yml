@@ -1,5 +1,8 @@
 vault: "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet"
+vault_img: "_i/"
 export: "/Users/thierrycrouzet/Documents/staticT"
+images_dir: "/images_tc/"
 title: "Thierry Crouzet"
+domain: "https://tcrouzet.com/"
 template: "tcrouzet"
 analytics: False

@@ -1,8 +1,8 @@
 # NoMoreWordPress
 
-Début du projet le 18/4/2024, 13h
+Début du projet le 18/4/2024
 
-### wp_export
+### wp_export.py
 
 Renommer model.env en .env et y saisir les bonnes infos.
 
@@ -12,3 +12,5 @@ Les fichiers sont horodatés à leur date de création et de dernière modificat
 Les fichiers sont organisé par année et mois.
 Les images sont copiées depuis OLD_IMG_DIR dans IMG_SUB_DIR de chacun des mois.
 Tous les liens internes commes les les liens images sont relatifs.
+
+### gen.py
