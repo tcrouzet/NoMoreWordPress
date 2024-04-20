@@ -1,17 +1,15 @@
 import mysql.connector
-from dotenv import load_dotenv
 import os
 from markdownify import markdownify as md
 import re
 import shutil
 import unidecode
+import secret
 
 os.system('clear')
 
-load_dotenv()
-
-if os.getenv('MARKDOWN_DIR'):
-    export_folder = os.getenv('MARKDOWN_DIR') + os.sep
+if secret.MARKDOWN_DIR:
+    export_folder = secret.MARKDOWN_DIR + os.sep
 else:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(script_dir)
@@ -19,20 +17,20 @@ else:
     
 os.makedirs(export_folder, exist_ok=True)
 
-prefix = os.getenv('WP_DB_PREFIX')
+prefix = secret.WP_DB_PREFIX
 
 # Connexion à la base de données MySQL
 conn = mysql.connector.connect(
-    host=os.getenv('WP_DB_HOST'),
-    port=os.getenv('WP_DB_PORT'),
-    user=os.getenv('WP_DB_USER'),
-    password=os.getenv('WP_DB_PASSWORD'),
-    database=os.getenv('WP_DB_NAME'),
+    host=secret.WP_DB_HOST,
+    port=secret.WP_DB_PORT,
+    user=secret.WP_DB_USER,
+    password=secret.WP_DB_PASSWORD,
+    database=secret.WP_DB_NAME,
     buffered=True
 )
 
-old_img_dir = os.getenv('OLD_IMG_DIR')
-img_sub_dir = os.getenv('IMG_SUB_DIR')
+old_img_dir = secret.OLD_IMG_DIR
+img_sub_dir = secret.IMG_SUB_DIR
 
 def get_export_filepath(post, export_dir):
     filename = post['post_name']+".md"
@@ -109,10 +107,9 @@ def my_markdown(post,path_dir):
     text = text.replace(")\n!",")\n\n!")
     text = text.replace(")\n#",")\n\n#")
     text = text.replace(".\n#",".\n\n#")
-    
+
     text = re.sub(r"\r", "\n", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
-    #text = re.sub(r"\n{3,}", "\n\n", text)
     text = text.replace("'", "’")
 
     text = clean_image_markdown(text)
@@ -123,7 +120,7 @@ def my_markdown(post,path_dir):
     text = process_internal_tagurls(text)
     text = process_internal_pageurls(text, path_dir)
 
-    text = ensure_newlines_after_images(text)
+    #text = ensure_newlines_after_images(text)
 
     line = tags_line(post)
 
@@ -233,11 +230,10 @@ def process_internal_tagurls(text):
         link_text = match.group(1)
         tag_name = match.group(2)
         tag_name = tag_name.strip("/")
-        return f'{link_text} #{tag_name}'
+        return f'[{link_text}](#{tag_name})'
 
     # Appliquer la fonction replace_url sur toutes les occurrences
     return pattern.sub(replace_url, text)
-
 
 def process_internal_pageurls(text, path_dir):
     pattern = re.compile(r'\[([^\]]+)\]\(https?:\/\/(?:blog\.)?tcrouzet\.com\/([^)]+\/)\)')

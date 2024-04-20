@@ -2,3 +2,5 @@ mysql-connector-python
 python-dotenv
 markdownify
 unidecode
+pyyaml
+liquidpy
