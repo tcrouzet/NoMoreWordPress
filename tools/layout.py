@@ -14,6 +14,7 @@ class Layout:
         script_dir = parent_dir
 
         self.template_dir = os.path.join(parent_dir, "templates", self.config['template'])
+        self.config['template'] = self.template_dir
 
         self.header = self.load_template("header")
         self.footer = self.load_template("footer")
@@ -24,7 +25,6 @@ class Layout:
 
     def load_template(self, name):
         return Liquid( os.path.join(self.template_dir,f"{name}.liquid"))
-
 
     def copy_assets(self):
 
@@ -56,6 +56,7 @@ class Layout:
         header_html = self.header.render(post=post, blog=self.config)
         footer_html = self.footer.render(post=post, blog=self.config)
         single_html = self.single.render(post=post, blog=self.config)
+        #share_html = self.share.render(post=post)
         self.save(header_html + single_html + footer_html, post['url'])
 
 

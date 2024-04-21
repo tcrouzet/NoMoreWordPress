@@ -69,6 +69,7 @@ def filter_tags(tags):
     filtered_tags = [tag for tag in tags if not date_pattern.match(tag) and not year_pattern.match(tag)]    
     return filtered_tags
 
+
 def markdown_extract(path):
     creation_time = round(os.path.getctime(path))
     modification_time = round(os.path.getmtime(path))
@@ -103,6 +104,7 @@ def markdown_extract(path):
         return {"pub_date":creation_time, "pub_update":modification_time, "title":title, "tags":tags, "thumb_legend":thumb_legend, "thumb_path":thumb_path}
         
     return None
+
 
 def db_builder(root_dir,reset=False):
     global conn
@@ -160,3 +162,17 @@ def list_posts(condition=None):
 
 def list_posts_updated():
     list_posts("updated=1")
+
+
+def get_posts_by_tag(tag):
+    global conn
+    c = conn.cursor()
+    
+    query = f'''
+    SELECT * FROM posts, json_each(posts.tags)
+    WHERE json_each.value = ?
+    ORDER BY pub_date ASC
+    '''
+    c.execute(query, (tag,))
+    posts = c.fetchall()
+    return posts
