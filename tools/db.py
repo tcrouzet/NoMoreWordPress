@@ -30,7 +30,7 @@ def create_table_posts(reset=False):
                 pub_update INTEGER,
                 thumb_path TEXT DEFAULT '',
                 thumb_legend TEXT DEFAULT '',
-                type INTEGER CHECK(type IN (0, 1)),  -- 0 pour post, 1 pour page
+                type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 book page
                 tags TEXT DEFAULT '[]',
                 updated BOOLEAN DEFAULT FALSE
               );''')

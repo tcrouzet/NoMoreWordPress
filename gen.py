@@ -13,8 +13,8 @@ with open('site.yml', 'r') as file:
 #tools.db.db_builder(config['vault'],False)
 
 posts = tools.db.get_posts_updated()
-
 layout = tools.layout.Layout(config)
+web = tools.web.Web(config)
 
 for post in posts:
-    layout.single( tools.web.supercharge_post(post, config) )
+    layout.single_gen( web.supercharge_post(post) )

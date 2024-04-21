@@ -12,7 +12,7 @@ function toggleMenu(){
 
     if(accessLoaded) return;
     doAPIcall(
-        "GET","/wp-content/themes/tcrouzetSatic1/ajax-menu.html?14", false,
+        "GET","/ajax-menu.html?14", false,
         function (data) {
             if(data){
                 access.innerHTML=data;
@@ -29,7 +29,7 @@ function searchMenu(){
 
     if(searchLoaded) return;
     doAPIcall(
-        "GET","/wp-content/themes/tcrouzetSatic1/ajax-search.html", 2,
+        "GET","/ajax-search.html", 2,
         function (data) {
             if(data){
                 search.innerHTML=data;

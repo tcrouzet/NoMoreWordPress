@@ -5,3 +5,6 @@ unidecode
 pyyaml
 liquidpy
 pytz
+Pillow
+markdown
+beautifulsoup4

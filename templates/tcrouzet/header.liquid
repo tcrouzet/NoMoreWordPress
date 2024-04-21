@@ -28,15 +28,14 @@
     <meta property="article:author" content="https://www.facebook.com/ThierryCrouzetAuteur/" />
     <meta property="article:published_time" content="{{ post.pub_date_str }}" />
     <meta property="article:modified_time" content="{{ post.pub_update_str }}" />
-    <meta property="og:image" content="{{ post.thumb_url }}" />
-    <meta property="og:image:width" content="1600" />
-    <meta property="og:image:height" content="1200" />
-    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image" content="{{ post.thumb.url }}" />
+    <meta property="og:image:width" content="{{ post.thumb.width }}" />
+    <meta property="og:image:height" content="{{ post.thumb.height }}" />
+    <meta property="og:image:type" content="{{ post.thumb.format }}" />
     <meta name="author" content="{{ blog.title }}" />
-    <link rel='stylesheet' id='style-css' href='/style.css?ver=FD' type='text/css' media='screen' />
+    <link rel='stylesheet' id='style-css' href='/style.css?ver={{ blog.version }}' type='text/css' media='screen' />
 </head>
 
-</head>
 {% if blog.analytics %}
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-47YLN2LHVB"></script>
 <script data-cfasync=”false”>
@@ -46,7 +45,6 @@
   gtag('config', 'G-47YLN2LHVB');
 </script>
 {% endif %}
-
 
 <body id="mybody">
 
@@ -61,4 +59,3 @@
 <div id="access-search" class="access pageGutter"></div>
 
 </div>
-<!-- end top -->

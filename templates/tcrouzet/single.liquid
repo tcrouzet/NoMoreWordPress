@@ -1,0 +1,39 @@
+<div id="content" role="main">
+
+{% if post.type == 2 %}
+
+<article id="article-{{ post.id }}" itemscope itemType="https://schema.org/Book">
+<meta itemprop="name" content="{{ post.title }}"/>
+
+{% else %}
+
+<article id="article-{{ post.id }}" itemscope itemType="https://schema.org/BlogPosting">
+<meta itemprop="articleSection" content="NONE'"/>
+<meta itemprop="name" content="Article"/>
+
+{% endif %}
+
+<meta itemprop="inLanguage" content="fr-FR"/>
+<meta itemprop="author" content="Thierry Crouzet"/>
+<meta itemprop="accountablePerson" content="Thierry Crouzet"/>
+<meta itemprop="datePublished" content="{{ post.pub_date_str }}"/>
+<meta itemprop="dateModified" content="{{ post.pub_update_str }}"/>
+<meta itemprop="url" content="{{ post.canonical }}" />
+
+<!-- $navigation=tcrouzet_poster_title($mynav);-->
+
+<div class="post hentry" itemprop="articleBody" id="post-{{ post.id }}">
+
+{{ post.html }}
+
+
+</div>
+</article>
+
+
+<!--echo(tcrouzet_mailchimp());-->
+
+
+</div>
+
+<!--script_load_more($mynav,true);-->
