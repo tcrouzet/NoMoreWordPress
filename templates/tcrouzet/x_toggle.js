@@ -86,41 +86,66 @@ function scrollFire(){
     if(scrollPoint >= totalPageHeight-500 && oktoload) {
 
         oktoload=false;
-        loadMoreContent();
 
-    }
+        //console.log("FireReady");
+        //firstLoad=false;
 
-}
+        var type = more.getAttribute("data-type");
+        //console.log(type);
+        var page = parseInt(more.getAttribute("data-page"),10);
+        //console.log(page);
+        var nextpage=page+1;
+        more.setAttribute("data-page", nextpage);
 
-function loadMoreContent() {
-    const more = document.getElementById("loadMore");
-    const url = more.getAttribute('next-url') + "content.html";
-    fetchContent(url);
-}
+        var url = more.getAttribute('data-url');
+        if(type=="post"){
+            var urls = url.split(' ');
+            //console.log(urls);
+            url=urls[page-1];
+        }
+        //console.log(url);
 
-
-
-function fetchContent(url) {
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function () {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 200) {
-                document.getElementById("content").insertAdjacentHTML('beforeend', xmlhttp.responseText);
-                updateNextURL();
-                oktoload = true;
-            } else {
-                more.style.display = "none";
+        if (location.host.endsWith("8888") || window.location.hostname.endsWith("8888")) {
+            //Dynamic
+            if(type=="post"){
+                var ajaxurl=url+"?static";
+            }else{
+                var ajaxurl=url+"/"+page+"/?static";
+            }
+        } else {
+            //Static
+            if(type=="post"){
+                var ajaxurl=url+"content.html";
+            }else{
+                var ajaxurl=url+page+".html";
             }
         }
-    };
-    xmlhttp.open("GET", url, true);
-    xmlhttp.send();
-}
 
-function updateNextURL() {
-    var nextURL = document.querySelector('.load-more-url:last-child').getAttribute('data-next-url');
-    const more = document.getElementById("loadMore");
-    more.setAttribute('data-next-url', nextURL);
+        //console.log(ajaxurl);
+
+        //ajax call
+        doAPIcall(
+            "GET",ajaxurl, 1,
+            function (data) {
+                //return;
+                //console.log("fire "+page);
+                if(data){
+                    if(type=="post"){
+                        document.getElementById("content").insertAdjacentHTML('beforeend', data);
+                    }else{
+                        document.getElementById("infinite").insertAdjacentHTML('beforeend', data);
+                    }
+                    oktoload=true;
+                }else{
+                    more.style.display = "none";
+                    more.style.visibility = "hidden";
+                }
+            }
+          );
+          
+    }
+
+   window.addEventListener("scroll", scrollFire);
 }
 
 function doAPIcall(type, url, flag, callback) {

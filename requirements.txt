@@ -8,3 +8,4 @@ pytz
 Pillow
 markdown
 beautifulsoup4
+tqdm

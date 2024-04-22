@@ -1,10 +1,14 @@
 import mysql.connector
-import os
+import os, sys
 from markdownify import markdownify as md
 import re
 import shutil
 import unidecode
 import secret
+import logs
+
+sys.stdout = logs.DualOutput("_log.txt")
+sys.stderr = sys.stdout
 
 os.system('clear')
 
@@ -56,15 +60,23 @@ def tags_line(post):
 
     tags = post.get('tags')
     if tags is not None:
-        line += "#" + " #".join(tag_format(tag) for tag in tags.split(","))
+        for tag in tags.split(","):
+            tag = tag_format(tag)
+            if tag == "serie" or tag == "une":
+                continue
+            line += f"#{tag} "
 
     cats = post.get('categories')
     if cats is not None:
-        line += " #" + " #".join(tag_format(cat) for cat in cats.split(","))
+        for tag in cats.split(","):
+            tag = tag_format(tag)
+            if tag == "serie" or tag == "une":
+                continue
+            line += f"#{tag} "
 
-    line += f" #{post['post_date'].year}-{post['post_date'].month}-{post['post_date'].day} #y{post['post_date'].year}"
+    line += f" #y{post['post_date'].year} #{post['post_date'].year}-{post['post_date'].month}-{post['post_date'].day}-{post['post_date'].hour}h{post['post_date'].minute}"
     
-    line=line.replace("  "," ")
+    line=line.replace("  "," ").strip()
 
     return line
 
@@ -283,6 +295,7 @@ def get_thumbnail_info(thumbnail_id,path_dir):
             
     return process_image_urls(r,path_dir)
 
+
 cursor = conn.cursor(dictionary=True)
 
 query = f"""
@@ -329,7 +342,6 @@ for post in cursor:
         
         creation = post['post_date'].timestamp()
         update = post['post_modified'].timestamp()
-        os.utime(path, (creation, creation))
         os.utime(path, (creation, update))
 
 cursor.close()

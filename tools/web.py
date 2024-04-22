@@ -46,6 +46,8 @@ class Web:
         return f"{os.path.splitext(url)[0]}-{text}{os.path.splitext(url)[1]}"
 
     def source_image(self, src, post):
+        if not src:
+            return None
         path = os.path.join( self.config['vault'], os.path.dirname(post['path_md']), src )
         try:
             with Image.open(path) as img:
@@ -139,7 +141,7 @@ class Web:
             return {"content": md.strip(), "description":self.resume_paragraph(lines[0].strip())}
 
         except Exception as e:
-            return None
+            return {"content": "", "description":""}
         
     def image_manager(self, html, post):
 
@@ -153,21 +155,24 @@ class Web:
             if img:
                 index +=1
                 img_data = self.source_image(img['src'], post)
-                alt_text = img.get('alt','')
+                if img_data:
+                    alt_text = img.get('alt','')
 
-                new_div = soup.new_tag('div', id=f"image-{post['id']}-{index}", **{'class': 'image'})
-                new_img = soup.new_tag('img', src=f"{img_data['url']}",
-                    **{'class': 'alignnone size-full paysage',
-                    'alt': alt_text, 'width': img_data['width'], 'height': img_data['height'],
-                    'loading': 'lazy', 'decoding': 'async',
-                    'srcset': f'{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w',
-                    'sizes': '(max-width: 1600px) 100vw, 1600px'})
-                
-                new_div.append(new_img)
-                new_legend = soup.new_tag('div', **{'class': 'legend'})
-                new_legend.string = alt_text
-                new_div.append(new_legend)
-                p.replace_with(new_div)
+                    new_div = soup.new_tag('div', id=f"image-{post['id']}-{index}", **{'class': 'image'})
+                    new_img = soup.new_tag('img', src=f"{img_data['url']}",
+                        **{'class': 'alignnone size-full paysage',
+                        'alt': alt_text, 'width': img_data['width'], 'height': img_data['height'],
+                        'loading': 'lazy', 'decoding': 'async',
+                        'srcset': f'{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w',
+                        'sizes': '(max-width: 1600px) 100vw, 1600px'})
+                    
+                    new_div.append(new_img)
+                    new_legend = soup.new_tag('div', **{'class': 'legend'})
+                    new_legend.string = alt_text
+                    new_div.append(new_legend)
+                    p.replace_with(new_div)
+                else:
+                    p.decompose()
 
         return str(soup)
 
@@ -185,12 +190,14 @@ class Web:
         return tags
         
     def main_tag(self, tagslist):
+        if not tagslist:
+            return None
         first_tag = ""
         for tag in tagslist:
             first_tag = tag
             if tag in self.config['tags']:
                 return {'slug': tag, "title":self.config['tags'][tag]['title']}
-        return {'slug': first_tag, "title":first_tag}
+        return {'slug': first_tag, "title":first_tag.capitalize().replace("-"," ")}
     
 
     def date_html(self,post):
@@ -211,19 +218,24 @@ class Web:
         return msg
 
     def navigation(self, post):
+
         main_tag =  self.main_tag(post['tagslist'])
+        # if not main_tag:
+        #     print(post)
+        #     exit()
         tag_posts = tools.db.get_posts_by_tag(main_tag['slug'])
 
         prev_post = None
         next_post = None
         total_posts = len(tag_posts)
+        #print(total_posts, main_tag['slug'], post['tagslist'])
         for i, tag_post in enumerate(tag_posts):
             #post_dict = dict(post)
             if post['id'] == tag_post['id']:
                 if i-1>=0:
                     prev_post = tag_posts[i-1]
                 else:
-                    prev_post = tag_posts[:-1]
+                    prev_post = tag_posts[-1]
                 if i==total_posts-1:
                     next_post = tag_posts[0]
                 else:
@@ -252,8 +264,9 @@ class Web:
         post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
         post['pub_update_str'] = self.format_timestamp_to_paris_time(post['pub_update'])
         post['thumb'] = self.source_image(post['thumb_path'], post)
-        post['thumb']["alt"] = post['thumb_legend']
-        post['thumb']['tag'] = self.img_tag(post['thumb'])
+        if post['thumb']:
+            post['thumb']["alt"] = post['thumb_legend']
+            post['thumb']['tag'] = self.img_tag(post['thumb'])
         post['paged'] = 0
         post['tagslist'] = self.extract_tags(post)
         post['navigation'] = self.navigation(post)

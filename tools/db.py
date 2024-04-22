@@ -2,6 +2,8 @@ import sqlite3
 import os
 import re
 import json
+import datetime
+
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir) + os.sep
@@ -20,6 +22,7 @@ def create_table_posts(reset=False):
     c = conn.cursor()
 
     if reset:
+        print("Reset table posts")
         c.execute('DROP TABLE IF EXISTS posts')
 
     c.execute(f'''CREATE TABLE IF NOT EXISTS posts (
@@ -36,10 +39,14 @@ def create_table_posts(reset=False):
               );''')
     conn.commit()
 
-def insert_post(conn, post):
+def insert_post(post):
+    global conn
 
     if 'tags' in post and isinstance(post['tags'], list):
         post['tags'] = json.dumps(post['tags'])
+
+    #print(post)
+    #exit()
 
     query = '''INSERT OR IGNORE INTO posts 
                (title, path_md, pub_date, pub_update, thumb_path, thumb_legend, type, tags)
@@ -64,16 +71,25 @@ def insert_post(conn, post):
 
 
 def filter_tags(tags):
-    date_pattern = re.compile(r'^\d{4}-\d{1,2}-\d{1,2}$')  # Correspond à 'YYYY-M-D'
-    year_pattern = re.compile(r'^y\d{4}$')  # Correspond à 'yYYYY'
-    filtered_tags = [tag for tag in tags if not date_pattern.match(tag) and not year_pattern.match(tag)]    
-    return filtered_tags
+    date_pattern = re.compile(r'^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2})h(\d{1,2})$')  # 'YYYY-M-D-HhM'
+    year_pattern = re.compile(r'^y(\d{4})$')  # 'yYYYY'
+    filtered_tags = []
+    timestamp = 0
 
+    for tag in tags:
+        date_match = date_pattern.match(tag)
+        if date_match:
+            year, month, day, hour, minute = map(int, date_match.groups())
+            date_obj = datetime.datetime(year, month, day, hour, minute)
+            timestamp = round(date_obj.timestamp())
+        elif not year_pattern.match(tag):
+            filtered_tags.append(tag)
+    return filtered_tags, timestamp
 
 def markdown_extract(path):
-    creation_time = round(os.path.getctime(path))
+    creation_time = 0
     modification_time = round(os.path.getmtime(path))
-    
+
     # Read the file and extract title and tags
     title = None
     tags = []
@@ -91,7 +107,7 @@ def markdown_extract(path):
                 potential_tags = line.strip().split()
                 if all(tag.startswith('#') for tag in potential_tags):
                     tags = [tag[1:] for tag in potential_tags if tag.startswith('#')]
-                    tags = filter_tags(tags)
+                    tags, creation_time = filter_tags(tags)
             #Thumb
             if '![' in line and thumb_path is None:
                 match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
@@ -101,7 +117,8 @@ def markdown_extract(path):
 
         if thumb_path and not thumb_legend:
             thumb_legend = title
-        return {"pub_date":creation_time, "pub_update":modification_time, "title":title, "tags":tags, "thumb_legend":thumb_legend, "thumb_path":thumb_path}
+        answer = {"pub_date":creation_time, "pub_update":modification_time, "title":title, "tags":tags, "thumb_legend":thumb_legend, "thumb_path":thumb_path}
+        return answer
         
     return None
 
@@ -128,14 +145,14 @@ def db_builder(root_dir,reset=False):
                     post['type'] = 1
                 else:
                     post['type'] = 0
-                
-                #print(post)
-                #exit()
 
-                if insert_post(conn, post):
+                #test_insert_post(post)
+                #print(post)
+
+                if insert_post(post):
                     count_added += 1
 
-        conn.commit()
+    conn.commit()
 
     return count_added
 
@@ -153,15 +170,10 @@ def get_posts(condition=None):
     return c.fetchall()
 
 def get_posts_updated():
-    return get_posts("updated=1")
+    return get_posts("updated=1 and type=0")
 
-def list_posts(condition=None):
-    posts = get_posts(condition)
-    for post in posts:
-        print(dict(post))
-
-def list_posts_updated():
-    list_posts("updated=1")
+def get_all_posts():
+    return get_posts("type=0")
 
 
 def get_posts_by_tag(tag):
@@ -176,3 +188,43 @@ def get_posts_by_tag(tag):
     c.execute(query, (tag,))
     posts = c.fetchall()
     return posts
+
+
+def timestamp_to_date(timestamp):
+    date_time = datetime.datetime.fromtimestamp(timestamp)
+    readable_date = date_time.strftime("%Y-%m-%d")
+    return readable_date
+
+def list_posts(condition=None):
+    posts = get_posts(condition)
+    for post in posts:
+        print(dict(post), timestamp_to_date(post['pub_date']))
+    exit("List end")
+
+def list_posts_updated():
+    list_posts("updated=1")
+
+def list_posts_updated():
+    list_posts("updated=1")
+
+def list_test():
+    list_posts("path_md=null")
+
+def test_insert_post(post=None):
+    global conn
+    create_table_posts(True)
+    if not post:
+        post = {
+            'title': 'Test Entry', 
+            'path_md': 'test/path.md', 
+            'pub_date': 1379706780, 
+            'pub_update': 1416085181, 
+            'thumb_path': '_i/test.jpg', 
+            'thumb_legend': 'Test Image', 
+            'type': 1, 
+            'tags': json.dumps(["test"])
+        }
+    result = insert_post(post)
+    conn.commit()
+    print("Insert/Update result:", result)
+    list_posts()

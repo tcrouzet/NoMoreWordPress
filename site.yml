@@ -6,17 +6,20 @@ title: "Thierry Crouzet"
 domain: "https://tcrouzet.com/"
 template: "tcrouzet"
 analytics: False
-version: 3
-
-tagsT:
-  - id: netlitterature
-    title: "NetLittérature"
-  - id: cuisine
-    title: "Cuisine"
-
+version: 0
 
 tags:
+  carnets-de-route:
+    title: "Carnets"
+  borntobike:
+    title: "Vélo"
+  ecriture:
+    title: "Écriture"
+  edition:
+    title: "Édition"
   netlitterature:
     title: "NetLittérature"
+  netculture:
+    title: "NetCulture"
   cuisine:
     title: "Cuisine"

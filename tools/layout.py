@@ -7,7 +7,7 @@ class Layout:
 
     def __init__(self, config):
         self.config = config
-        self.config['version'] = time.time()
+        #self.config['version'] = time.time()
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(script_dir) + os.sep
@@ -19,6 +19,7 @@ class Layout:
         self.header = self.load_template("header")
         self.footer = self.load_template("footer")
         self.single = self.load_template("single")
+        self.article = self.load_template("article")
 
         self.new_assets = self.copy_assets()
 
@@ -49,21 +50,23 @@ class Layout:
                     shutil.copy2(source_item, destination_item)
                     copied_files.append(destination_item)
 
+        print(copied_files)
         return copied_files
 
 
     def single_gen(self, post):
         header_html = self.header.render(post=post, blog=self.config)
         footer_html = self.footer.render(post=post, blog=self.config)
-        single_html = self.single.render(post=post, blog=self.config)
-        #share_html = self.share.render(post=post)
-        self.save(header_html + single_html + footer_html, post['url'])
+        article_html = self.article.render(post=post, blog=self.config)
+        single_html = self.single.render(post=post, blog=self.config, article=article_html)
+        self.save(header_html + single_html + footer_html, post['url'], "index.html")
+        self.save(article_html, post['url'], "content.html")
 
 
-    def save(self, html, path):
+    def save(self, html, path, file_name="index.html"):
 
         dir = os.path.join( self.config['export'], path)
         os.makedirs(dir, exist_ok=True)
 
-        with open(os.path.join( dir, 'index.html'), 'w', encoding="utf-8") as file:
+        with open(os.path.join( dir, file_name), 'w', encoding="utf-8") as file:
             file.write(html)
