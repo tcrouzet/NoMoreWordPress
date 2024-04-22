@@ -1,11 +1,4 @@
-{% if blog.version == 0 %}
-<script>
-document.write('<script src="/toggle.js?ver=' + Date.now() + '"><\/script>');
-</script>
-{% else %}
 <script type="text/javascript" src="/toggle.js?ver={{ blog.version }}" id="toggle-js"></script>
-{% endif %}
-
 <div id="copyMessage"></div>
 </body>
 </html>

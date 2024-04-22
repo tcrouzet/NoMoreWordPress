@@ -32,15 +32,8 @@
     <meta property="og:image:width" content="{{ post.thumb.width }}" />
     <meta property="og:image:height" content="{{ post.thumb.height }}" />
     <meta property="og:image:type" content="{{ post.thumb.format }}" />
-    <meta name="author" content="{{ blog.title }}" />
-    
-    {% if blog.version == 0 %}
-    <script>
-    document.write('<link rel="stylesheet" href="/style.css?ver=' + Date.now() + '" type="text/css" media="screen">');
-    </script>
-    {% else %}
+    <meta name="author" content="{{ blog.title }}" />    
     <link rel='stylesheet' id='style-css' href='/style.css?ver={{ blog.version }}' type='text/css' media='screen' />
-    {% endif %}
 
 </head>
 
@@ -67,3 +60,4 @@
 <div id="access-search" class="access pageGutter"></div>
 
 </div>
+<div id="top-spacer"></div>

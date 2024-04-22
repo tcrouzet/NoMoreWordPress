@@ -50,7 +50,7 @@ window.addEventListener('load', function() {
     }
 });
 
-//Ajax
+//Infinite scroll
 var firstLoad=true;
 var more="";
 var oktoload=true;
@@ -58,12 +58,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     more = document.getElementById("loadMore");
     if(more){
-    
-        //var moreValue= more.value;
-
         window.addEventListener("scroll", scrollFire);
         //alert("scroll");
-
     }
 
 });
@@ -79,25 +75,28 @@ function scrollFire(){
     var windowHeight = window.innerHeight;    
     var scrollPoint = currentScrollPosition + windowHeight;
 
-   //console.log(scrollPoint);
-
+    //console.log(scrollPoint);
 
     //if(scrollPoint >= totalPageHeight-500 || firstLoad) {
     if(scrollPoint >= totalPageHeight-500 && oktoload) {
 
         oktoload=false;
+        if (!firstLoad) {
+            updateNextURL();
+        }
+        firstLoad = false
         loadMoreContent();
 
     }
-
+    window.addEventListener("scroll", scrollFire);
 }
 
 function loadMoreContent() {
+    console.log("LoadMore")
     const more = document.getElementById("loadMore");
     const url = more.getAttribute('next-url') + "content.html";
     fetchContent(url);
 }
-
 
 
 function fetchContent(url) {
@@ -106,7 +105,7 @@ function fetchContent(url) {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
             if (xmlhttp.status == 200) {
                 document.getElementById("content").insertAdjacentHTML('beforeend', xmlhttp.responseText);
-                updateNextURL();
+                //updateNextURL();
                 oktoload = true;
             } else {
                 more.style.display = "none";
@@ -118,10 +117,18 @@ function fetchContent(url) {
 }
 
 function updateNextURL() {
-    var nextURL = document.querySelector('.load-more-url:last-child').getAttribute('data-next-url');
-    const more = document.getElementById("loadMore");
-    more.setAttribute('data-next-url', nextURL);
+    var loadMoreUrls = document.querySelectorAll('.load-more-url');
+    if (loadMoreUrls.length > 0) {
+        var lastUrlElement = loadMoreUrls[loadMoreUrls.length - 1]; // Prend le dernier élément de la liste
+        var nextURL = lastUrlElement.getAttribute('next-url');
+        console.log("Next URL found:", nextURL);
+        const more = document.getElementById("loadMore");
+        more.setAttribute('next-url', nextURL);
+    } else {
+        console.log("No .load-more-url elements found!");
+    }
 }
+
 
 function doAPIcall(type, url, flag, callback) {
     var xmlhttp = new XMLHttpRequest();

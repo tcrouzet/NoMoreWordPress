@@ -4,31 +4,30 @@
     <article id="article-{{ post.id }}" itemscope itemType="https://schema.org/Book">
     <meta itemprop="name" content="{{ post.title }}"/>
     
-    {% else %}
+{% else %}
     
     <article id="article-{{ post.id }}" itemscope itemType="https://schema.org/BlogPosting">
-    <meta itemprop="articleSection" content="NONE'"/>
+    <meta itemprop="articleSection" content="{{ post.navigation.maintag.slug }}"/>
     <meta itemprop="name" content="Article"/>
     
-    {% endif %}
+{% endif %}
     
-    <meta itemprop="inLanguage" content="fr-FR"/>
-    <meta itemprop="author" content="Thierry Crouzet"/>
-    <meta itemprop="accountablePerson" content="Thierry Crouzet"/>
-    <meta itemprop="datePublished" content="{{ post.pub_date_str }}"/>
-    <meta itemprop="dateModified" content="{{ post.pub_update_str }}"/>
-    <meta itemprop="url" content="{{ post.canonical }}" />
+<meta itemprop="inLanguage" content="fr-FR"/>
+<meta itemprop="author" content="Thierry Crouzet"/>
+<meta itemprop="accountablePerson" content="Thierry Crouzet"/>
+<meta itemprop="datePublished" content="{{ post.pub_date_str }}"/>
+<meta itemprop="dateModified" content="{{ post.pub_update_str }}"/>
+<meta itemprop="url" content="{{ post.canonical }}" />
     
-    {% if post.thumb %}
+<div class="poster maxContainerWidth">
+{% if post.thumb %}
         
-    <div class="poster maxContainerWidth">
-    
-    {% if post.paged == 0 %}<div class="poster-spacer maxContainerWidth"></div>{% endif %}
+    {% if post.paged == 0 %}<div class="maxContainerWidth"></div>{% endif %}
     
     {{ post.thumb.tag }}
     {% if post.thumb.alt != blank %}<div class="poster-legend">{{ post.thumb.alt }}</div>{% endif %}
     
-    {% endif %}
+{% endif %}
     
     <div class="poster-title{% if not post.thumb or post.type == 2 %} poster-title-center{% endif %}">
     {% if not post.thumb %}<div class="poster-big-spacer maxContainerWidth"></div>{% endif %}
@@ -38,18 +37,18 @@
     {% if post.type == 0 %}
     
     <div class="poster-subtitle">
-    <div class="poster-serie">
-    <a href="{{ post.navigation.prev_url }}" class="prev">&lt; </a>
-    {% if post.navigation.maintag.slug != blank %}
-        <a href="/tag/{{ post.navigation.maintag.slug }}">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> ● 
-    {% endif %}
-    {{ post.navigation.datelink }}
-    <a href="{{ post.navigation.next_url }}" class="next"> &gt;</a>
-    </div>
+        <div class="poster-serie">
+        <a href="{{ post.navigation.prev_url }}" class="prev">&lt; </a>
+        {% if post.navigation.maintag.slug != blank %}
+            <a href="/tag/{{ post.navigation.maintag.slug }}">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> ● 
+        {% endif %}
+        {{ post.navigation.datelink }}
+        <a href="{{ post.navigation.next_url }}" class="next"> &gt;</a>
+        </div>
     
-    <div class="plus-contenair">
-        {% include share_path %}
-        <div class="plus">&bull;&bull;&bull;<ul>
+        <div class="plus-contenair">
+            {% include share_path %}
+            <div class="plus">&bull;&bull;&bull;<ul>
                 <li><a
                         href="http://www.printfriendly.com/print?url={{ post.url }}&amp;partner=sociable">Imprime
                         le billet/PDF</a></li>
@@ -62,25 +61,22 @@
                         class="footertitre">(cc)</a>&#8239;<a
                         href="/informations/">Thierry&#8239;Crouzet</a></li>
             </ul>
+            </div>
         </div>
     </div>
     
-    </div>
+{% endif %}
+</div>
     
-    {% endif %}
+<div class="post hentry" itemprop="articleBody" id="post-{{ post.id }}">
     
-    {% if post.thumb %}</div>{% endif %}
+{{ post.html }}
     
-    <div class="post hentry" itemprop="articleBody" id="post-{{ post.id }}">
+<div class="sharebas pageGutter">{% include share_path %}</div>
     
-    {{ post.html }}
-    
-    <div class="sharebas pageGutter">
-    {% include share_path %}
-    </div>
-    
-    </div>
+</div>
+{% comment %} End post hentry {% endcomment %}
 
-    <div class="load-more-url" next-url="{{ post.navigation.next_url }}" style="display: none;"></div>
+<div class="load-more-url" next-url="{{ post.navigation.prev_url }}" style="display: none;"></div>
 
-    </article>
+</article>

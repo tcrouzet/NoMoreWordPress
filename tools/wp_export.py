@@ -37,7 +37,7 @@ old_img_dir = secret.OLD_IMG_DIR
 img_sub_dir = secret.IMG_SUB_DIR
 
 def get_export_filepath(post, export_dir):
-    filename = post['post_name']+".md"
+    filename = tag_format(post['post_name'])+".md"
     if post['post_type'] == 'page':
         export_path = os.path.join(export_dir, "page", filename)
         return export_path
@@ -53,6 +53,9 @@ def tag_format(tag):
     tag = unidecode.unidecode(tag.strip())
     tag = tag.lower()
     tag = tag.replace(" ", "_")
+    tag = tag.replace("’", "")
+    tag = tag.replace("%e2%80%99", "")
+    
     return tag
 
 def tags_line(post):

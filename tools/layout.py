@@ -7,7 +7,8 @@ class Layout:
 
     def __init__(self, config):
         self.config = config
-        #self.config['version'] = time.time()
+        if self.config['version'] == 0:
+            self.config['version'] = time.time()
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(script_dir) + os.sep
