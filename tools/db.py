@@ -197,7 +197,9 @@ def get_tags():
     
     query = '''
     SELECT t.tag,
-        t.count, 
+        t.count,
+        '/tag/' || t.tag as path_md,
+        5 as type,
         p.id,
         p.path_md as post_md,
         p.thumb_path,
@@ -250,6 +252,10 @@ def list_tags():
         print(dict(tag))
     exit("List end")
 
+def list_object(objects):
+    objects = dict(objects)
+    for obsject in objects:
+        print(obsject)
 
 def test_insert_post(post=None):
     global conn

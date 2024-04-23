@@ -26,8 +26,8 @@ elif config['build'] == 2:
 layout = tools.layout.Layout(config)
 web = tools.web.Web(config)
 
-#TAGS
 
+#TAGS
 tags = tools.db.get_tags()
 pbar = tqdm(total=len(tags), desc='Tags:')
 for tag in tags:
@@ -36,8 +36,23 @@ for tag in tags:
     pbar.update(1)
 
 
-#POSTS
+#SERIES
+tools.db.list_object(tags[0])
+series = {
+    "tag": "series",
+    "type": 5,
+    "pub_update": tags[0]['pub_update'],
+    "thumb_path": tags[0]['thumb_path'],
+    "thumb_legend": tags[0]['thumb_legend'],
+    "post_md": "tag/series/",
+}
+series = web.supercharge_tag(series,tags)
+#print(series)
+layout.tag_gen( series )
+exit()
 
+
+#POSTS
 #posts = tools.db.get_posts_updated()
 posts = tools.db.get_all_posts()
 #posts = tools.db.get_all_pages()

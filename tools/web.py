@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+import time
 import locale
 import pytz
 from PIL import Image
@@ -276,11 +277,17 @@ class Web:
                 }
 
 
-    def supercharge_post(self, post, mode=True):
+    def supercharge_post(self, post):
         post = dict(post)
-        post['url'] = self.url(post)
 
-        if mode:
+        if post['type']==5:
+            post['main'] = self.main_tag([post['tag']])
+            post['pub_date'] = time.time()
+            post['pub_update'] = post['pub_date']  
+
+        post['url'] = self.url(post)
+ 
+        if post['type']!=5:
             content = self.get_post_content(post)
             post['content'] = content['content']
             html = markdown.markdown(content['content'])
@@ -296,7 +303,7 @@ class Web:
             post['thumb']['tag'] = self.img_tag(post['thumb'])
         post['paged'] = 0
 
-        if mode:
+        if post['type']!=5:
             post['tagslist'] = self.extract_tags(post)
             post['navigation'] = self.navigation(post)
             post['navigation']['datelink'] = self.date_html(post)
@@ -306,7 +313,7 @@ class Web:
 
         return post
 
-    def supercharge_tag(self, tag):
+    def supercharge_tag(self, tag, posts=None):
         tag = dict(tag)
         tag['type'] = 5
         tag['main'] = self.main_tag([tag['tag']])
@@ -338,14 +345,17 @@ class Web:
             menu.insert(index-1, {"title": "Vélo", "url": "/tag/borntobike/"})
         tag['menu'] = menu
 
-        posts = tools.db.get_posts_by_tag(tag['tag'])
+        if not posts:
+            posts = tools.db.get_posts_by_tag(tag['tag'])
+        
         total_posts = len(posts)
         numbered_posts = []
         for index, post in enumerate(posts, start=1):
-            post_with_order = self.supercharge_post(post, False)
+            post_with_order = self.supercharge_post(post)
             post_with_order['order']=total_posts-index+1
             numbered_posts.append(post_with_order)
 
         tag['posts'] = numbered_posts
       
         return tag
+#

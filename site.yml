@@ -11,6 +11,8 @@ analytics: False
 version: 0 #0 dynamic random version for testing only
 
 tags:
+  series:
+    title: "Séries"
   carnets:
     title: "Carnets"
     url: "carnet-de-route"
