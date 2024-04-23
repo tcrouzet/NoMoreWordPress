@@ -77,6 +77,8 @@
 </div>
 {% comment %} End post hentry {% endcomment %}
 
+{% if post.type == 0 %}
 <div class="load-more-url" next-url="{{ post.navigation.prev_url }}" style="display: none;"></div>
+{% endif %}
 
 </article>

@@ -9,3 +9,5 @@ Pillow
 markdown
 beautifulsoup4
 tqdm
+requests
+csscompressor

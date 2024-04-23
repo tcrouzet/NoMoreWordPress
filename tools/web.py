@@ -29,10 +29,26 @@ class Web:
 
 
     def url(self, post):
-        date = datetime.fromtimestamp(post['pub_date'])
-        path = date.strftime("/%Y/%m/%d")
         file_name_without_extension = os.path.splitext(os.path.basename(post['path_md']))[0]
-        url = '/'.join([path.strip('/'), file_name_without_extension]) + "/"
+        if post['type'] == 0:
+
+            #POST
+            date = datetime.fromtimestamp(post['pub_date'])
+            path = date.strftime("/%Y/%m/%d")
+            url = '/'.join([path.strip('/'), file_name_without_extension]) + "/"
+        
+        elif post['type'] == 1:
+
+            #PAGES
+            url = file_name_without_extension + "/"
+
+        elif post['type'] == 5:
+
+            #TAGS
+            url = "tag/" + post['path_md']
+
+        # print(url)
+        # exit()
         return url
 
 
@@ -48,7 +64,12 @@ class Web:
     def source_image(self, src, post):
         if not src:
             return None
-        path = os.path.join( self.config['vault'], os.path.dirname(post['path_md']), src )
+        if post['type'] == 5:
+            #Tags
+            path = os.path.join( self.config['vault'], os.path.dirname(post['post_md']), src )
+        else:
+            path = os.path.join( self.config['vault'], os.path.dirname(post['path_md']), src )
+        #print(path)
         try:
             with Image.open(path) as img:
                 (width, height) = img.size
@@ -86,6 +107,7 @@ class Web:
                     }
 
         except Exception as e:
+            #print("bug",e)
             return None
 
 
@@ -220,9 +242,6 @@ class Web:
     def navigation(self, post):
 
         main_tag =  self.main_tag(post['tagslist'])
-        # if not main_tag:
-        #     print(post)
-        #     exit()
         tag_posts = tools.db.get_posts_by_tag(main_tag['slug'])
 
         prev_post = None
@@ -252,14 +271,17 @@ class Web:
                 }
 
 
-    def supercharge_post(self, post):
+    def supercharge_post(self, post, mode=True):
         post = dict(post)
         post['url'] = self.url(post)
-        content = self.get_post_content(post)
-        post['content'] = content['content']
-        html = markdown.markdown(content['content'])
-        post['html'] = self.image_manager(html, post)
-        post['description'] = content['description']
+
+        if mode:
+            content = self.get_post_content(post)
+            post['content'] = content['content']
+            html = markdown.markdown(content['content'])
+            post['html'] = self.image_manager(html, post)
+            post['description'] = content['description']
+        
         post['canonical'] = self.config['domain'] + post['url']
         post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
         post['pub_update_str'] = self.format_timestamp_to_paris_time(post['pub_update'])
@@ -268,11 +290,43 @@ class Web:
             post['thumb']["alt"] = post['thumb_legend']
             post['thumb']['tag'] = self.img_tag(post['thumb'])
         post['paged'] = 0
-        post['tagslist'] = self.extract_tags(post)
-        post['navigation'] = self.navigation(post)
-        post['navigation']['datelink'] = self.date_html(post)
+
+        if mode:
+            post['tagslist'] = self.extract_tags(post)
+            post['navigation'] = self.navigation(post)
+            post['navigation']['datelink'] = self.date_html(post)
         # print(post['navigation'])
         # print(post['navigation']['maintag'])
         # exit()
 
         return post
+
+    def supercharge_tag(self, tag):
+        tag = dict(tag)
+        tag['type'] = 5
+        tag['path_md'] = tag['tag'] + "/"
+        tag['url'] = self.url(tag)
+        main = self.main_tag([tag['tag']])
+        tag['title'] = main['title']
+        tag['pub_date'] = tag['pub_update']
+
+        tag['description'] = tag['title']
+        tag['canonical'] = self.config['domain'] + tag['url']
+        tag['pub_date_str'] = self.format_timestamp_to_paris_time(tag['pub_date'])
+        tag['pub_update_str'] = self.format_timestamp_to_paris_time(tag['pub_update'])
+        tag['thumb'] = self.source_image(tag['thumb_path'], tag)
+        if tag['thumb']:
+            tag['thumb']["alt"] = tag['thumb_legend']
+            tag['thumb']['tag'] = self.img_tag(tag['thumb'])
+
+        posts = tools.db.get_posts_by_tag(tag['tag'])
+
+        numbered_posts = []
+        for index, post in enumerate(posts, start=1):
+            post_with_order = self.supercharge_post(post, False)
+            post_with_order['order']=index
+            numbered_posts.append(post_with_order)
+
+        tag['posts'] = numbered_posts
+      
+        return tag

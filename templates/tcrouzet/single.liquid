@@ -1,8 +1,10 @@
 {% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
 
-<div id="content" role="main">
+<div id="content" class="infinite" role="main">
 {{ article }}
 {% include mailchimp_path %}
 </div>
 
+{% if post.type == 0 %}
 <a href="{{ post.navigation.prev_url }}"><div id="loadMore" next-url="{{ post.navigation.prev_url }}"></div></a>
+{% endif %}

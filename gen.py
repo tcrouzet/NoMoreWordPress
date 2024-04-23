@@ -14,18 +14,38 @@ os.system('clear')
 with open('site.yml', 'r') as file:
     config = yaml.safe_load(file)
 
-#tools.db.list_test()
+if config['build'] == 1:
+    #Load new posts only
+    tools.db.db_builder(config['vault'],False)
+elif config['build'] == 2:
+     #Rebuild all
+    tools.db.db_builder(config['vault'],True)
 
-#Load new posts if False (all post if True)
-tools.db.db_builder(config['vault'],False)
-#tools.db.db_builder(config['vault'],True)
+#tools.db.list_tags()
 
-#posts = tools.db.get_posts_updated()
-posts = tools.db.get_all_posts()
 layout = tools.layout.Layout(config)
 web = tools.web.Web(config)
 
-pbar = tqdm(total=len(posts), desc='Gen:')
+#TAGS
+
+tags = tools.db.get_tags()
+pbar = tqdm(total=len(tags), desc='Tags:')
+for tag in tags:
+    tag = web.supercharge_tag(tag)
+    #print(tag)
+    layout.tag_gen(tag)
+    pbar.update(1)
+    exit()
+
+
+#POSTS
+
+#posts = tools.db.get_posts_updated()
+posts = tools.db.get_all_posts()
+#posts = tools.db.get_all_pages()
+#posts = tools.db.get_posts()
+
+pbar = tqdm(total=len(posts), desc='Posts:')
 for post in posts:
     #print(dict(post))
     #exit()

@@ -92,10 +92,16 @@ function scrollFire(){
 }
 
 function loadMoreContent() {
-    console.log("LoadMore")
     const more = document.getElementById("loadMore");
-    const url = more.getAttribute('next-url') + "content.html";
-    fetchContent(url);
+    const url = more.getAttribute('next-url')
+    //console.log("LoadMore " + url)
+    if (url !== ""){
+        if (!url.includes('.html'))
+            url += "content.html";
+        fetchContent(url);
+    }else{
+        oktoload = false
+    }
 }
 
 
@@ -104,9 +110,13 @@ function fetchContent(url) {
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
             if (xmlhttp.status == 200) {
-                document.getElementById("content").insertAdjacentHTML('beforeend', xmlhttp.responseText);
-                //updateNextURL();
-                oktoload = true;
+                var infiniteContainer = document.querySelector('.infinite');
+                if (infiniteContainer) {
+                    infiniteContainer.insertAdjacentHTML('beforeend', xmlhttp.responseText);
+                    oktoload = true;
+                }else{
+                    more.style.display = "none";
+                }
             } else {
                 more.style.display = "none";
             }
@@ -121,11 +131,9 @@ function updateNextURL() {
     if (loadMoreUrls.length > 0) {
         var lastUrlElement = loadMoreUrls[loadMoreUrls.length - 1]; // Prend le dernier élément de la liste
         var nextURL = lastUrlElement.getAttribute('next-url');
-        console.log("Next URL found:", nextURL);
+        //console.log("Next URL found:", nextURL);
         const more = document.getElementById("loadMore");
         more.setAttribute('next-url', nextURL);
-    } else {
-        console.log("No .load-more-url elements found!");
     }
 }
 

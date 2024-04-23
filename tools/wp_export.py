@@ -54,6 +54,7 @@ def tag_format(tag):
     tag = tag.lower()
     tag = tag.replace(" ", "_")
     tag = tag.replace("’", "")
+    tag = tag.replace("'", "")
     tag = tag.replace("%e2%80%99", "")
     
     return tag
@@ -76,6 +77,12 @@ def tags_line(post):
             if tag == "serie" or tag == "une":
                 continue
             line += f"#{tag} "
+
+    if post['post_type'] == 'page':
+        line += f"#page "
+
+    if "bookshop" in post['post_content']:
+        line += f"#book "
 
     line += f" #y{post['post_date'].year} #{post['post_date'].year}-{post['post_date'].month}-{post['post_date'].day}-{post['post_date'].hour}h{post['post_date'].minute}"
     

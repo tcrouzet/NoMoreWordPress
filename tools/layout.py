@@ -21,6 +21,8 @@ class Layout:
         self.footer = self.load_template("footer")
         self.single = self.load_template("single")
         self.article = self.load_template("article")
+        self.tag = self.load_template("tag")
+        self.tags_list = self.load_template("tags_list")
 
         self.new_assets = self.copy_assets()
 
@@ -51,7 +53,7 @@ class Layout:
                     shutil.copy2(source_item, destination_item)
                     copied_files.append(destination_item)
 
-        print(copied_files)
+        #print(copied_files)
         return copied_files
 
 
@@ -62,6 +64,29 @@ class Layout:
         single_html = self.single.render(post=post, blog=self.config, article=article_html)
         self.save(header_html + single_html + footer_html, post['url'], "index.html")
         self.save(article_html, post['url'], "content.html")
+
+
+    def tag_gen(self, tag):
+        header_html = self.header.render(post=tag, blog=self.config)
+        footer_html = self.footer.render(post=tag, blog=self.config)
+
+        posts = tag['posts']
+        page = 1
+        while posts:
+            file_name = f"contener{page}.html"
+            tag['posts'] = posts[:40]
+            if len(tag['posts'])<40:
+                tag['next_url'] = ""
+            else:
+                tag['next_url'] = "/" + tag['url'] + f"contener{page+1}.html"
+            list_html = self.tags_list.render(post=tag)
+            if page == 1:
+                tag_html = self.tag.render(post=tag, list=list_html)
+                self.save(header_html + tag_html + footer_html, tag['url'], "index.html")
+            else:
+                self.save(list_html, tag['url'], file_name)
+            del posts[:40]
+            page += 1
 
 
     def save(self, html, path, file_name="index.html"):

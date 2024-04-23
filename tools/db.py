@@ -175,6 +175,8 @@ def get_posts_updated():
 def get_all_posts():
     return get_posts("type=0")
 
+def get_all_pages():
+    return get_posts("type=1")
 
 def get_posts_by_tag(tag):
     global conn
@@ -183,12 +185,44 @@ def get_posts_by_tag(tag):
     query = f'''
     SELECT * FROM posts, json_each(posts.tags)
     WHERE json_each.value = ?
-    ORDER BY pub_date ASC
+    ORDER BY pub_date DESC
     '''
     c.execute(query, (tag,))
     posts = c.fetchall()
     return posts
 
+def get_tags():
+    global conn
+    c = conn.cursor()
+    
+    query = '''
+    SELECT t.tag,
+        t.count, 
+        p.id,
+        p.path_md as post_md,
+        p.thumb_path,
+        p.thumb_legend, 
+        p.pub_update
+        FROM (
+            SELECT json_each.value AS tag, 
+                COUNT(*) AS count, 
+                MAX(posts.pub_date) AS most_recent_date
+            FROM posts
+            JOIN json_each(posts.tags)
+            GROUP BY json_each.value
+        ) AS t
+        JOIN posts AS p ON p.pub_date = t.most_recent_date
+        WHERE EXISTS (
+            SELECT 1 FROM json_each(p.tags)
+            WHERE json_each.value = t.tag
+        )
+        ORDER BY t.count DESC
+    '''
+
+    c.execute(query)
+    tags = c.fetchall()
+    
+    return tags
 
 def timestamp_to_date(timestamp):
     date_time = datetime.datetime.fromtimestamp(timestamp)
@@ -209,6 +243,13 @@ def list_posts_updated():
 
 def list_test():
     list_posts("path_md=null")
+
+def list_tags():
+    tags = get_tags()
+    for tag in tags:
+        print(dict(tag))
+    exit("List end")
+
 
 def test_insert_post(post=None):
     global conn

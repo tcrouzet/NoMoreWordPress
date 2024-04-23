@@ -1,3 +1,5 @@
+build: 0 #O: No update 1:Update new post only 2:update from scratch
+
 vault: "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet"
 vault_img: "_i/"
 export: "/Users/thierrycrouzet/Documents/staticT"
@@ -6,7 +8,7 @@ title: "Thierry Crouzet"
 domain: "https://tcrouzet.com/"
 template: "tcrouzet"
 analytics: False
-version: 0
+version: 0 #0 dynamic random version for testing only
 
 tags:
   carnets-de-route:
