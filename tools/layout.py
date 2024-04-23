@@ -78,7 +78,7 @@ class Layout:
             if len(tag['posts'])<40:
                 tag['next_url'] = ""
             else:
-                tag['next_url'] = "/" + tag['url'] + f"contener{page+1}.html"
+                tag['next_url'] = "/" + tag['url'].strip("/") + "/" + f"contener{page+1}.html"
             list_html = self.tags_list.render(post=tag)
             if page == 1:
                 tag_html = self.tag.render(post=tag, list=list_html)

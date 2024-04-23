@@ -11,10 +11,12 @@ analytics: False
 version: 0 #0 dynamic random version for testing only
 
 tags:
-  carnets-de-route:
+  carnets:
     title: "Carnets"
-  borntobike:
+    url: "carnet-de-route"
+  velo:
     title: "Vélo"
+    url: "borntobike"
   ecriture:
     title: "Écriture"
   edition:

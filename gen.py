@@ -32,10 +32,8 @@ tags = tools.db.get_tags()
 pbar = tqdm(total=len(tags), desc='Tags:')
 for tag in tags:
     tag = web.supercharge_tag(tag)
-    #print(tag)
     layout.tag_gen(tag)
     pbar.update(1)
-    exit()
 
 
 #POSTS

@@ -39,7 +39,9 @@
     <div class="poster-subtitle">
         <div class="poster-serie">
         <a href="{{ post.navigation.prev_url }}" class="prev">&lt; </a>
-        {% if post.navigation.maintag.slug != blank %}
+        {% if post.navigation.maintag.url %}
+            <a href="/tag/{{ post.navigation.maintag.url }}">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> ● 
+        {% elif post.navigation.maintag.slug != blank %}
             <a href="/tag/{{ post.navigation.maintag.slug }}">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> ● 
         {% endif %}
         {{ post.navigation.datelink }}

@@ -2,17 +2,17 @@
 
 <div class="poster-title poster-title-center">
 <div class="poster-menu">
-    <h1 itemprop="headline" id="title">{{ post.title }}</h1><a href="/blog/">Blog</a><a
-        href="/tag/borntobike/">Vélo</a><a href="/series/">•••</a>
+    {% for menu in post.menu %}
+        {% if forloop.index == 1 %}
+            <h1 itemprop="headline" id="title">{{ menu.title }}</h1>
+        {% else %}
+            <a href="{{ menu.url }}">{{ menu.title }}</a>
+        {% endif %}
+    {% endfor %}
 </div>
 </div>
 
 <article>
-
-{% comment %} $mynav= new tcrouzet_navigation($wp_query);
-$mynav->build_poster();
-$mynav->poster=false;
-tcrouzet_poster_title($mynav); {% endcomment %}
 
 <div class="front maxContainerWidth pageGutter infinite">
 

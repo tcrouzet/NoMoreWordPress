@@ -93,11 +93,13 @@ function scrollFire(){
 
 function loadMoreContent() {
     const more = document.getElementById("loadMore");
-    const url = more.getAttribute('next-url')
-    //console.log("LoadMore " + url)
+    var url = more.getAttribute('next-url');
+    console.log("LoadMore " + url);
     if (url !== ""){
+        console.log("URL non vide");
         if (!url.includes('.html'))
             url += "content.html";
+        console.log(url);
         fetchContent(url);
     }else{
         oktoload = false

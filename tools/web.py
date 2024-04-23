@@ -45,7 +45,8 @@ class Web:
         elif post['type'] == 5:
 
             #TAGS
-            url = "tag/" + post['path_md']
+            url = "tag/" + post['main'].get('url',post['path_md'])
+            #url = "tag/" + post['path_md']
 
         # print(url)
         # exit()
@@ -218,7 +219,11 @@ class Web:
         for tag in tagslist:
             first_tag = tag
             if tag in self.config['tags']:
-                return {'slug': tag, "title":self.config['tags'][tag]['title']}
+                response = {'slug': tag, "title":self.config['tags'][tag]['title']}
+                turl = self.config['tags'][tag].get("url",None)
+                if turl:
+                    response['url'] = turl
+                return response
         return {'slug': first_tag, "title":first_tag.capitalize().replace("-"," ")}
     
 
@@ -252,13 +257,13 @@ class Web:
             #post_dict = dict(post)
             if post['id'] == tag_post['id']:
                 if i-1>=0:
-                    prev_post = tag_posts[i-1]
+                    next_post = tag_posts[i-1]
                 else:
-                    prev_post = tag_posts[-1]
+                    next_post = tag_posts[-1]
                 if i==total_posts-1:
-                    next_post = tag_posts[0]
+                    prev_post = tag_posts[0]
                 else:
-                    next_post = tag_posts[i+1]
+                    prev_post = tag_posts[i+1]
                 break
 
         return {"maintag": main_tag,
@@ -267,7 +272,7 @@ class Web:
                 "prev_url": "/"+self.url(prev_post),
                 "next_post": next_post,
                 "next_url": "/"+self.url(next_post),
-                "order": i+1
+                "order": total_posts-i
                 }
 
 
@@ -304,10 +309,10 @@ class Web:
     def supercharge_tag(self, tag):
         tag = dict(tag)
         tag['type'] = 5
+        tag['main'] = self.main_tag([tag['tag']])
         tag['path_md'] = tag['tag'] + "/"
         tag['url'] = self.url(tag)
-        main = self.main_tag([tag['tag']])
-        tag['title'] = main['title']
+        tag['title'] = tag['main']['title']
         tag['pub_date'] = tag['pub_update']
 
         tag['description'] = tag['title']
@@ -319,12 +324,26 @@ class Web:
             tag['thumb']["alt"] = tag['thumb_legend']
             tag['thumb']['tag'] = self.img_tag(tag['thumb'])
 
-        posts = tools.db.get_posts_by_tag(tag['tag'])
+        menu = []
+        menu.append({"title": tag['title'], "url": "/tag/"+tag['tag']})
+        if tag['tag'] != "blog":
+            menu.append({"title": "Blog", "url": "/blog/"})
+        if tag['tag'] != "series":
+            menu.append({"title": "…", "url": "/series/"})
+        index = len(menu)
+        if tag['tag'] != "carnets" and index<4:
+            menu.insert(index-1, {"title": "Carnets", "url": "/tag/carnet-de-route/"})
+        index = len(menu)
+        if tag['tag'] != "borntobike" and index<4:
+            menu.insert(index-1, {"title": "Vélo", "url": "/tag/borntobike/"})
+        tag['menu'] = menu
 
+        posts = tools.db.get_posts_by_tag(tag['tag'])
+        total_posts = len(posts)
         numbered_posts = []
         for index, post in enumerate(posts, start=1):
             post_with_order = self.supercharge_post(post, False)
-            post_with_order['order']=index
+            post_with_order['order']=total_posts-index+1
             numbered_posts.append(post_with_order)
 
         tag['posts'] = numbered_posts
