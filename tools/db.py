@@ -33,7 +33,7 @@ def create_table_posts(reset=False):
                 pub_update INTEGER,
                 thumb_path TEXT DEFAULT '',
                 thumb_legend TEXT DEFAULT '',
-                type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 book page
+                type INTEGER CHECK(type IN (0, 1)),  -- 0 pour post, 1 pour page
                 tags TEXT DEFAULT '[]',
                 updated BOOLEAN DEFAULT FALSE
               );''')
@@ -170,32 +170,44 @@ def get_posts(condition=None):
     return c.fetchall()
 
 def get_posts_updated():
-    return get_posts("updated=1 and type=0")
+    return get_posts("updated=1")
 
 def get_all_posts():
     return get_posts("type=0")
 
+def get_blog_posts(tags_tuple):
+    where = "id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN " + str(tags_tuple) + ") AND type=0"
+    return get_posts(where)
+
 def get_all_pages():
     return get_posts("type=1")
 
-def get_posts_by_tag(tag):
+def get_posts_by_tag(tag, limit=""):
     global conn
     c = conn.cursor()
+
+    if limit:
+        limit = f"LIMIT {limit}"
     
     query = f'''
     SELECT * FROM posts, json_each(posts.tags)
     WHERE json_each.value = ?
-    ORDER BY pub_date DESC
+    ORDER BY pub_date DESC {limit}
     '''
     c.execute(query, (tag,))
     posts = c.fetchall()
     return posts
 
-def get_tags():
+def get_tags(order="t.count DESC", exclude_tags=None):
     global conn
     c = conn.cursor()
+
+    where_clause = ""
+    if exclude_tags:
+        tags_list = ','.join('?' for _ in exclude_tags)  # Créer une chaîne de placeholders
+        where_clause = f"AND t.tag NOT IN ({tags_list})"
     
-    query = '''
+    query = f'''
     SELECT t.tag,
         t.count,
         '/tag/' || t.tag as path_md,
@@ -217,11 +229,14 @@ def get_tags():
         WHERE EXISTS (
             SELECT 1 FROM json_each(p.tags)
             WHERE json_each.value = t.tag
-        )
-        ORDER BY t.count DESC
+        ) {where_clause}
+        ORDER BY {order}
     '''
 
-    c.execute(query)
+    if exclude_tags:
+        c.execute(query, exclude_tags)
+    else:
+        c.execute(query)
     tags = c.fetchall()
     
     return tags
@@ -253,9 +268,24 @@ def list_tags():
     exit("List end")
 
 def list_object(objects):
-    objects = dict(objects)
-    for obsject in objects:
-        print(obsject)
+    total = len(objects)
+    if total == 0:
+        exit("Empty")
+    else:
+        print(total, "objects")
+    print(type(objects))
+    #objects = dict(objects)
+    if isinstance(objects,dict):
+        pass
+    elif isinstance(objects,list):
+        for key, object in enumerate(objects):
+            print(key, list_object(object))
+        exit()
+    else:
+        objects = dict(objects)
+    for key, object in objects.items():
+        print(key, object)
+    exit()
 
 def test_insert_post(post=None):
     global conn

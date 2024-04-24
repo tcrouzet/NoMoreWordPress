@@ -13,7 +13,17 @@
     
     </a>
     <div class="resume-number"><a href="/{{ tag_post.url }}">{{ tag_post.order }}</a></div>
-    <div class="resume-title"><a href="/{{ tag_post.url }}">{{ tag_post.title }}</a></div>
+    {% if tag_post.type !=5 %}
+        <div class="resume-serie"><a href="tag/{{ tag_post.navigation.maintag.url }}">{{ tag_post.navigation.maintag.title }}</a></div>
+    {% endif %}
+    <div class="resume-title"><a href="/{{ tag_post.url }}">
+    {% if tag_post.type ==5 %}
+        <b>{{ tag_post.title }}</b>
+    {% else %}
+        {{ tag_post.title }}
+    {% endif %}
+    </a>
+    </div>
     </div>
     
 {% endfor %}

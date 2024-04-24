@@ -1,0 +1,101 @@
+{% comment %} /* last post */
+$tag_born = get_term_by('slug', 'borntobike', 'post_tag');
+$tag_carnet = get_term_by('slug', 'carnet-de-route', 'post_tag');
+$tag_id_invisible = get_term_by( 'slug', 'invisible', 'post_tag' );
+$tags_to_exclude = array($tag_born->term_id, $tag_carnet->term_id, $tag_id_invisible->term_id);
+
+$args = array( 'numberposts' => 1, 'order'=> 'DESC', 'category' => 191, 'tag__not_in' => $tags_to_exclude );
+$postslist = get_posts( $args );
+foreach ($postslist as $post){
+    setup_postdata($post);
+	$last_post='<a href="'.get_permalink().'">'.get_the_title().'</a>';
+    //if(substr(get_the_title(), -1)!="?") $msg.=".";
+}
+wp_reset_postdata();
+
+/* last carnet */
+$args = array( 'numberposts' => 1, 'order'=> 'DESC', 'tag' => 'carnet-de-route' );
+$postslist = get_posts( $args );
+foreach ($postslist as $post){
+    setup_postdata($post);
+	$last_carnet='<a href="'.get_permalink().'">'.get_the_title().'</a>';
+}
+wp_reset_postdata();
+
+/* last vélo */
+$args = array( 'numberposts' => 1, 'order'=> 'DESC', 'tag' => 'borntobike' );
+$postslist = get_posts( $args );
+foreach ($postslist as $post){
+    setup_postdata($post);
+	$last_velo='<a href="'.get_permalink().'">'.get_the_title().'</a>';
+}
+wp_reset_postdata(); {% endcomment %}
+
+<div id="content" role="main" class="splash">
+    <div class="pageGutter">
+
+        <p><a href="/informations/">Je suis heureux quand j’écris,<br/>alors j’écris…</a></p>
+
+        <h2><a href="/bibliographie/">Livres</a></h2>
+        <h3><a href="/le-code-houellebecq/"><em>Le Code Houellebecq</em></a></h3>
+
+        <h2><a href="/blog/">Blog</a></h2>
+        <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
+
+        <h2><a href="{{ post.carnet.url }}">Carnets</a></h2>
+        <h3>{{ post.carnet.title }}</h3>
+
+        <h2><a href="{{ post.bike.url }}">Vélo</a></h2>
+        <h3>{{ post.bike.title }}</h3>
+
+        <h2><a href="https://daylog.tcrouzet.com/">Daylog</a></h2>
+        <h3><a href="https://daylog.tcrouzet.com/" id="daylog_link">Mes dernières lectures</a></h3>
+
+        {% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
+        {% include mailchimp_path %}
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const container = document.querySelector('.splash');
+    const minimumMarginTop = parseInt(window.getComputedStyle(container).marginTop, 10);
+  
+    function adjustContentPosition() {
+      if (container.offsetHeight < window.innerHeight) {
+        let marginTop = (window.innerHeight - container.offsetHeight) / 3;
+        marginTop = Math.max(marginTop, minimumMarginTop);
+        container.style.marginTop = `${marginTop}px`;
+      } else {
+        container.style.marginTop = '';
+      }
+    }  
+    adjustContentPosition();
+    window.addEventListener('resize', adjustContentPosition);
+
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = ('0' + (now.getMonth() + 1)).slice(-2);
+    var day = ('0' + now.getDate()).slice(-2);
+    var hour = now.getHours();
+    if (hour < 19) {
+      now.setDate(now.getDate() - 1);
+      year = now.getFullYear();
+      month = ('0' + (now.getMonth() + 1)).slice(-2);
+      day = ('0' + now.getDate()).slice(-2);
+    }
+
+    var link = `https://daylog.tcrouzet.com/${year}/${month}/${day}_fr/`;
+    var linkElement = document.getElementById('daylog_link');
+    linkElement.setAttribute('href', link);
+
+    var formattedDate = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(year, month - 1, day));
+    linkElement.textContent = formattedDate;
+
+  });
+</script>
+
+
+

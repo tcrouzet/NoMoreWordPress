@@ -23,6 +23,7 @@ class Layout:
         self.article = self.load_template("article")
         self.tag = self.load_template("tag")
         self.tags_list = self.load_template("tags_list")
+        self.home = self.load_template("home")
 
         self.new_assets = self.copy_assets()
 
@@ -87,6 +88,12 @@ class Layout:
                 self.save(list_html, tag['url'], file_name)
             del posts[:40]
             page += 1
+
+    def home_gen(self, post):
+        header_html = self.header.render(post=post, blog=self.config)
+        footer_html = self.footer.render(post=post, blog=self.config)
+        home_html = self.home.render(post=post, blog=self.config)
+        self.save(header_html + home_html + footer_html, "", "index.html")
 
 
     def save(self, html, path, file_name="index.html"):

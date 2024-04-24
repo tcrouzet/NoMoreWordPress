@@ -1,9 +1,10 @@
 IMG_SUB_DIR="_i" # _ To help .gitignore
 WP_DB_HOST="localhost"
 WP_DB_PORT="8889"
-WP_DB_PASSWORD="XXXX"
+WP_DB_PASSWORD="root"
 WP_DB_USER="root"
-WP_DB_PREFIX="wp_"
+WP_DB_PREFIX="tc_"
 WP_DB_NAME="tcrouzet-blog"
 OLD_IMG_DIR="/Users/thierrycrouzet/Documents/tcrouzet"
 MARKDOWN_DIR="/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet"
+EXCLUDE=['series','blog','splash','tags']

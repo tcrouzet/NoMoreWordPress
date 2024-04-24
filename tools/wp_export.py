@@ -4,7 +4,7 @@ from markdownify import markdownify as md
 import re
 import shutil
 import unidecode
-import secret
+import tools.wp_export_secret as wp_export_secret
 import logs
 
 sys.stdout = logs.DualOutput("_log.txt")
@@ -12,8 +12,8 @@ sys.stderr = sys.stdout
 
 os.system('clear')
 
-if secret.MARKDOWN_DIR:
-    export_folder = secret.MARKDOWN_DIR + os.sep
+if wp_export_secret.MARKDOWN_DIR:
+    export_folder = wp_export_secret.MARKDOWN_DIR + os.sep
 else:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(script_dir)
@@ -21,20 +21,20 @@ else:
     
 os.makedirs(export_folder, exist_ok=True)
 
-prefix = secret.WP_DB_PREFIX
+prefix = wp_export_secret.WP_DB_PREFIX
 
 # Connexion à la base de données MySQL
 conn = mysql.connector.connect(
-    host=secret.WP_DB_HOST,
-    port=secret.WP_DB_PORT,
-    user=secret.WP_DB_USER,
-    password=secret.WP_DB_PASSWORD,
-    database=secret.WP_DB_NAME,
+    host=wp_export_secret.WP_DB_HOST,
+    port=wp_export_secret.WP_DB_PORT,
+    user=wp_export_secret.WP_DB_USER,
+    password=wp_export_secret.WP_DB_PASSWORD,
+    database=wp_export_secret.WP_DB_NAME,
     buffered=True
 )
 
-old_img_dir = secret.OLD_IMG_DIR
-img_sub_dir = secret.IMG_SUB_DIR
+old_img_dir = wp_export_secret.OLD_IMG_DIR
+img_sub_dir = wp_export_secret.IMG_SUB_DIR
 
 def get_export_filepath(post, export_dir):
     filename = tag_format(post['post_name'])+".md"
@@ -335,6 +335,10 @@ cursor.execute(query)
 for post in cursor:
     #print(post)
     #exit()
+
+    if post['post_name'] in wp_export_secret.EXCLUDE:
+        continue
+
     path = get_export_filepath(post, export_folder)
     if path:
         path_dir = os.path.dirname(path)

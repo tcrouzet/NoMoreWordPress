@@ -30,7 +30,20 @@ class Web:
 
 
     def url(self, post):
-        file_name_without_extension = os.path.splitext(os.path.basename(post['path_md']))[0]
+
+        if not post:
+            return None
+
+        # if isinstance(post, tools.db.sqlite3.Row):
+        #     post = dict(post)
+        # elif isinstance(post, list):
+        #     tools.db.list_object(dict(post[0]))
+
+        if "url" in post:
+            return post['url']
+                
+        base = os.path.basename(post['path_md'])        
+        file_name_without_extension = os.path.splitext(base)[0]
         if post['type'] == 0:
 
             #POST
@@ -47,7 +60,6 @@ class Web:
 
             #TAGS
             url = "tag/" + post['main'].get('url',post['path_md'])
-            #url = "tag/" + post['path_md']
 
         # print(url)
         # exit()
@@ -208,9 +220,12 @@ class Web:
 
 
     def extract_tags(self, post):
-        tags = json.loads(post['tags'])
-        if "serie" in tags:
-            tags.remove("serie")
+        if "tags" in post:
+            tags = json.loads(post['tags'])
+        else:
+            tags = ["None"]
+        #if "serie" in tags:
+        #    tags.remove("serie")
         return tags
         
     def main_tag(self, tagslist):
@@ -224,9 +239,13 @@ class Web:
                 turl = self.config['tags'][tag].get("url",None)
                 if turl:
                     response['url'] = turl
+                else:
+                    response['url'] = first_tag
                 return response
-        return {'slug': first_tag, "title":first_tag.capitalize().replace("-"," ")}
+        return {'slug': first_tag, "title": self.title_formater(first_tag), "url": first_tag}
     
+    def title_formater(self, title):
+        return title.capitalize().replace("-"," ").replace("_"," ")
 
     def date_html(self,post):
         locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
@@ -248,12 +267,17 @@ class Web:
     def navigation(self, post):
 
         main_tag =  self.main_tag(post['tagslist'])
+
+        if post["type"]==5:
+            return {"maintag": main_tag}
+
         tag_posts = tools.db.get_posts_by_tag(main_tag['slug'])
 
         prev_post = None
         next_post = None
         total_posts = len(tag_posts)
         #print(total_posts, main_tag['slug'], post['tagslist'])
+
         for i, tag_post in enumerate(tag_posts):
             #post_dict = dict(post)
             if post['id'] == tag_post['id']:
@@ -277,17 +301,26 @@ class Web:
                 }
 
 
-    def supercharge_post(self, post):
+    def tag_2_post(self, post):
         post = dict(post)
+        post['main'] = self.main_tag([post['tag']])
+        post['pub_date'] = time.time()
+        post['pub_update'] = post['pub_date']
+        post['title'] = self.title_formater(post['main']['title'])
+        post['url'] = "tag/"+post['tag']
+        return post
 
-        if post['type']==5:
-            post['main'] = self.main_tag([post['tag']])
-            post['pub_date'] = time.time()
-            post['pub_update'] = post['pub_date']  
+        
+    def supercharge_post(self, post, maximal=True):
+
+        if isinstance(post, tools.db.sqlite3.Row):
+            post = dict(post)
+        elif isinstance(post, list):
+            post = dict(post[0])
 
         post['url'] = self.url(post)
  
-        if post['type']!=5:
+        if maximal:
             content = self.get_post_content(post)
             post['content'] = content['content']
             html = markdown.markdown(content['content'])
@@ -303,10 +336,9 @@ class Web:
             post['thumb']['tag'] = self.img_tag(post['thumb'])
         post['paged'] = 0
 
-        if post['type']!=5:
-            post['tagslist'] = self.extract_tags(post)
-            post['navigation'] = self.navigation(post)
-            post['navigation']['datelink'] = self.date_html(post)
+        post['tagslist'] = self.extract_tags(post)
+        post['navigation'] = self.navigation(post)
+        post['navigation']['datelink'] = self.date_html(post)
         # print(post['navigation'])
         # print(post['navigation']['maintag'])
         # exit()
@@ -314,7 +346,11 @@ class Web:
         return post
 
     def supercharge_tag(self, tag, posts=None):
-        tag = dict(tag)
+
+        if isinstance(tag, tools.db.sqlite3.Row):
+            tag = dict(post)
+
+        #tag = dict(tag)
         tag['type'] = 5
         tag['main'] = self.main_tag([tag['tag']])
         tag['path_md'] = tag['tag'] + "/"
@@ -351,11 +387,34 @@ class Web:
         total_posts = len(posts)
         numbered_posts = []
         for index, post in enumerate(posts, start=1):
-            post_with_order = self.supercharge_post(post)
-            post_with_order['order']=total_posts-index+1
+
+            post=dict(post)
+
+            # if "exclude" in tag:
+            #     if "tags" in post:
+            #         tags = self.extract_tags(post)
+            #         if set(tags) & set(tag["exclude"]):
+            #             continue
+            #     elif "tag" in post:
+            #         if post["tag"].strip() in tag["exclude"]:
+            #             continue
+
+            if post["type"]==5:
+                post = self.tag_2_post(post)
+                #tools.db.list_object(post)
+                post_with_order = self.supercharge_post(post, False)
+                post_with_order['order']=post['count']
+
+            else:
+                post_with_order = self.supercharge_post(post, False)
+                post_with_order['order']=total_posts-index+1
+ 
             numbered_posts.append(post_with_order)
 
         tag['posts'] = numbered_posts
       
         return tag
-#
+
+def home_builder():
+    post = {}
+    return post
