@@ -96,6 +96,15 @@ class Layout:
         self.save(header_html + home_html + footer_html, "", "index.html")
 
 
+    def e404_gen(self):
+        post = {"thumb": None}
+        header_html = self.header.render(post=post, blog=self.config)
+        footer_html = self.footer.render(post=post, blog=self.config)
+        article_html = '<div class="bookshop"><h1>Erreur 404</h1><p>Cette page n’existe plus… ou n’a jamais existé.</p></div>'
+        single_html = self.single.render(post=post, blog=self.config, article=article_html)
+        self.save(header_html + single_html + footer_html, "", "404.html")
+
+
     def save(self, html, path, file_name="index.html"):
 
         dir = os.path.join( self.config['export'], path)

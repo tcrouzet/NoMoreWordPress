@@ -198,6 +198,8 @@ class Db:
         return self.get_posts("type=1")
 
     def get_posts_by_tag(self, tag, limit=""):
+        if not tag:
+            return None
         c = self.conn.cursor()
 
         if limit:

@@ -5,6 +5,7 @@ import tools.db
 import tools.layout
 import tools.web
 import tools.logs
+import json
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -28,11 +29,16 @@ print(new_pots, "new posts")
 
 #db.list_posts_updated()
 
+layout.e404_gen()
+exit()
+
 #POSTS
 posts = db.get_posts_updated()
 total = len(posts)
 pbar = tqdm(total=total, desc='Posts:')
+used_tags = []
 for post in posts:
+    used_tags.extend( json.loads(post['tags']))
     supercharged = web.supercharge_post(post)
     layout.single_gen( supercharged )
     #db.updated(post)
@@ -40,12 +46,12 @@ for post in posts:
 pbar.close()
 db.db_commit()
 print(total, "posts updated")
-exit()
+used_tags = list(set(used_tags))
 
 
 #SERIES
 exclude = ("invisible","iacontent","book","page","le_jardin_de_leternite")
-tags = db.get_tags("p.pub_update DESC",exclude)
+tags = db.get_tags("p.pub_date DESC",exclude)
 series = {
     "tag": "series",
     "pub_update": tags[0]['pub_update'],
@@ -94,9 +100,12 @@ tags = db.get_tags()
 total = len(tags)
 pbar = tqdm(total=total, desc='Tags:')
 for tag in tags:
+    if tag['tag'] not in used_tags:
+        continue
     #tools.db.list_object(tag,False)
     tag = web.supercharge_tag(tag)
     layout.tag_gen(tag)
     pbar.update(1)
 pbar.close()
 print(total, "tags updated")
+

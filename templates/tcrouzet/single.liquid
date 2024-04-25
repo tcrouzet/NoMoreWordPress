@@ -5,6 +5,6 @@
 {% include mailchimp_path %}
 </div>
 
-{% if post.type == 0 %}
+{% if post.type == 0 and post.navigation%}
 <a href="{{ post.navigation.prev_url }}"><div id="loadMore" next-url="{{ post.navigation.prev_url }}"></div></a>
 {% endif %}

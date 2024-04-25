@@ -9,6 +9,7 @@ import shutil
 from bs4 import BeautifulSoup
 import json
 import yaml
+import tools.frontmatter as ft
 
 
 class Web:
@@ -55,7 +56,17 @@ class Web:
         elif post['type'] == 5:
 
             #TAGS
-            url = "tag/" + post['main'].get('url',post['path_md'])
+            main_url = post['main'].get('url',None)
+            if main_url:
+                if main_url.startswith("/"):
+                    url = main_url.strip("/")
+                else:
+                    url = "tag/"+main_url
+            else:
+                url = "tag/" + post['path_md']
+
+
+            #url = "tag/" + post['main'].get('url',post['path_md'])
 
         # print(url)
         # exit()
@@ -281,12 +292,13 @@ class Web:
     def navigation(self, post):
 
         main_tag =  self.main_tag(post['tagslist'])
+        if not main_tag:
+            return None
 
         if post["type"]==5:
             return {"maintag": main_tag}
-
+        
         tag_posts = self.db.get_posts_by_tag(main_tag['slug'])
-
         prev_post = None
         next_post = None
         total_posts = len(tag_posts)
@@ -321,9 +333,15 @@ class Web:
         post['pub_date'] = time.time()
         post['pub_update'] = post['pub_date']
         post['title'] = self.title_formater(post['main']['title'])
-        post['url'] = "tag/"+post['tag']
+        if post['main']['url']:
+            if post['main']['url'].startswith("/"):
+                post['url'] = post['main']['url'].strip("/")
+            else:
+                post['url'] = "tag/"+post['main']['url']
+        else:
+            post['url'] = "tag/"+post['tag']
         return post
-
+    
         
     def supercharge_post(self, post, maximal=True):
 
@@ -341,7 +359,8 @@ class Web:
             html = markdown.markdown(content['content'])
             post['html'] = self.image_manager(html, post)
             post['description'] = content['description']
-            post['frontmatter'] = content['frontmatter']
+            frontmatter = ft.Frontmatter(content['frontmatter'])
+            post['frontmatter'] = frontmatter.supercharge()
             #print(post['frontmatter'])
         
         post['canonical'] = self.config['domain'] + post['url']
@@ -355,7 +374,8 @@ class Web:
 
         post['tagslist'] = self.extract_tags(post)
         post['navigation'] = self.navigation(post)
-        post['navigation']['datelink'] = self.date_html(post)
+        if post['navigation']:
+            post['navigation']['datelink'] = self.date_html(post)
         # print(post['navigation'])
         # print(post['navigation']['maintag'])
         # exit()

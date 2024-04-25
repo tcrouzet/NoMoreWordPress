@@ -5,11 +5,11 @@
 {% assign daylog = "" %}
 {% assign page_guter = '' %}
 
-{% if post.navigation.maintag.slug == "carnet-de-route" %}
+{% if post.navigation and post.navigation.maintag.slug == "carnet-de-route" %}
     {% assign carnets='checked="1" ' %}
-{% elif post.navigation.maintag.slug == "borntobike" %}
+{% elif post.navigation and post.navigation.maintag.slug == "borntobike" %}
     {% assign born = 'checked="1" ' %}
-{% elif post.navigation.maintag.slug == "ecriture" %}
+{% elif post.navigation and post.navigation.maintag.slug == "ecriture" %}
     {% assign wip = 'checked="1" ' %}
 {% else %}
     {% assign tous = 'checked="1" ' %}

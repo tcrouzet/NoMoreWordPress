@@ -18,6 +18,9 @@ pages:
 tags:
   series:
     title: "Séries"
+  book:
+    title: "Bibliographie"
+    url: "/bibliographie"
   carnets:
     title: "Carnets"
     url: "carnet-de-route"

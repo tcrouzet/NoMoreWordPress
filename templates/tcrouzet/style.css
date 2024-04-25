@@ -810,8 +810,7 @@ div.smenu img.flag{height:11px;width:16px;margin:0}
   display: block;
   max-width: var(--justif-text);
   text-align:center;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
   padding-left: var(--page-guter);
   padding-right: var(--page-guter);
 }

@@ -9,6 +9,7 @@ def is_url(url):
     resultat = urlparse(url)
     return bool(resultat.scheme and resultat.netloc)
 
+
 sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
@@ -53,18 +54,18 @@ for book in cursor:
         #New book
         if book_name:
             # Save Old book
-            new['shops'] = stores
             book_data={"book": new}
             livres.append(book_data)
 
         book_name = book['book_name']
 
         new = {
+            'title': book['book_title'], 
             'name': book['book_name'],
             'date': book['book_date'],
             'genre': book['book_genre'],
-            'isbn13': book['book_isbn13'],
-            'isbn13e': book['book_isbn13e'],
+            'isbn': book['book_isbn13'],
+            'isbne': book['book_isbn13e'],
             'editor': book['book_editor'],
             'baseline': book['book_baseline'],
             'exergue': book['book_exergue'],
@@ -72,20 +73,42 @@ for book in cursor:
             'blabla': book['book_blabla'],
             'details_h': book['book_details_h'],
             'lire': book['book_lire'],
-            'thema': book['book_thema'],
-            'shops': ""
+            'prix': None,
+            'eprix': None,
+            'shops': [],
+            'eshops': []
         }
-
-        stores = []
 
     result = urlparse(book['mail'])
     if book["mail"] and is_url(book['mail']) and book['prix'] and book['data'] :
-        shop = {"prix": book['prix'], "shop": book["data"], "url": book["mail"]}
-        stores.append(shop)
+        if "ebook" in book["data"]:
+            if not new['eprix']:
+                new['eprix'] = book['prix']
+            new['eshops'].append(book["mail"])
+        else:
+            if not new['prix']:
+                new['prix'] = book['prix']
+            new['shops'].append(book["mail"])
     
-new['shops'] = stores
 book_data={"book": new}
 livres.append(book_data)
 
-with open('books.yml', 'w') as fichier:
-    yaml.dump(livres, fichier, allow_unicode=True)
+
+for index, book in enumerate(livres):
+    print("---")
+
+    for _, titre in book.items():
+
+        for key, value in titre.items():
+
+            if isinstance(value, list):
+                print(f"{key}:")
+                for item in value:
+                     print(f" - {item}")
+            else:
+                print(f"{key}: {value}")
+
+    print("---")
+
+# with open('books.yml', 'w') as fichier:
+#     yaml.dump(livres, fichier, allow_unicode=True)
