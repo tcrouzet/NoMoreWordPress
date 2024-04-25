@@ -21,18 +21,26 @@
     
 <div class="poster maxContainerWidth">
 {% if post.thumb %}
-        
-    {% if post.paged == 0 %}<div class="maxContainerWidth"></div>{% endif %}
     
-    {{ post.thumb.tag }}
+    <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}" class="poster-img 
+    {% if post.frontmatter.baseline %}poster-img-book{% else %}poster-img-full{% endif %}"
+    alt="{{ post.thumb.alt }}" loading="lazy" decoding="async"
+    srcset="{{ post.thumb.url250 }} 250w, {{ post.thumb.url1024 }} 1024w, {{ post.thumb.url }} 1600w" sizes="(max-width: 1600px) 100vw, 1600px" />
+
     {% if post.thumb.alt != blank %}<div class="poster-legend">{{ post.thumb.alt }}</div>{% endif %}
     
 {% endif %}
     
-    <div class="poster-title{% if not post.thumb or post.type == 2 %} poster-title-center{% endif %}">
+    <div class="poster-title{% if not post.thumb or post.frontmatter.baseline %} poster-title-center{% endif %}">
     {% if not post.thumb %}<div class="poster-big-spacer maxContainerWidth"></div>{% endif %}
     
-    <h1 itemprop="headline" id="title{{ post.id }}">{{ post.title }}</h1>
+    <h1 itemprop="headline" id="title{{ post.id }}">
+    {% if post.frontmatter.baseline %}
+        <span class="book_genre">{{ post.frontmatter.genre }}</span>
+        {{ post.frontmatter.baseline }}
+    {% else %}
+        {{ post.title }}
+    {% endif %}</h1>
     
     {% if post.type == 0 %}
     
@@ -67,10 +75,24 @@
         </div>
     </div>
     
-{% endif %}
+    {% endif %}
+
 </div>
     
 <div class="post hentry" itemprop="articleBody" id="post-{{ post.id }}">
+
+{% if post.frontmatter.exergue %}
+    <h2 class="bookshop book_exergue">{{ post.frontmatter.exergue }}</h2>
+{% endif %}
+
+{% if post.frontmatter.lire %}
+    <h5 class="bookshop"><a href="{{ post.frontmatter.lire }}">Extrait</a></h5>
+{% endif %}
+
+{% if post.frontmatter.papier %}
+    <h5 class="bookshop">{{ post.frontmatter.papier }}</h5>
+{% endif %}
+
     
 {{ post.html }}
     

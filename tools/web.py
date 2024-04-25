@@ -8,13 +8,14 @@ import markdown
 import shutil
 from bs4 import BeautifulSoup
 import json
-import tools.db
+import yaml
 
 
 class Web:
 
-    def __init__(self, config):
+    def __init__(self, config, db):
         self.config = config
+        self.db = db
 
         # script_dir = os.path.dirname(os.path.abspath(__file__))
         # parent_dir = os.path.dirname(script_dir) + os.sep
@@ -33,11 +34,6 @@ class Web:
 
         if not post:
             return None
-
-        # if isinstance(post, tools.db.sqlite3.Row):
-        #     post = dict(post)
-        # elif isinstance(post, list):
-        #     tools.db.list_object(dict(post[0]))
 
         if "url" in post:
             return post['url']
@@ -143,14 +139,29 @@ class Web:
         # Si aucun point n'est trouvé, couper à 157 caractères et ajouter "..."
         return paragraph[:157] + "..."
 
-
     def get_post_content(self, post):
         path = os.path.join(self.config['vault'], post['path_md'])
         try:
+            frontmatter_start = False
+            frontmatter_lines = []
             with open(path, "r", encoding="utf-8") as file:
                 lines = file.readlines()
 
             for i, line in enumerate(lines):
+
+                if i==0 and line.strip().startswith('---'):
+                    #print("FrontStart")
+                    frontmatter_start = True
+                    continue
+
+                if frontmatter_start:
+                    if line.strip().startswith('---'):
+                        frontmatter_start = False
+                        frontmatter = yaml.safe_load('\n'.join(frontmatter_lines))
+                    else:
+                        frontmatter_lines.append(line)
+                    continue
+
                 if line.strip().startswith('#'):
                     # Supprimer tout jusqu'à la ligne après le titre trouvé
                     lines = lines[i + 1:]
@@ -174,10 +185,13 @@ class Web:
                 lines.pop()            
 
             md = ''.join(lines)
-            return {"content": md.strip(), "description":self.resume_paragraph(lines[0].strip())}
+            if len(frontmatter_lines) == 0:
+                frontmatter = None
+            return {"content": md.strip(), "description":self.resume_paragraph(lines[0].strip()), "frontmatter": frontmatter}
 
         except Exception as e:
-            return {"content": "", "description":""}
+            #print(e)
+            return {"content": "", "description":"", "frontmatter": None}
         
     def image_manager(self, html, post):
 
@@ -271,7 +285,7 @@ class Web:
         if post["type"]==5:
             return {"maintag": main_tag}
 
-        tag_posts = tools.db.get_posts_by_tag(main_tag['slug'])
+        tag_posts = self.db.get_posts_by_tag(main_tag['slug'])
 
         prev_post = None
         next_post = None
@@ -313,12 +327,13 @@ class Web:
         
     def supercharge_post(self, post, maximal=True):
 
-        if isinstance(post, tools.db.sqlite3.Row):
+        if isinstance(post, self.db.get_row_factory()):
             post = dict(post)
         elif isinstance(post, list):
             post = dict(post[0])
 
         post['url'] = self.url(post)
+        #print(post)
  
         if maximal:
             content = self.get_post_content(post)
@@ -326,15 +341,17 @@ class Web:
             html = markdown.markdown(content['content'])
             post['html'] = self.image_manager(html, post)
             post['description'] = content['description']
+            post['frontmatter'] = content['frontmatter']
+            #print(post['frontmatter'])
         
         post['canonical'] = self.config['domain'] + post['url']
         post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
         post['pub_update_str'] = self.format_timestamp_to_paris_time(post['pub_update'])
         post['thumb'] = self.source_image(post['thumb_path'], post)
-        if post['thumb']:
-            post['thumb']["alt"] = post['thumb_legend']
-            post['thumb']['tag'] = self.img_tag(post['thumb'])
-        post['paged'] = 0
+        #print(post)
+        # if post['thumb']:
+        #     post['thumb']["alt"] = post['thumb_legend']
+        #     post['thumb']['tag'] = self.img_tag(post['thumb'])
 
         post['tagslist'] = self.extract_tags(post)
         post['navigation'] = self.navigation(post)
@@ -347,10 +364,11 @@ class Web:
 
     def supercharge_tag(self, tag, posts=None):
 
-        if isinstance(tag, tools.db.sqlite3.Row):
-            tag = dict(post)
+        if isinstance(tag, self.db.get_row_factory()):
+            tag = dict(tag)
+        elif isinstance(tag, list):
+            print("Tag list")
 
-        #tag = dict(tag)
         tag['type'] = 5
         tag['main'] = self.main_tag([tag['tag']])
         tag['path_md'] = tag['tag'] + "/"
@@ -382,7 +400,7 @@ class Web:
         tag['menu'] = menu
 
         if not posts:
-            posts = tools.db.get_posts_by_tag(tag['tag'])
+            posts = self.db.get_posts_by_tag(tag['tag'])
         
         total_posts = len(posts)
         numbered_posts = []
@@ -390,18 +408,8 @@ class Web:
 
             post=dict(post)
 
-            # if "exclude" in tag:
-            #     if "tags" in post:
-            #         tags = self.extract_tags(post)
-            #         if set(tags) & set(tag["exclude"]):
-            #             continue
-            #     elif "tag" in post:
-            #         if post["tag"].strip() in tag["exclude"]:
-            #             continue
-
             if post["type"]==5:
                 post = self.tag_2_post(post)
-                #tools.db.list_object(post)
                 post_with_order = self.supercharge_post(post, False)
                 post_with_order['order']=post['count']
 

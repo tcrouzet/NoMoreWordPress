@@ -374,7 +374,6 @@ h1.menu{
 
 .poster-title h2{
   color: var(--color--contrast);
-  display: inline;
   margin-left: 2rem;
 }
 
@@ -807,23 +806,19 @@ div.smenu li{display: inline-block;line-height: 0.8rem;margin: 0;padding:0.2rem 
 div.smenu img.flag{height:11px;width:16px;margin:0}
 
 /* bookshop */
-#bookshop_maintext{
+.bookshop{
   display: block;
   max-width: var(--justif-text);
   text-align:center;
-  /*margin-top: var(--margin-top-post);*/
   margin-left: auto;
   margin-right: auto;
   padding-left: var(--page-guter);
   padding-right: var(--page-guter);
-
 }
-#bookshop_maintext .exergue{margin-top: 1rem;line-height: 2rem;}
-#bookshop_maintext h1{color: #1A1C18;margin-top: 1em;margin-bottom:0;line-height: 1.2em}
-#bookshop_maintext h5.exergue{color: #1A1C18;margin-top: 1em;font-style: italic;font-weight: normal;text-align:center}
-#bookshop_maintext h5.genre{color: #1A1C18;margin-top: 1em;text-align:center;font-size: 1em}
-#bookshop_maintext h5.lib{color: #1A1C18;margin-top: 1em;font-style: normal;font-weight: normal;text-align:left;margin-bottom: 1rem}
-#bookshop_logos a{border:none}
+
+.book_exergue{margin-top: 1rem;line-height: 2rem;}
+
+.book_genre{color:var(--color--titre-medium);font-variant: small-caps}
 
 .book{
   object-fit: cover;

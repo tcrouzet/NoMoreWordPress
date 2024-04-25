@@ -1,4 +1,5 @@
-build: 0 #O: No update 1:Update new post only 2:update from scratch
+build: 2 #O: No update 1:Update new post only 2:update from scratch
+version: 0 #0 dynamic random version for testing only
 
 vault: "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet"
 vault_img: "_i/"
@@ -8,7 +9,11 @@ title: "Thierry Crouzet"
 domain: "https://tcrouzet.com/"
 template: "tcrouzet"
 analytics: False
-version: 0 #0 dynamic random version for testing only
+
+# Listes des dossiers où sont les pages qui se retrouvent à la racine du site
+pages:
+ - "page"
+ - "books"
 
 tags:
   series:
