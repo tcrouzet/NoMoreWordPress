@@ -1,0 +1,16 @@
+{% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
+
+<div id="content" role="main">
+
+<div class="poster maxContainerWidth">
+    <div class="poster-big-spacer maxContainerWidth"></div>
+    <div class="poster-title poster-title-center">
+    <h1>{{ post.title }}</h1>
+    </div>
+</div>
+
+<div class="post hentry" itemprop="articleBody">
+    {{ post.content }}
+</div>
+{% include mailchimp_path %}
+</div>

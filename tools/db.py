@@ -191,8 +191,33 @@ class Db:
         return self.get_posts("type=0")
 
     def get_blog_posts(self, tags_tuple):
-        where = "id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN " + str(tags_tuple) + ") AND type=0"
+        if isinstance(tags_tuple,tuple):
+            plus = str(tags_tuple)
+        else:
+            plus = "('{tags_tuple}')"
+        where = f"id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN {plus}) AND type=0"
         return self.get_posts(where)
+
+    def get_posts_by_year(self, year, exclude_tags=None):
+        where = f"strftime('%Y', datetime(pub_date, 'unixepoch')) = '{year}' AND type=0 "
+        if exclude_tags:
+             where += "AND id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN " + str(exclude_tags) + ")"
+        return self.get_posts(where)
+    
+    def get_years(self):
+        c = self.conn.cursor()
+
+        query = '''
+        SELECT DISTINCT strftime('%Y', datetime(pub_date, 'unixepoch')) AS year
+        FROM posts
+        ORDER BY year DESC
+        '''
+        c.execute(query)
+        years = c.fetchall()
+
+        # years = [year[0] for year in years]
+        years = [year[0] for year in years if year[0] != '1970']
+        return years
 
     def get_all_pages(self):
         return self.get_posts("type=1")

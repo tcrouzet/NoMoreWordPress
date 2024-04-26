@@ -95,6 +95,17 @@ class Web:
             with Image.open(path) as img:
                 (width, height) = img.size
                 url = self.url_image(src, post)
+
+                if img.format in ["GIF","PNG"]:
+                    return {"path": path,
+                        "width": width,
+                        "height": height,
+                        "format": "image/"+img.format.lower(),
+                        "url": url,
+                        "url_1024": url,
+                        "url_250": url
+                    }
+
                 url_aboslute = os.path.join( self.config['export'], url.strip("/"))
                 sizes = {'1024': None, '250': None}
 
@@ -283,8 +294,8 @@ class Web:
         day_month = current_time.strftime('%d %B')
         
         msg = f'<span itemprop="datePublished" content="{date_iso}" title="Publié à {time_published}">'
-        msg += f' <a href="{date_link}">{day_month}</a>'
-        msg += f' <a href="{year_link}">{current_time.year}</a>'
+        # msg += f' <a href="{date_link}">{day_month}</a>'
+        msg += f' <a href="{year_link}">{day_month} {current_time.year}</a>'
         msg += '</span>'
         
         return msg
@@ -406,7 +417,10 @@ class Web:
             tag['thumb']['tag'] = self.img_tag(tag['thumb'])
 
         menu = []
-        menu.append({"title": tag['title'], "url": "/tag/"+tag['tag']})
+        if "title_date" in tag:
+            menu.append({"title": tag['title_date'], "url": "/tag/"+tag['tag']})
+        else:
+            menu.append({"title": tag['title'], "url": "/tag/"+tag['tag']})
         if tag['tag'] != "blog":
             menu.append({"title": "Blog", "url": "/blog/"})
         if tag['tag'] != "series":

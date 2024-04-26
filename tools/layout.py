@@ -24,6 +24,7 @@ class Layout:
         self.tag = self.load_template("tag")
         self.tags_list = self.load_template("tags_list")
         self.home = self.load_template("home")
+        self.page = self.load_template("page")
 
         self.new_assets = self.copy_assets()
 
@@ -97,12 +98,19 @@ class Layout:
 
 
     def e404_gen(self):
-        post = {"thumb": None}
+        post = {"thumb": None, "title": "Erreur 404", "content": '<p>Cette page n’existe plus… ou n’a jamais existé.</p>'}
         header_html = self.header.render(post=post, blog=self.config)
         footer_html = self.footer.render(post=post, blog=self.config)
-        article_html = '<div class="bookshop"><h1>Erreur 404</h1><p>Cette page n’existe plus… ou n’a jamais existé.</p></div>'
-        single_html = self.single.render(post=post, blog=self.config, article=article_html)
-        self.save(header_html + single_html + footer_html, "", "404.html")
+        page_html = self.page.render(post=post, blog=self.config)
+        self.save(header_html + page_html + footer_html, "", "404.html")
+
+
+    def archives_gen(self, archives):
+        post = {"thumb": None, "title": "Archives", "content": archives}
+        header_html = self.header.render(post=post, blog=self.config)
+        footer_html = self.footer.render(post=post, blog=self.config)
+        page_html = self.page.render(post=post, blog=self.config)
+        self.save(header_html + page_html + footer_html, "archives/")
 
 
     def save(self, html, path, file_name="index.html"):
