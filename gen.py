@@ -6,6 +6,7 @@ import tools.layout
 import tools.web
 import tools.logs
 import tools.sitemap
+import tools.feed
 import json
 from datetime import datetime
 
@@ -21,7 +22,7 @@ db = tools.db.Db(config)
 web = tools.web.Web(config, db)
 layout = tools.layout.Layout(config)
 sitemap = tools.sitemap.Sitemap(config)
-
+feed = tools.feed.Feed(config, web)
 
 if config['build'] == 1:
     #Load new posts only
@@ -90,6 +91,7 @@ series = {
 blog = web.supercharge_tag(series, posts)
 layout.tag_gen( blog )
 sitemap.add_post(blog)
+feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
 print("Blog done")
 
 
@@ -107,6 +109,7 @@ print("Home done")
 sitemap.add_page("/archives/index.html", home['pub_update_str'])
 sitemap.save()
 
+
 #TAGS
 sitemap.open("sitemap-tags")
 tags = db.get_tags()
@@ -117,8 +120,20 @@ for tag in tags:
         continue
     #tools.db.list_object(tag,False)
     tag = web.supercharge_tag(tag)
+
+    if tag['tag']=="carnets":
+        feed.builder(tag['posts'],"carnet-de-route", "Derniers carnets de Thierry Crouzet")
+    if tag['tag']=="velo":
+        feed.builder(tag['posts'],"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
+    if tag['tag']=="ecriture":
+        feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
+    if tag['tag']=="mailing":
+        feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
+
     layout.tag_gen(tag)
     sitemap.add_post(tag)
+
+
     pbar.update(1)
 pbar.close()
 sitemap.save()

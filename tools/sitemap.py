@@ -37,7 +37,7 @@ class Sitemap:
 
     def add(self, url_loc, lastmod=None, image_url=None):
         if ".html" not in url_loc:
-            url_loc += "index.html"
+            url_loc = url_loc.rstrip("/")+ "/index.html"
         url_loc = self.config['domain'] + url_loc
         if image_url:
             image_url = self.config['domain'] + image_url.strip("/")
@@ -84,7 +84,6 @@ class Sitemap:
 
         self._indent(index_element)
         index_tree = ET.ElementTree(index_element)
-        index_path = os.path.join(self.config['export'], )
         index_tree.write(output, xml_declaration=True, encoding='utf-8', method='xml')
 
     def _indent(self, elem, level=0):

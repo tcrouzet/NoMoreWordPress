@@ -11,3 +11,6 @@ beautifulsoup4
 tqdm
 requests
 csscompressor
+feedgen
+htmlmin
+boto3

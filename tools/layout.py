@@ -2,6 +2,8 @@ from liquid import Liquid
 import os
 import shutil
 import time
+import htmlmin
+import csscompressor
 
 class Layout:
 
@@ -45,18 +47,40 @@ class Layout:
             destination_item = os.path.join(self.config['export'], item)
             
             if os.path.isdir(source_item):
+                # Directory
                 if not os.path.exists(destination_item):
                     shutil.copytree(source_item, destination_item)
                     for root, dirs, files in os.walk(destination_item):
                         for file in files:
                             copied_files.append(os.path.join(root, file))
             else:
+                ## File
                 if not os.path.exists(destination_item) or os.path.getsize(source_item) != os.path.getsize(destination_item):
-                    shutil.copy2(source_item, destination_item)
+                    self.copy_file(source_item, destination_item)
                     copied_files.append(destination_item)
 
         #print(copied_files)
         return copied_files
+    
+
+    def copy_file(self, source, target):
+
+        if self.config['version']==0:
+            shutil.copy2(source, target)
+            return True
+
+        _, ext = os.path.splitext(source)
+        if ext in [".html", ".css"]:
+            with open(source, "r") as file:
+                content = file.read()
+            if ext in [".css"]:
+                content = csscompressor.compress(content)
+            if ext in [".html"]:
+                content = htmlmin.minify(content)
+            with open(target, "w", encoding="utf-8") as file:
+                file.write(content)
+        else:
+            shutil.copy2(source, target)
 
 
     def single_gen(self, post):
@@ -114,6 +138,9 @@ class Layout:
 
 
     def save(self, html, path, file_name="index.html"):
+
+        if self.config["version"]>0:
+            html = htmlmin.minify(html, remove_empty_space=True)
 
         dir = os.path.join( self.config['export'], path)
         os.makedirs(dir, exist_ok=True)
