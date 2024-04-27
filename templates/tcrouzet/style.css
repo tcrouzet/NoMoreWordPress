@@ -859,11 +859,13 @@ div.smenu img.flag{height:11px;width:16px;margin:0}
 
 /* Splash */
 .splash{text-align: center;padding-top: 1rem;}
-.splash h2{margin-top: 1rem;
+.splash h2{
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
   background: var(--color--contrast);
   min-width: 5rem;
   color: var(--color--titre);
-  padding: 0 0.4rem;
+  padding: 0 0.3rem;
   display: inline-block;
   font-size: inherit;
   text-align: center;
@@ -1053,8 +1055,6 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
     width: 12rem;
     height: 18rem;
   }
-
-  #bookshop_maintext .exergue{margin-top: 3rem}
 
 }
 

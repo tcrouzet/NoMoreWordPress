@@ -81,6 +81,16 @@ class Db:
         else:
             return False
 
+    def delete_post(self, post):
+        c = self.conn.cursor()
+
+        query = '''DELETE FROM posts WHERE id = ?;'''
+        c.execute(query, (post['id'],))
+        if c.rowcount > 0:
+            return True
+        else:
+            return False
+
     def db_commit(self):
         self.conn.commit()
 

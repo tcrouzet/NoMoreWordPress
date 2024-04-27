@@ -10,8 +10,6 @@ class Frontmatter:
             return "7switch"
         if "kobo.com" in url:
             return "Kobo"
-        if "vivlio.com" in url:
-            return "Vivlio"
         if "apple.com" in url:
             return "Apple"
         if "google.com" in url:
@@ -30,7 +28,16 @@ class Frontmatter:
             return "Cultura"
         if "lalibrairie.com" in url:
             return "La Librairie"
-        
+        if "leslibraires.fr" in url:
+            return "Les Libraires"
+        if "librest.com" in url:
+            return "Librest"
+        if "parislibrairies.fr" in url:
+            return "Paris Librairies"
+        if "mollat.com" in url:
+            return "Mollat"
+        if "vivlio.com" in url or "bookeen" in url:
+            return "Vivlio"
         return url
 
     def supercharge(self):

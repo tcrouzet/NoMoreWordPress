@@ -2,7 +2,7 @@
 {% assign carnets='' %}
 {% assign born = "" %}
 {% assign wip = "" %}
-{% assign daylog = "" %}
+{% assign genlog = "" %}
 {% assign page_guter = '' %}
 
 {% if post.navigation and post.navigation.maintag.slug == "carnet-de-route" %}
@@ -16,7 +16,7 @@
     {% assign carnets = 'checked="1" ' %}
     {% assign born = 'checked="1" ' %}
     {% assign wip = 'checked="1" ' %}
-    {% assign daylog = 'checked="1" ' %}
+    {% assign genlog = 'checked="1" ' %}
 {% endif %}
 	
 {% if post.type == 0 %}
@@ -29,7 +29,7 @@
 <label class="checkbox" for="mc-carnet"><input {{ carnets }} type="checkbox" value="2" name="mc-carnet" id="mc-carnet" />Carnets</label>
 <label class="checkbox" for="mc-ecriture"><input {{ wip }} type="checkbox" value="3" name="mc-ecriture" id="mc-ecriture" />Écriture</label>
 <label class="checkbox" for="mc-bike"><input {{ born }} type="checkbox" value="4" name="mc-bike" id="mc-bike" />Vélo</label>
-<label class="checkbox" for="mc-daylog"><input {{ daylog }}type="checkbox" value="1" name="mc-daylog" id="mc-daylog" />Daylog</label>
+<label class="checkbox" for="mc-daylog"><input {{ genlog }}type="checkbox" value="1" name="mc-daylog" id="mc-daylog" />Genlog</label>
 </div>
 
 <div aria-hidden="true" style="position: absolute; left: -5000px;">

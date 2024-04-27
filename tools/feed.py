@@ -36,18 +36,14 @@ class Feed:
         fg.lastBuildDate(date)
 
         # Add post to flux
-        #print(len(posts))
-        #posts = list(reversed(posts))
-        #posts.sort(key=lambda x: x['pub_date'], reverse=True)
-
         for post in reversed(posts[:5]):
-        # for i, post in enumerate(posts):
-        #     if i == 5:
-        #         break
             
+            post = self.web.supercharge_post(post)
+            if not post:
+                continue
+
             fe = fg.add_entry()
 
-            post = self.web.supercharge_post(post)
             #print(post['title'])
 
             fe.id(str(post['id']))

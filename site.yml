@@ -1,4 +1,4 @@
-build: 2 #O: No update 1:Update new post only 2:update from scratch
+build: 1 #O: No update 1:Update new post only 2:update from scratch
 version: 0 #0 dynamic random version for testing only (no minification)
 
 vault: "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet"

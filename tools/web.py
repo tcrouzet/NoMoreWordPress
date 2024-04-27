@@ -161,8 +161,18 @@ class Web:
         # Si aucun point n'est trouvé, couper à 157 caractères et ajouter "..."
         return paragraph[:157] + "..."
 
-    def get_post_content(self, post):
+
+    def is_post_otherwise_delete(self, post):
+        if not post:
+            return None
         path = os.path.join(self.config['vault'], post['path_md'])
+        if post["type"]==0:
+            if not os.path.exists(path):
+                self.db.delete_post(post)
+                return None
+        return path
+
+    def get_post_content(self, path):
         try:
             frontmatter_start = False
             frontmatter_lines = []
@@ -361,11 +371,15 @@ class Web:
         elif isinstance(post, list):
             post = dict(post[0])
 
+        path = self.is_post_otherwise_delete(post)
+        if not path:
+            return None
+
         post['url'] = self.url(post)
         #print(post)
  
         if maximal:
-            content = self.get_post_content(post)
+            content = self.get_post_content(path)
             post['content'] = content['content']
             html = markdown.markdown(content['content'])
             post['html'] = self.image_manager(html, post)
