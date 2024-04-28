@@ -2,17 +2,25 @@
 import http.server
 import socketserver
 import threading
+import os
 
-PORT = 8000
+
+def run_server():
+    PORT = 8000
+    while True:
+        try:
+            with socketserver.TCPServer(("", PORT), Handler) as httpd:
+                print(f"Serving at http://localhost:{PORT}")
+                httpd.serve_forever()
+        except OSError as e:
+            print(f"Port {PORT} is already in use. Trying next port...")
+            PORT += 1
+            continue
+        break
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=".", **kwargs)
-
-def run_server():
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print(f"Serving at http://localhost:{PORT}")
-        httpd.serve_forever()
 
 thread = threading.Thread(target=run_server)
 thread.daemon = True

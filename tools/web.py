@@ -18,12 +18,6 @@ class Web:
         self.config = config
         self.db = db
 
-        # script_dir = os.path.dirname(os.path.abspath(__file__))
-        # parent_dir = os.path.dirname(script_dir) + os.sep
-        # script_dir = parent_dir
-
-        # self.template_dir = os.path.join(parent_dir, "templates", self.config['template'])
-
 
     def format_timestamp_to_paris_time(self, timestamp):
         utc_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -81,6 +75,24 @@ class Web:
 
     def add_before_extension(self, url, text):
         return f"{os.path.splitext(url)[0]}-{text}{os.path.splitext(url)[1]}"
+    
+    def copy_if_needded(self, src, path, post):
+        url = self.url_image( src, post)
+        url_aboslute = os.path.join( self.config['export'], url.strip("/"))
+        if not os.path.exists(path):
+            print(post['path_md'])
+            print("Can't find:", path)
+            exit()
+        exists = True
+        destination_dir = None
+        if not os.path.exists(url_aboslute):
+            exists = False
+            destination_dir = os.path.dirname(url_aboslute)
+            os.makedirs(destination_dir, exist_ok=True)
+            #print(path, url_aboslute)
+            shutil.copy2(path, url_aboslute)
+        return url, exists, destination_dir
+
 
     def source_image(self, src, post):
         if not src:
@@ -90,11 +102,28 @@ class Web:
             path = os.path.join( self.config['vault'], os.path.dirname(post['post_md']), src )
         else:
             path = os.path.join( self.config['vault'], os.path.dirname(post['path_md']), src )
+
+        if src.endswith('.mp3'):
+            url, _, _ = self.copy_if_needded(src, path, post)
+            return {"path": path,
+                "format": "audio/mpeg",
+                "url": url,
+            }
+
+        if src.endswith('.pdf'):
+            url, _, _ = self.copy_if_needded(src, path, post)
+            return {"path": path,
+                "format": "application/pdf",
+                "url": url,
+            }
+
         #print(path)
         try:
             with Image.open(path) as img:
+
+                url, exists, destination_dir = self.copy_if_needded(src, path, post)
+
                 (width, height) = img.size
-                url = self.url_image(src, post)
 
                 if img.format in ["GIF","PNG"]:
                     return {"path": path,
@@ -106,13 +135,8 @@ class Web:
                         "url_250": url
                     }
 
-                url_aboslute = os.path.join( self.config['export'], url.strip("/"))
                 sizes = {'1024': None, '250': None}
-
-                if not os.path.exists(url_aboslute):
-                    destination_dir = os.path.dirname(url_aboslute)
-                    os.makedirs(destination_dir, exist_ok=True)
-                    shutil.copy2(path, url_aboslute)
+                if not exists:
 
                     # Création des versions redimensionnées de l'image
                     for size in sizes.keys():
@@ -238,25 +262,73 @@ class Web:
                 index +=1
                 img_data = self.source_image(img['src'], post)
                 if img_data:
+
                     alt_text = img.get('alt','')
 
-                    new_div = soup.new_tag('div', id=f"image-{post['id']}-{index}", **{'class': 'image'})
-                    new_img = soup.new_tag('img', src=f"{img_data['url']}",
-                        **{'class': 'alignnone size-full paysage',
-                        'alt': alt_text, 'width': img_data['width'], 'height': img_data['height'],
-                        'loading': 'lazy', 'decoding': 'async',
-                        'srcset': f'{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w',
-                        'sizes': '(max-width: 1600px) 100vw, 1600px'})
-                    
-                    new_div.append(new_img)
-                    new_legend = soup.new_tag('div', **{'class': 'legend'})
-                    new_legend.string = alt_text
-                    new_div.append(new_legend)
-                    p.replace_with(new_div)
+                    if img_data["format"].startswith("image/"):
+
+                        new_div = soup.new_tag('div', id=f"image-{post['id']}-{index}", **{'class': 'image'})
+                        new_img = soup.new_tag('img', src=f"{img_data['url']}",
+                            **{'class': 'alignnone size-full paysage',
+                            'alt': alt_text, 'width': img_data['width'], 'height': img_data['height'],
+                            'loading': 'lazy', 'decoding': 'async',
+                            'srcset': f'{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w',
+                            'sizes': '(max-width: 1600px) 100vw, 1600px'})
+                        
+                        new_div.append(new_img)
+                        new_legend = soup.new_tag('div', **{'class': 'legend'})
+                        new_legend.string = alt_text
+                        new_div.append(new_legend)
+                        p.replace_with(new_div)
+
+                    elif img_data["format"].startswith("audio/"):
+
+                        new_div = soup.new_tag('figure')
+                        new_audio = soup.new_tag('audio', controls='', preload='none')
+                        new_audio['src'] = img_data['url']
+                        new_div.append(new_audio)
+
+                        fallback_link = soup.new_tag('a', href=f"{img_data['url']}")
+                        fallback_link.string = "Ouvrir l'audio…"
+                        new_div.append(fallback_link)
+
+                        p.replace_with(new_div)
+
+                    elif img_data["format"].startswith("application/"):
+                        new_div = soup.new_tag('div', id=f"pdf-{post['id']}-{index}", **{'class': 'pdf'})
+                        new_object = soup.new_tag('object', data=f"{img_data['url']}", type="application/pdf", width="100%", height="500px")
+                        fallback_link = soup.new_tag('a', href=f"{img_data['url']}")
+                        fallback_link.string = "Click here to download the PDF file."
+                        new_object.append(fallback_link)
+                        new_div.append(new_object)
+                        p.replace_with(new_div)
+
                 else:
                     p.decompose()
 
         return str(soup)
+
+
+    def link_manager(self, html, post):
+
+        soup = BeautifulSoup(html, 'html.parser')
+        links = soup.find_all('a')
+        
+        for link in links:
+            
+            href = link.get('href','')
+            if href and href.endswith(".md"):
+                #internal
+                directory = os.path.dirname(post['path_md'])
+                full_link = os.path.join(directory, href)
+                path_md = full_link.lstrip('/')
+                source_post = self.db.get_post_by_path(path_md)
+                if source_post:
+                    url = "/" + self.url( source_post )
+                    link['href'] = url
+            
+        return str(soup)
+    
 
     def img_tag(self, img):
         return f'''<img width="{img['width']}" height="{img['height']}" src="{img['url']}" class="poster-img poster-img-full"
@@ -383,6 +455,7 @@ class Web:
             post['content'] = content['content']
             html = markdown.markdown(content['content'])
             post['html'] = self.image_manager(html, post)
+            post['html'] = self.link_manager(post['html'], post)
             post['description'] = content['description']
             frontmatter = ft.Frontmatter(content['frontmatter'])
             post['frontmatter'] = frontmatter.supercharge()

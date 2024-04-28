@@ -145,5 +145,8 @@ class Layout:
         dir = os.path.join( self.config['export'], path)
         os.makedirs(dir, exist_ok=True)
 
-        with open(os.path.join( dir, file_name), 'w', encoding="utf-8") as file:
+        file_path = os.path.join( dir, file_name)
+        #print(file_path)
+
+        with open(file_path, 'w', encoding="utf-8") as file:
             file.write(html)

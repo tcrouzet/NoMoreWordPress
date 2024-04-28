@@ -26,37 +26,43 @@ feed = tools.feed.Feed(config, web)
 
 if config['build'] == 1:
     #Load new posts only
-    new_pots = db.db_builder(config['vault'],False)
+    new_posts = db.db_builder(config['vault'],False)
 elif config['build'] == 2:
      #Rebuild all
-    new_pots = db.db_builder(config['vault'],True)
-print(new_pots, "new posts")
+    new_posts = db.db_builder(config['vault'],True)
+print(new_posts, "new posts")
 
 #db.list_posts_updated()
 
 #POSTS
-sitemap.open("sitemap-posts")
 posts = db.get_posts_updated()
 total = len(posts)
 pbar = tqdm(total=total, desc='Posts:')
 used_tags = []
-used_years = set()
 for post in posts:
+    #db.list_object(post)
     used_tags.extend( json.loads(post['tags']))
-    used_years.add( datetime.fromtimestamp(post['pub_date']).strftime('%Y') ) 
     supercharged = web.supercharge_post(post)
-    # print(supercharged)
-    # exit()
+    #print(supercharged)
+    if not supercharged:
+        continue
     layout.single_gen( supercharged )
-    sitemap.add_post(supercharged)
     db.updated(post)
     pbar.update(1)
 pbar.close()
 db.db_commit()
-sitemap.save()
 print(total, "posts updated")
 used_tags = list(set(used_tags))
-used_years = list(used_years)
+
+
+#SITEMAP POSTS
+if new_posts>0:
+    sitemap.open("sitemap-posts")
+    posts = db.get_all_posts()
+    for post in posts:
+        sitemap.add_post( web.supercharge_post(post) )
+    sitemap.save()
+    print("Sitemap posts done")
 
 
 #SERIES
@@ -116,23 +122,20 @@ tags = db.get_tags()
 total = len(tags)
 pbar = tqdm(total=total, desc='Tags:')
 for tag in tags:
-    if tag['tag'] not in used_tags:
-        continue
-    #tools.db.list_object(tag,False)
     tag = web.supercharge_tag(tag)
-
-    if tag['tag']=="carnets":
-        feed.builder(tag['posts'],"carnet-de-route", "Derniers carnets de Thierry Crouzet")
-    if tag['tag']=="velo":
-        feed.builder(tag['posts'],"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
-    if tag['tag']=="ecriture":
-        feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
-    if tag['tag']=="mailing":
-        feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
-
-    layout.tag_gen(tag)
     sitemap.add_post(tag)
+    if tag['tag'] in used_tags:
 
+        if tag['tag']=="carnets":
+            feed.builder(tag['posts'],"carnet-de-route", "Derniers carnets de Thierry Crouzet")
+        if tag['tag']=="velo":
+            feed.builder(tag['posts'],"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
+        if tag['tag']=="ecriture":
+            feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
+        if tag['tag']=="mailing":
+            feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
+
+        layout.tag_gen(tag)
 
     pbar.update(1)
 pbar.close()
@@ -146,9 +149,6 @@ years_archive = ""
 exclude = ("invisible","book","page")
 years = db.get_years()
 for iy, year in enumerate(years):
-
-    if year not in used_years:
-        continue
 
     posts = db.get_posts_by_year(year, exclude)
     if posts:
@@ -173,10 +173,10 @@ for iy, year in enumerate(years):
             "url": f"{str(year)}/",
         }
         superyear= web.supercharge_tag(series, posts)
+        sitemap.add_post(superyear)
         layout.tag_gen( superyear )
         years_archive += f'<p><a href="{str(year)}/">{year}</a></p>'
-        sitemap.add_post(superyear)
-        #sitemap.add_page(f"/{str(year)}/index.html", home['pub_update_str'])
+
 sitemap.save()
 print("Years done")
 
@@ -187,7 +187,7 @@ exclude = ("invisible")
 posts = db.get_blog_posts(exclude)
 for post in posts:
     url = web.url(post)
-    posts_archive += f'<p><a href="{url}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%M') + f' {post['title']}</a></p>'
+    posts_archive += f'<p><a href="{url}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'
 layout.archives_gen( f"<h3>Années</h3>{years_archive}<h3>Billets</h3>{posts_archive}" )
 print("Archives done")
 

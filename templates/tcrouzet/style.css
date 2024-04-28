@@ -806,7 +806,7 @@ div.smenu li{display: inline-block;line-height: 0.8rem;margin: 0;padding:0.2rem 
 div.smenu img.flag{height:11px;width:16px;margin:0}
 
 /* bookshop */
-.bookshop{
+.bookshop, figure{
   display: block;
   max-width: var(--justif-text);
   text-align:center;

@@ -231,6 +231,17 @@ class Db:
 
     def get_all_pages(self):
         return self.get_posts("type=1")
+    
+    def get_post_by_path(self, path):
+        c = self.conn.cursor()
+        query = f'''
+        SELECT * FROM posts
+        WHERE path_md = ? LIMIT 1
+        '''
+        c.execute(query, (path,))
+        post = c.fetchone()
+        return post
+
 
     def get_posts_by_tag(self, tag, limit=""):
         if not tag:
