@@ -78,7 +78,8 @@ series = {
     "url": "series/",
 }
 series = web.supercharge_tag(series,tags)
-sitemap.add_post(series)
+layout.tag_gen( series )
+sitemap.add_post( series )
 print("Series done")
 
 
@@ -111,8 +112,7 @@ home['bike'] = web.supercharge_post(last_bile, False)
 layout.home_gen( home )
 sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
 print("Home done")
-#sitemap.add_post({"url": , "pub_update_str": home['pub_update_str'] })
-sitemap.add_page("/archives/index.html", home['pub_update_str'])
+sitemap.add_page("archives/index.html", home['pub_update_str'])
 sitemap.save()
 
 

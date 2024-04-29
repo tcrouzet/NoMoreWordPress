@@ -1,12 +1,8 @@
 import yaml
-import json, os, sys
+import json, os
 import subprocess
 import boto3
 from datetime import datetime
-import tools.logs
-
-sys.stdout = tools.logs.DualOutput("_log.txt")
-sys.stderr = sys.stdout
 
 os.system('clear')
 
@@ -14,18 +10,34 @@ with open('site.yml', 'r') as file:
     config = yaml.safe_load(file)
 
 # Chemins et identifiants
-local_directory = '/Users/thierrycrouzet/Documents/static'
-bucket_name = 'tcrouzet.com'
-distribution_id = 'E3RIIZ74W6XIH6'
-invalidation_file = '/Users/thierrycrouzet/Documents/static/update.json'
+invalidation_file = os.path.join(config['export'], 'update.json')
+output_file_path = os.path.join(config['export'], 'sync.json')
 
 # Exécution de la synchronisation S3
-command = f'aws s3 sync {local_directory} s3://{bucket_name} --output json'
+command = f'aws s3 sync {config['export']} s3://{config['bucket_name']}  --delete --output json'
 result = subprocess.run(command, shell=True, capture_output=True, text=True)
 output = result.stdout
 
+# Analyse basique de la sortie
+uploaded_files = []
+deleted_files = []
+for line in output.splitlines():
+    if line.startswith("upload:"):
+        path_part = line.split()[-1]
+        uploaded_files.append(path_part)
+    if line.startswith("deleted:"):
+        path_part = line.split()[-1]
+        deleted_files.append(path_part)
+
+# Sauvegarde des fichiers téléchargés en JSON pour une utilisation ultérieure
+with open(output_file_path, 'w') as file:
+    json.dump({'upload':uploaded_files, 'deleted': deleted_files}, file)
+
+exit()
+
 # Analyse de la sortie pour obtenir les fichiers téléchargés
 uploads = json.loads(output)['Uploads']
+
 paths = [f"/{upload['Key']}" for upload in uploads]
 
 # Créer l'invalidation batch si des fichiers ont été modifiés
@@ -47,7 +59,7 @@ if paths:
     with open(invalidation_file, 'r') as file:
         invalidation_data = json.load(file)
         response = client.create_invalidation(
-            DistributionId=distribution_id,
+            DistributionId=config['distribution_id'],
             InvalidationBatch=invalidation_data
         )
         print("Invalidation créée:", response)
