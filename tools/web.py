@@ -342,8 +342,8 @@ class Web:
             tags = json.loads(post['tags'])
         else:
             tags = ["None"]
-        #if "serie" in tags:
-        #    tags.remove("serie")
+        if len(tags)>1 and "dialogue" in tags:
+            tags.remove("dialogue")
         return tags
         
     def main_tag(self, tagslist):
@@ -536,7 +536,12 @@ class Web:
 
             else:
                 post_with_order = self.supercharge_post(post, False)
-                post_with_order['order']=total_posts-index+1
+                if not post_with_order:
+                    total_posts -=1
+                    continue
+                else:
+                    post_with_order['order']=total_posts-index+1
+
  
             numbered_posts.append(post_with_order)
 

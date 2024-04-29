@@ -60,7 +60,11 @@ if new_posts>0:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts()
     for post in posts:
-        sitemap.add_post( web.supercharge_post(post) )
+        supercharge = web.supercharge_post(post)
+        sitemap.add_post( supercharge )
+        if not supercharged:
+            print("need to delete", web.url(post))
+
     sitemap.save()
     print("Sitemap posts done")
 

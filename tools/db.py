@@ -164,6 +164,9 @@ class Db:
                     md_path = os.path.join(root, file)
                     #print(root,file,root.replace(root_dir,""))
                     post = self.markdown_extract(md_path)
+                    if post['pub_date'] == 0:
+                        print("post not ready",post['title'])
+                        continue
 
                     post['path_md'] = os.path.join(root.replace(root_dir,"").strip("/"), file)
 
@@ -219,7 +222,7 @@ class Db:
 
         query = '''
         SELECT DISTINCT strftime('%Y', datetime(pub_date, 'unixepoch')) AS year
-        FROM posts
+        FROM posts WHERE type = 0
         ORDER BY year DESC
         '''
         c.execute(query)

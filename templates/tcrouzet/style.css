@@ -618,6 +618,7 @@ div.plus ul{
   font-size: var(--font-size-post);
   min-width: 30ch;
   right: 0;
+  top: 5px
 }
 div.plus ul li{
   margin:0 0.3rem 0.3rem 0.3rem;

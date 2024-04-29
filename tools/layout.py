@@ -4,6 +4,8 @@ import shutil
 import time
 import htmlmin
 import csscompressor
+import hashlib
+
 
 class Layout:
 
@@ -55,8 +57,7 @@ class Layout:
                             copied_files.append(os.path.join(root, file))
             else:
                 ## File
-                if not os.path.exists(destination_item) or os.path.getsize(source_item) != os.path.getsize(destination_item):
-                    self.copy_file(source_item, destination_item)
+                if self.copy_file(source_item, destination_item):
                     copied_files.append(destination_item)
 
         #print(copied_files)
@@ -64,10 +65,6 @@ class Layout:
     
 
     def copy_file(self, source, target):
-
-        if self.config['version']==0:
-            shutil.copy2(source, target)
-            return True
 
         _, ext = os.path.splitext(source)
         if ext in [".html", ".css"]:
@@ -77,11 +74,32 @@ class Layout:
                 content = csscompressor.compress(content)
             if ext in [".html"]:
                 content = htmlmin.minify(content)
+
+            # test is the same
+            if os.path.exists(target):
+                with open(target, 'r', encoding='utf-8') as file:
+                    if file.read() == content:
+                        return  False
+
             with open(target, "w", encoding="utf-8") as file:
                 file.write(content)
+                return True
         else:
-            shutil.copy2(source, target)
+            if os.path.exists(target) and self.file_hash(source) == self.file_hash(target):
+                return False
 
+            shutil.copy2(source, target)
+            return True
+
+
+    def file_hash(self,file_path):
+        hasher = hashlib.sha256()
+        with open(file_path, 'rb') as file:
+            buf = file.read(65536)
+            while len(buf) > 0:
+                hasher.update(buf)
+                buf = file.read(65536)
+        return hasher.hexdigest()
 
     def single_gen(self, post):
         header_html = self.header.render(post=post, blog=self.config)
@@ -148,5 +166,12 @@ class Layout:
         file_path = os.path.join( dir, file_name)
         #print(file_path)
 
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as file:
+                if file.read() == html:
+                    return  False
+
         with open(file_path, 'w', encoding="utf-8") as file:
             file.write(html)
+            return True
+        

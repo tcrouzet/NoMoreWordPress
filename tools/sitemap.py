@@ -53,6 +53,8 @@ class Sitemap:
             image_loc.text = image_url
 
     def add_post(self, post):
+        if not post:
+            return None
         if 'pub_update_str' in post:
             pub_date = post['pub_update_str']
         else:
