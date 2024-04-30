@@ -68,10 +68,16 @@ class Web:
 
 
     def url_image(self, src, post):
-        date = datetime.fromtimestamp(post['pub_date'])
-        path = date.strftime("%Y/%m/")
-        url = self.config['images_dir'] + path + src.replace(self.config['vault_img'],"")
+        if post['type'] == 5:
+            file_name = os.path.basename(post['thumb_path'])
+            source_dir = self.normalize_month(os.path.dirname(post['post_md']))
+            url = os.path.join(self.config['images_dir'].strip("/"), source_dir,file_name)
+        else:
+            date = datetime.fromtimestamp(post['pub_date'])
+            path = date.strftime("%Y/%m/")
+            url = self.config['images_dir'] + path + src.replace(self.config['vault_img'],"")
         return url
+
 
     def add_before_extension(self, url, text):
         return f"{os.path.splitext(url)[0]}-{text}{os.path.splitext(url)[1]}"
@@ -93,12 +99,20 @@ class Web:
             shutil.copy2(path, url_aboslute)
         return url, exists, destination_dir
 
+    def normalize_month(self, path):
+        parts = path.split('/')
+        year = parts[0]
+        month = parts[1]
+        month_padded = month.zfill(2)
+        return f"{year}/{month_padded}"
+
 
     def source_image(self, src, post):
         if not src:
             return None
+        
         if post['type'] == 5:
-            #Tags
+            #Tags - Image already created by post supercharge
             path = os.path.join( self.config['vault'], os.path.dirname(post['post_md']), src )
         else:
             path = os.path.join( self.config['vault'], os.path.dirname(post['path_md']), src )

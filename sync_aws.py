@@ -13,7 +13,7 @@ with open('site.yml', 'r') as file:
 invalidation_file = os.path.join(config['export'], 'update.json')
 output_file_path = os.path.join(config['export'], 'sync.json')
 
-test = True
+test = False
 
 if not test:
     # Exécution de la synchronisation S3
@@ -69,12 +69,12 @@ if len(uploaded_files)>0:
 
 
     invalidation_paths = []
-    invalidation_dirs = set()
+    #invalidation_dirs = set()
     for directory, files in folders.items():
 
-        parts = directory.split('/')
-        if len(parts)>1:
-            invalidation_dirs.add((f"/{parts[1]}/*"))
+        # parts = directory.split('/')
+        # if len(parts)>1:
+        #     invalidation_dirs.add((f"/{parts[1]}/*"))
 
         html = True
         xml = True

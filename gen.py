@@ -59,14 +59,16 @@ used_tags = list(set(used_tags))
 if new_posts>0:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts()
+    pbar = tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
         supercharge = web.supercharge_post(post)
         sitemap.add_post( supercharge )
         if not supercharged:
             print("need to delete", web.url(post))
-
+        pbar.update(1)
     sitemap.save()
     print("Sitemap posts done")
+    pbar.close()
 
 
 #SERIES
@@ -78,10 +80,10 @@ series = {
     "pub_update": tags[0]['pub_update'],
     "thumb_path": tags[0]['thumb_path'],
     "thumb_legend": tags[0]['thumb_legend'],
-    "post_md": "series/",
-    "url": "series/",
+    "post_md": tags[0]['post_md'],
+    "url": "series/"
 }
-series = web.supercharge_tag(series,tags)
+series = web.supercharge_tag(series, tags)
 layout.tag_gen( series )
 sitemap.add_post( series )
 print("Series done")
@@ -90,13 +92,13 @@ print("Series done")
 #BLOG
 exclude = ("invisible", "carnets", "velo", "retroblogging")
 posts = db.get_blog_posts(exclude)
-#tools.db.list_object(posts)
+first_post = dict(posts[0])
 series = {
     "tag": "blog",
-    "pub_update": posts[0]['pub_update'],
-    "thumb_path": posts[0]['thumb_path'],
-    "thumb_legend": posts[0]['thumb_legend'],
-    "post_md": "blog/",
+    "pub_update": first_post['pub_update'],
+    "thumb_path": first_post['thumb_path'],
+    "thumb_legend": first_post['thumb_legend'],
+    "post_md": first_post['path_md'],
     "url": "blog/",
 }
 blog = web.supercharge_tag(series, posts)
@@ -173,7 +175,7 @@ for iy, year in enumerate(years):
             "pub_update": posts[0]['pub_update'],
             "thumb_path": posts[0]['thumb_path'],
             "thumb_legend": posts[0]['thumb_legend'],
-            "post_md": f"{str(year)}/",
+            "post_md": posts[0]['path_md'],
             "url": f"{str(year)}/",
         }
         superyear= web.supercharge_tag(series, posts)
@@ -194,6 +196,7 @@ for post in posts:
     posts_archive += f'<p><a href="{url}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'
 layout.archives_gen( f"<h3>Années</h3>{years_archive}<h3>Billets</h3>{posts_archive}" )
 print("Archives done")
+
 
 #ERROR
 layout.e404_gen()
