@@ -1,10 +1,10 @@
+import yaml
 import mysql.connector
 import os, sys
 from markdownify import markdownify as md
 import re
 import shutil
 import unidecode
-import tools.wp_export_secret as wp_export_secret
 import logs
 
 sys.stdout = logs.DualOutput("_log.txt")
@@ -12,8 +12,12 @@ sys.stderr = sys.stdout
 
 os.system('clear')
 
-if wp_export_secret.MARKDOWN_DIR:
-    export_folder = wp_export_secret.MARKDOWN_DIR + os.sep
+with open('site.yml', 'r') as file:
+    config = yaml.safe_load(file)
+
+
+if config['vault']:
+    export_folder = config['vault'] + os.sep
 else:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(script_dir)
@@ -21,20 +25,20 @@ else:
     
 os.makedirs(export_folder, exist_ok=True)
 
-prefix = wp_export_secret.WP_DB_PREFIX
+prefix = config['WP_DB_PREFIX']
 
 # Connexion à la base de données MySQL
 conn = mysql.connector.connect(
-    host=wp_export_secret.WP_DB_HOST,
-    port=wp_export_secret.WP_DB_PORT,
-    user=wp_export_secret.WP_DB_USER,
-    password=wp_export_secret.WP_DB_PASSWORD,
-    database=wp_export_secret.WP_DB_NAME,
+    host=config['WP_DB_HOST'],
+    port=config['wp_export_secret'],
+    user=config['WP_DB_USER'],
+    password=config['WP_DB_PASSWORD'],
+    database=config['WP_DB_NAME'],
     buffered=True
 )
 
-old_img_dir = wp_export_secret.OLD_IMG_DIR
-img_sub_dir = wp_export_secret.IMG_SUB_DIR
+old_img_dir = config['OLD_IMG_DIR']
+img_sub_dir = config['IMG_SUB_DIR']
 
 def get_export_filepath(post, export_dir):
     filename = tag_format(post['post_name'])+".md"
@@ -336,7 +340,7 @@ for post in cursor:
     #print(post)
     #exit()
 
-    if post['post_name'] in wp_export_secret.EXCLUDE:
+    if post['post_name'] in config['EXCLUDE']:
         continue
 
     path = get_export_filepath(post, export_folder)

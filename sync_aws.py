@@ -13,7 +13,7 @@ with open('site.yml', 'r') as file:
 invalidation_file = os.path.join(config['export'], 'update.json')
 output_file_path = os.path.join(config['export'], 'sync.json')
 
-test = False
+test = True
 
 if not test:
     # Exécution de la synchronisation S3
@@ -109,7 +109,6 @@ if len(uploaded_files)>0:
 
     if test:
         exit("Mode test")
-
 
     # Utiliser boto3 pour créer l'invalidation CloudFront
     client = boto3.client('cloudfront')
