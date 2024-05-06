@@ -1,4 +1,4 @@
-import os
+import os, re
 from datetime import datetime, timezone
 import time
 import locale
@@ -17,6 +17,8 @@ class Web:
     def __init__(self, config, db):
         self.config = config
         self.db = db
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.parent_dir = os.path.dirname(script_dir) + os.sep
 
 
     def format_timestamp_to_paris_time(self, timestamp):
@@ -45,7 +47,11 @@ class Web:
         elif post['type'] == 1:
 
             #PAGES
-            url = file_name_without_extension + "/"
+            url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + "/"
+            #url = file_name_without_extension + "/"
+            # print(url)
+            # print(post)
+            # exit()
 
         elif post['type'] == 5:
 
@@ -99,13 +105,16 @@ class Web:
             shutil.copy2(path, url_aboslute)
         return url, exists, destination_dir
 
+
     def normalize_month(self, path):
         parts = path.split('/')
+        if len(parts) < 2:
+            return path
         year = parts[0]
         month = parts[1]
         month_padded = month.zfill(2)
-        return f"{year}/{month_padded}"
-
+        normalized_parts = [year, month_padded] + parts[2:]
+        return '/'.join(normalized_parts)
 
     def source_image(self, src, post):
         if not src:
@@ -145,6 +154,7 @@ class Web:
                         "height": height,
                         "format": "image/"+img.format.lower(),
                         "url": url,
+                        "url_absolu": self.config['domain'] + url.strip("/"),
                         "url_1024": url,
                         "url_250": url
                     }
@@ -172,6 +182,7 @@ class Web:
                         "height": height,
                         "format": "image/"+img.format.lower(),
                         "url": url,
+                        "url_absolu": self.config['domain'] + url.strip("/"),
                         "url_1024": sizes['1024'],
                         "url_250": sizes['250']
                     }
@@ -323,6 +334,34 @@ class Web:
         return str(soup)
 
 
+    def is_valid_year_month_path(self, path):
+        # Utilisation d'une expression régulière pour tester le format
+        pattern = r'^\d{4}/\d{1,2}/'
+        return re.match(pattern, path) is not None
+
+
+    def relative_to_absolute(self, post, relative_url):
+        
+        directory_path = os.path.dirname(post['path_md'])
+        full_path = os.path.normpath(os.path.join(directory_path, relative_url.replace(".md","")))
+        absolute_path = os.path.abspath(full_path)
+        url = os.path.relpath(absolute_path, self.parent_dir).strip("/")
+
+        if self.is_valid_year_month_path(url):
+            #C'est un post, faut ajouter le jour
+            href_post = self.db.get_post_by_path(url+".md")
+            if href_post:
+                url = self.url( href_post )
+            elif "#com" in url:
+                #Non géré
+                pass
+            else:
+                pass
+                # print("Unknown url", url, "dans:", post['path_md'])
+                # exit()
+        return "/" + url
+
+
     def link_manager(self, html, post):
 
         soup = BeautifulSoup(html, 'html.parser')
@@ -331,15 +370,9 @@ class Web:
         for link in links:
             
             href = link.get('href','')
-            if href and href.endswith(".md"):
+            if href and href.endswith(".md") and not href.startswith("http"):
                 #internal
-                directory = os.path.dirname(post['path_md'])
-                full_link = os.path.join(directory, href)
-                path_md = full_link.lstrip('/')
-                source_post = self.db.get_post_by_path(path_md)
-                if source_post:
-                    url = "/" + self.url( source_post )
-                    link['href'] = url
+                link['href'] = self.relative_to_absolute(post, href )
             
         return str(soup)
     

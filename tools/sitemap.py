@@ -9,6 +9,7 @@ class Sitemap:
         self.sitemap_index = []
         self.urlset = None
         self.output = None
+        self.lastmod = ""
 
 
     def open(self, sitemap_name):
@@ -25,7 +26,7 @@ class Sitemap:
                 "xmlns:image": "http://www.google.com/schemas/sitemap-image/1.1"
             })
         
-        self.output = os.path.join(self.config['export'], f"{sitemap_name}.xml")
+        self.output = os.path.join(self.config['export'], f"sitemap/{sitemap_name}.xml")
 
 
     def save(self):
@@ -45,12 +46,14 @@ class Sitemap:
         loc = ET.SubElement(url, 'loc')
         loc.text = url_loc
         if lastmod:
+            self.lastmod = max(self.lastmod, lastmod)
             lastmod_elem = ET.SubElement(url, 'lastmod')
             lastmod_elem.text = lastmod
         if image_url:
             image_elem = ET.SubElement(url, 'image:image')
             image_loc = ET.SubElement(image_elem, 'image:loc')
             image_loc.text = image_url
+
 
     def add_post(self, post):
         if not post:
@@ -64,17 +67,21 @@ class Sitemap:
             if 'url' in post['thumb']:
                 thumb = post['thumb']['url']
 
+        self.lastmod = max(self.lastmod, pub_date)
         self.add(post['url'], pub_date, thumb)
 
+
     def add_page(self, url, date):
+        self.lastmod = max(self.lastmod, date)
         self.add_post({"url": url, "pub_update_str": date })
 
 
     def save_index(self, sitemap_name = 'sitemap'):
-        output = os.path.join(self.config['export'], f"{sitemap_name}.xml")
+        output = os.path.join(self.config['export'], f"sitemap/{sitemap_name}.xml")
         index_element = ET.Element('sitemapindex', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
 
-        now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+        if not self.lastmod:
+            self.lastmod = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
         for sitemap in self.sitemap_index:
             sitemap_elem = ET.SubElement(index_element, 'sitemap')
@@ -82,11 +89,12 @@ class Sitemap:
             loc.text = self.config['domain'] + os.path.basename(sitemap)
 
             lastmod_elem = ET.SubElement(sitemap_elem, 'lastmod')
-            lastmod_elem.text = now
+            lastmod_elem.text = self.lastmod
 
         self._indent(index_element)
         index_tree = ET.ElementTree(index_element)
         index_tree.write(output, xml_declaration=True, encoding='utf-8', method='xml')
+
 
     def _indent(self, elem, level=0):
             i = "\n" + level*"  "

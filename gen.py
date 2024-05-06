@@ -67,8 +67,8 @@ if new_posts>0:
             print("need to delete", web.url(post))
         pbar.update(1)
     sitemap.save()
-    print("Sitemap posts done")
     pbar.close()
+    print("Sitemap posts done")
 
 
 #SERIES

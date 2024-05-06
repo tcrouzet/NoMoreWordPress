@@ -170,7 +170,7 @@ class Db:
 
                     post['path_md'] = os.path.join(root.replace(root_dir,"").strip("/"), file)
 
-                    if any(post['path_md'].startswith(prefix) for prefix in self.config["pages"]):
+                    if any(post['path_md'].startswith(prefix) for prefix in self.config['pages']):
                         post['type'] = 1
                     else:
                         post['type'] = 0

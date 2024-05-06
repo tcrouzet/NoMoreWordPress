@@ -3,6 +3,8 @@ import pytz
 from datetime import datetime
 import re, os
 from html import unescape
+from bs4 import BeautifulSoup
+
 
 
 class Feed:
@@ -17,6 +19,19 @@ class Feed:
 
     def striptags(self, html_text):
         return re.sub(r'<[^>]+>', '', html_text)
+
+
+    def add_domains(self, html):
+        soup = BeautifulSoup(html, 'html.parser')
+        # Modifier les liens des images
+        for img in soup.find_all('img'):
+            if img['src'].startswith('/'):
+                img['src'] = self.config['domain'] + img['src'].lstrip("/")
+        # Modifier les liens des pages
+        for link in soup.find_all('a'):
+            if link['href'].startswith('/'):
+                link['href'] = self.config['domain'] + link['href'].lstrip("/")
+        return str(soup)
 
 
     def builder(self, posts, filename, description):
@@ -49,7 +64,7 @@ class Feed:
             fe.id(str(post['id']))
             fe.title(post['title'])
             fe.link(href=self.config["domain"]+post['url'])
-            fe.content(post['html'].strip(), type='CDATA')
+            fe.content( self.add_domains(post['html'].strip()), type='CDATA')
 
             fe.author(name=self.config["author"])
 

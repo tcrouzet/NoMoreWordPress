@@ -1,8 +1,10 @@
 import yaml
-import subprocess
 import os, sys
 import shutil
 import tools.logs
+from git import Repo
+from datetime import datetime
+
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -78,8 +80,23 @@ def copy_and_update_html(source_dir, target_dir):
                 shutil.copy2(file_path, os.path.join(dest_root, file ))
 
 
-
 source_img = os.path.join(config['export'], config['images_dir'].strip("/"))
 target_img = os.path.join(config['export_github_html'], config['images_dir'].strip("/"))
 filter_and_copy_images(source_img, target_img)
 copy_and_update_html(config['export'], config['export_github_html'])
+
+
+print(config['export_github_html'])
+repo = Repo(config['export_github_html'])
+repo.git.add(all=True)
+
+# Créer un commit
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+commit_message = f"Auto-{now}"
+repo.git.commit('-m', commit_message)
+
+# Pousser les changements
+origin = repo.remote(name='origin')
+origin.push('main', set_upstream=True)
+
+print("Github commit done")

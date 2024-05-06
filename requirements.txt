@@ -14,3 +14,4 @@ csscompressor
 feedgen
 htmlmin
 boto3
+GitPython

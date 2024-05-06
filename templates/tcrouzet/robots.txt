@@ -5,4 +5,4 @@ Disallow: /images_css/*
 User-agent: *
 Allow: /
 
-Sitemap: https://tcrouzet.com/sitemap.xml
+Sitemap: https://tcrouzet.com/sitemap/sitemap.xml

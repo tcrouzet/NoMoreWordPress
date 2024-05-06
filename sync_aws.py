@@ -12,6 +12,16 @@ with open('site.yml', 'r') as file:
 # Chemins et identifiants
 invalidation_file = os.path.join(config['export'], 'update.json')
 output_file_path = os.path.join(config['export'], 'sync.json')
+output_brut_path = os.path.join(config['export'], 'sync.txt')
+
+
+def get_root(path):
+    directory = path.strip("/")
+    parts = directory.split('/')
+    root = parts[0].strip()
+    if not root:
+        root = "/"
+    return root
 
 test = False
 
@@ -20,6 +30,10 @@ if not test:
     command = f'aws s3 sync {config['export']} s3://{config['bucket_name']}  --delete --output json'
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     output = result.stdout
+
+    # Sauvegarde des fichiers téléchargés en JSON pour une utilisation ultérieure
+    with open(output_brut_path, 'w') as file:
+        file.write(output)
 
     # Analyse basique de la sortie
     uploaded_files = []
@@ -45,14 +59,15 @@ else:
 
 #Filtre
 excluded_files = {".DS_Store"}
-excluded_extensions = {".jpeg", ".jpg", ".webp", ".gif", ".png", ".json", ".pdf", ".mp3"}
+excluded_extensions = {".jpeg", ".jpg", ".webp", ".gif", ".png", ".json", ".pdf", ".mp3", ".txt"}
 
 # Filtrer les fichiers
 uploaded_files = [
-    file_path for file_path in uploaded_files
+    file_path.replace("s3://" + config['bucket_name'], "") for file_path in uploaded_files
     if os.path.basename(file_path) not in excluded_files
     and not file_path.endswith(tuple(excluded_extensions))
 ]
+
 
 # Créer l'invalidation batch si des fichiers ont été modifiés
 if len(uploaded_files)>0:
@@ -60,7 +75,7 @@ if len(uploaded_files)>0:
     folders = {}
     for file_path in uploaded_files:
 
-        directory = os.path.dirname(file_path).replace("s3://" + config['bucket_name'], "")
+        directory = os.path.dirname(file_path)
         base = os.path.basename(file_path)
         if directory in folders:
             folders[directory].add(base)
@@ -68,33 +83,34 @@ if len(uploaded_files)>0:
             folders[directory] = {base}
 
 
-    invalidation_paths = []
-    #invalidation_dirs = set()
+    #Compte files par dossier racine
+    root_dirs = {}
     for directory, files in folders.items():
 
-        # parts = directory.split('/')
-        # if len(parts)>1:
-        #     invalidation_dirs.add((f"/{parts[1]}/*"))
+        root = get_root(directory)
+        if root in root_dirs:
+            root_dirs[root] += len(files)
+        else:
+            root_dirs[root] = len(files)
 
-        html = True
-        xml = True
-        for file in files:
-            if file.endswith(".html"):
-                if html:
-                    invalidation_paths.append(f"{directory}/*.html")
-                    html = False
-            elif file.endswith(".xml"):
-                if xml:
-                    invalidation_paths.append(f"{directory}/*.xml")
-                    xml = False
 
-            else:
-                invalidation_paths.append(f"{directory}/{file}")
+    invalidation_paths = set()
+    for directory, files in folders.items():
 
-    if len(invalidation_paths)>500:
-        invalidation_paths = []
-        invalidation_paths.append("/*")
+        root = get_root(directory)
+        if root == "/":
+            print(root)
+            for file in files:
+                path = "/" + file
+                invalidation_paths.add(path)
+        elif root_dirs[root]>0:
+            invalidation_paths.add(f"/{root}/*")
 
+    if len(invalidation_paths)>15:
+         invalidation_paths = []
+         invalidation_paths.append("/*")
+
+    invalidation_paths = list(invalidation_paths)
     invalidation_batch = {
         'Paths': {
             'Quantity': len(invalidation_paths),
@@ -107,8 +123,8 @@ if len(uploaded_files)>0:
     with open(invalidation_file, 'w') as file:
         json.dump(invalidation_batch, file, indent=4, sort_keys=True)
 
-    if test:
-        exit("Mode test")
+    # if test:
+    #      exit("Mode test")
 
     # Utiliser boto3 pour créer l'invalidation CloudFront
     client = boto3.client('cloudfront')

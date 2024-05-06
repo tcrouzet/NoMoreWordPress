@@ -6,7 +6,8 @@ import shutil
 import tools.logs
 import hashlib
 from PIL import Image
-
+from git import Repo
+from datetime import datetime
 
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
@@ -108,3 +109,16 @@ sync_files(config['vault'], config['export_github_md'])
 clean_files(config['vault'], config['export_github_md'], preserved_files)
 
 
+repo = Repo(config['export_github_md'])
+repo.git.add(all=True)
+
+# Créer un commit
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+commit_message = f"Auto-{now}"
+repo.git.commit('-m', commit_message)
+
+# Pousser les changements
+origin = repo.remote(name='origin')
+origin.push('main', set_upstream=True)
+
+print("Github MD commit done")

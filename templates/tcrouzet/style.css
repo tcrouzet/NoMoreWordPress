@@ -567,14 +567,19 @@ div.bottomnav a,div.bottomnav a:visited,div.bottomnav a:hover{border-bottom:none
 div.olderposts{text-align: center;padding: 0.5em;  background: var(--color--light);}
 
 
-iframe{margin:auto;padding:0 0 1em 0;display: block}
-.post div.iframe{
+iframe{
+  margin:auto;
+  padding:0 0 1em 0;
+  display: block;
+  width: var(--justif-text)
+}
+/* .post div.iframe{
   margin-top: var(--line-height-post);
   margin-bottom: 0;
   margin-left: auto;
   margin-right: auto;
   max-width: 58ch
-}
+} */
 
 .post audio{width: inherit;}
 
