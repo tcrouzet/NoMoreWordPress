@@ -20,6 +20,11 @@ class Db:
         self.conn = sqlite3.connect(self.db)
         self.conn.row_factory = sqlite3.Row
 
+        self.new_posts = 0
+        self.updated_posts = 0
+        self.used_tags = set()
+        self.used_years = set()
+
     def create_table_posts(self, reset=False):
         c = self.conn.cursor()
 
@@ -42,6 +47,55 @@ class Db:
         self.conn.commit()
 
     def insert_post(self, post):
+
+        if 'tags' in post and isinstance(post['tags'], list):
+            tags_set = set(post['tags'])
+            post['tags'] = json.dumps(post['tags'])
+
+        #print(post)
+        #exit()
+
+        c = self.conn.cursor()
+        c.execute('SELECT * FROM posts WHERE path_md = :path_md', {'path_md': post['path_md']})
+        existing_post = c.fetchone()
+
+        if existing_post and post['pub_update'] > existing_post['pub_update']:
+            # Update post
+
+            query = '''UPDATE posts SET
+                        title = :title,
+                        pub_date = :pub_date,
+                        pub_update = :pub_update,
+                        thumb_path = :thumb_path,
+                        thumb_legend = :thumb_legend,
+                        type = :type,
+                        tags = :tags,
+                        updated = TRUE
+                    WHERE path_md = :path_md;'''
+            c.execute(query, post)
+
+            existing_tags_set = set(json.loads(existing_post['tags']))
+            self.used_tags.update( existing_tags_set - tags_set )
+
+            return 0, 1
+
+        else:
+            # New post
+
+            query = '''INSERT OR IGNORE INTO posts 
+                    (title, path_md, pub_date, pub_update, thumb_path, thumb_legend, type, tags)
+                    VALUES (:title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags);             
+                    '''
+            c.execute(query, post)
+            if c.rowcount > 0:
+                self.used_tags.update( tags_set )
+                date_time = datetime.datetime.fromtimestamp(post['pub_date'])
+                self.used_years.update( date_time.year )
+                return 1, 0
+            else:
+                return 0, 0
+
+    def insert_post_old(self, post):
 
         if 'tags' in post and isinstance(post['tags'], list):
             post['tags'] = json.dumps(post['tags'])
@@ -154,6 +208,7 @@ class Db:
 
         self.create_table_posts(reset)
         count_added = 0
+        count_updated = 0
 
         for root, dirs, files in os.walk(root_dir):
             # Exlude images dirs
@@ -178,12 +233,11 @@ class Db:
                     #test_insert_post(post)
                     #print(post)
 
-                    if self.insert_post(post):
-                        count_added += 1
+                    added, updated = self.insert_post(post)
+                    self.new_posts += added
+                    self.updated_posts += updated
 
         self.conn.commit()
-
-        return count_added
 
 
     def get_posts(self, condition=None):

@@ -26,37 +26,32 @@ feed = tools.feed.Feed(config, web)
 
 if config['build'] == 1:
     #Load new posts only
-    new_posts = db.db_builder(config['vault'],False)
+    db.db_builder(config['vault'],False)
 elif config['build'] == 2:
      #Rebuild all
-    new_posts = db.db_builder(config['vault'],True)
-print(new_posts, "new posts")
+    db.db_builder(config['vault'],True)
+print(db.new_posts, "new posts")
+print(db.updated_posts, "updated posts")
 
-#db.list_posts_updated()
 
 #POSTS
 posts = db.get_posts_updated()
 total = len(posts)
-pbar = tqdm(total=total, desc='Posts:')
-used_tags = []
-for post in posts:
-    #db.list_object(post)
-    used_tags.extend( json.loads(post['tags']))
-    supercharged = web.supercharge_post(post)
-    #print(supercharged)
-    if not supercharged:
-        continue
-    layout.single_gen( supercharged )
-    db.updated(post)
-    pbar.update(1)
-pbar.close()
-db.db_commit()
-print(total, "posts updated")
-used_tags = list(set(used_tags))
+if total >0:
+    pbar = tqdm(total=total, desc='Posts:')
+    for post in posts:
+        supercharged = web.supercharge_post(post)
+        if not supercharged:
+            continue
+        layout.single_gen( supercharged )
+        db.updated(post)
+        pbar.update(1)
+    pbar.close()
+    db.db_commit()
 
 
 #SITEMAP POSTS
-if new_posts>0:
+if db.new_posts > 0:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts()
     pbar = tqdm(total=len(posts), desc='Sitemap-posts:')
@@ -71,135 +66,155 @@ if new_posts>0:
     print("Sitemap posts done")
 
 
-#SERIES
 sitemap.open("sitemap-main")
-exclude = ("invisible","iacontent","book","page","le_jardin_de_leternite")
-tags = db.get_tags("p.pub_date DESC",exclude)
-series = {
-    "tag": "series",
-    "pub_update": tags[0]['pub_update'],
-    "thumb_path": tags[0]['thumb_path'],
-    "thumb_legend": tags[0]['thumb_legend'],
-    "post_md": tags[0]['post_md'],
-    "url": "series/"
-}
-series = web.supercharge_tag(series, tags)
-layout.tag_gen( series )
-sitemap.add_post( series )
-print("Series done")
+
+#SERIES
+if len(db.used_tags) > 0:
+    exclude = ("invisible","iacontent","book","page","le_jardin_de_leternite")
+    tags = db.get_tags("p.pub_date DESC",exclude)
+    series = {
+        "tag": "series",
+        "pub_update": tags[0]['pub_update'],
+        "thumb_path": tags[0]['thumb_path'],
+        "thumb_legend": tags[0]['thumb_legend'],
+        "post_md": tags[0]['post_md'],
+        "url": "series/"
+    }
+    series = web.supercharge_tag(series, tags)
+    layout.tag_gen( series )
+    sitemap.add_post( series )
+    print("Series done")
 
 
 #BLOG
-exclude = ("invisible", "carnets", "velo", "retroblogging")
-posts = db.get_blog_posts(exclude)
-first_post = dict(posts[0])
-series = {
-    "tag": "blog",
-    "pub_update": first_post['pub_update'],
-    "thumb_path": first_post['thumb_path'],
-    "thumb_legend": first_post['thumb_legend'],
-    "post_md": first_post['path_md'],
-    "url": "blog/",
-}
-blog = web.supercharge_tag(series, posts)
-layout.tag_gen( blog )
-sitemap.add_post(blog)
-feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
-print("Blog done")
+if  db.new_posts >0 or db.updated_posts > 0:
+    exclude = ("invisible", "carnets", "velo", "retroblogging")
+    posts = db.get_blog_posts(exclude)
+    first_post = dict(posts[0])
+    series = {
+        "tag": "blog",
+        "pub_update": first_post['pub_update'],
+        "thumb_path": first_post['thumb_path'],
+        "thumb_legend": first_post['thumb_legend'],
+        "post_md": first_post['path_md'],
+        "url": "blog/",
+    }
+    blog = web.supercharge_tag(series, posts)
+    layout.tag_gen( blog )
+    sitemap.add_post( blog )
+    feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
+    print("Blog done")
 
 
 #HOME
-last_post=posts[0]
-last_carnet = db.get_posts_by_tag("carnets", 1)
-last_bile = db.get_posts_by_tag("velo", 1)
-home = web.supercharge_post(last_post, False)
-home['carnet'] = web.supercharge_post(last_carnet, False)
-home['bike'] = web.supercharge_post(last_bile, False)
-layout.home_gen( home )
-sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
-print("Home done")
-sitemap.add_page("archives/index.html", home['pub_update_str'])
-sitemap.save()
+if  db.new_posts >0 or db.updated_posts > 0:
+    last_post=posts[0]
+    last_carnet = db.get_posts_by_tag("carnets", 1)
+    last_bile = db.get_posts_by_tag("velo", 1)
+    home = web.supercharge_post(last_post, False)
+    home['carnet'] = web.supercharge_post(last_carnet, False)
+    home['bike'] = web.supercharge_post(last_bile, False)
+    layout.home_gen( home )
+    sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
+    print("Home done")
+
+
+sitemap.add_page("archives/index.html")
+sitemap.save(4)
+
+
+#MAIN FEED
+if  db.new_posts >0 or db.updated_posts > 0:
+    posts = db.get_all_posts()
+    feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
+    print("Main feed done")
 
 
 #TAGS
-sitemap.open("sitemap-tags")
-tags = db.get_tags()
-total = len(tags)
-pbar = tqdm(total=total, desc='Tags:')
-for tag in tags:
-    tag = web.supercharge_tag(tag)
-    sitemap.add_post(tag)
-    if tag['tag'] in used_tags:
+if len(db.used_tags) > 0:
 
-        if tag['tag']=="carnets":
-            feed.builder(tag['posts'],"carnet-de-route", "Derniers carnets de Thierry Crouzet")
-        if tag['tag']=="velo":
-            feed.builder(tag['posts'],"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
-        if tag['tag']=="ecriture":
-            feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
-        if tag['tag']=="mailing":
-            feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
+    sitemap.open("sitemap-tags")
+    tags = db.get_tags()
+    total = len(tags)
+    pbar = tqdm(total=total, desc='Tags:')
+    for tag in tags:
+        tag = web.supercharge_tag(tag)
+        sitemap.add_post(tag)
+        if tag['tag'] in db.used_tags:
 
-        layout.tag_gen(tag)
+            if tag['tag']=="carnets":
+                feed.builder(tag['posts'],"carnet-de-route", "Derniers carnets de Thierry Crouzet")
+            if tag['tag']=="velo":
+                feed.builder(tag['posts'],"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
+            if tag['tag']=="ecriture":
+                feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
+            if tag['tag']=="mailing":
+                feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
 
-    pbar.update(1)
-pbar.close()
-sitemap.save()
-print(total, "tags updated")
+            layout.tag_gen(tag)
+
+        pbar.update(1)
+    pbar.close()
+    sitemap.save()
+    print(total, "tags updated")
 
 
 #YEARS
-sitemap.open("sitemap-years")
-years_archive = ""
-exclude = ("invisible","book","page")
-years = db.get_years()
-for iy, year in enumerate(years):
+if len(db.used_years) > 0:
 
-    posts = db.get_posts_by_year(year, exclude)
-    if posts:
+    sitemap.open("sitemap-years")
+    years_archive = ""
+    exclude = ("invisible","book","page")
+    years = db.get_years()
+    for iy, year in enumerate(years):
 
-        if iy<len(years)-1:
-            prev_year =  years[iy+1]
-        else:
-            prev_year =  years[0]
+        posts = db.get_posts_by_year(year, exclude)
+        if posts:
 
-        if iy>0:
-            next_year =  years[iy-1]
-        else:
-            next_year =  years[-1]
+            if iy<len(years)-1:
+                prev_year =  years[iy+1]
+            else:
+                prev_year =  years[0]
 
-        series = {
-            "tag": str(year),
-            "title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
-            "pub_update": posts[0]['pub_update'],
-            "thumb_path": posts[0]['thumb_path'],
-            "thumb_legend": posts[0]['thumb_legend'],
-            "post_md": posts[0]['path_md'],
-            "url": f"{str(year)}/",
-        }
-        superyear= web.supercharge_tag(series, posts)
-        sitemap.add_post(superyear)
-        layout.tag_gen( superyear )
-        years_archive += f'<p><a href="{str(year)}/">{year}</a></p>'
+            if iy>0:
+                next_year =  years[iy-1]
+            else:
+                next_year =  years[-1]
 
-sitemap.save()
-print("Years done")
+            series = {
+                "tag": str(year),
+                "title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
+                "pub_update": posts[0]['pub_update'],
+                "thumb_path": posts[0]['thumb_path'],
+                "thumb_legend": posts[0]['thumb_legend'],
+                "post_md": posts[0]['path_md'],
+                "url": f"{str(year)}/",
+            }
+            superyear= web.supercharge_tag(series, posts)
+            sitemap.add_post(superyear)
+            layout.tag_gen( superyear )
+            years_archive += f'<p><a href="{str(year)}/">{year}</a></p>'
+
+    sitemap.save()
+    print("Years done")
 
 
 #ARCHIVES
-posts_archive = ""
-exclude = ("invisible")
-posts = db.get_blog_posts(exclude)
-for post in posts:
-    url = web.url(post)
-    posts_archive += f'<p><a href="{url}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'
-layout.archives_gen( f"<h3>Années</h3>{years_archive}<h3>Billets</h3>{posts_archive}" )
-print("Archives done")
+if len(db.used_years) > 0:
+
+    posts_archive = ""
+    exclude = ("invisible")
+    posts = db.get_blog_posts(exclude)
+    for post in posts:
+        url = web.url(post)
+        posts_archive += f'<p><a href="{url}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'
+    layout.archives_gen( f"<h3>Années</h3>{years_archive}<h3>Billets</h3>{posts_archive}" )
+    print("Archives done")
 
 
 #ERROR
 layout.e404_gen()
 
+
 #END SITEMAP
-sitemap.save_index()
+sitemap.save_index('sitemap',4)

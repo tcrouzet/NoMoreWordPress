@@ -10,6 +10,7 @@ class Sitemap:
         self.urlset = None
         self.output = None
         self.lastmod = ""
+        self.count = 0
 
 
     def open(self, sitemap_name):
@@ -27,9 +28,14 @@ class Sitemap:
             })
         
         self.output = os.path.join(self.config['export'], f"sitemap/{sitemap_name}.xml")
+        self.count = 0
+ 
 
+    def save(self, ucount=None):
+        if ucount:
+            if self.count != ucount:
+                return True
 
-    def save(self):
         self._indent(self.urlset)
         tree = ET.ElementTree(self.urlset)
         tree.write(self.output, xml_declaration=True, encoding='utf-8', method='xml')
@@ -53,6 +59,7 @@ class Sitemap:
             image_elem = ET.SubElement(url, 'image:image')
             image_loc = ET.SubElement(image_elem, 'image:loc')
             image_loc.text = image_url
+        self.count += 1
 
 
     def add_post(self, post):
@@ -71,12 +78,19 @@ class Sitemap:
         self.add(post['url'], pub_date, thumb)
 
 
-    def add_page(self, url, date):
+    def add_page(self, url, date=None):
+        if date == None:
+            date = datetime.now(timezone.utc).isoformat(timespec='seconds')
         self.lastmod = max(self.lastmod, date)
         self.add_post({"url": url, "pub_update_str": date })
 
 
-    def save_index(self, sitemap_name = 'sitemap'):
+    def save_index(self, sitemap_name, icount = None):
+
+        if icount:
+            if len(self.sitemap_index) != icount:
+                return False
+
         output = os.path.join(self.config['export'], f"sitemap/{sitemap_name}.xml")
         index_element = ET.Element('sitemapindex', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
 
