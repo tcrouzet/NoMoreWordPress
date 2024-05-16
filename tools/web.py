@@ -400,31 +400,41 @@ class Web:
             srcset="{img['url_250']} 250w, {img['url_1024']} 1024w, {img['url']} 1600w"
             sizes="(max-width: 768px) 100vw, 768px" />'''
 
-
+    
     def extract_tags(self, post):
-        if "tags" in post:
+        
+        #Cleaning
+        if isinstance(post, str):
+            tags = [post]
+        elif "tags" in post:
             tags = json.loads(post['tags'])
         else:
             tags = ["None"]
         if len(tags)>1 and "dialogue" in tags:
             tags.remove("dialogue")
-        return tags
         
-    def main_tag(self, tagslist):
-        if not tagslist:
-            return None
-        first_tag = ""
-        for tag in tagslist:
-            first_tag = tag
+        #Enrich
+        tagslist = []
+        main_tag = True
+        for tag in tags:
             if tag in self.config['tags']:
                 response = {'slug': tag, "title":self.config['tags'][tag]['title']}
                 turl = self.config['tags'][tag].get("url",None)
                 if turl:
                     response['url'] = turl
                 else:
-                    response['url'] = first_tag
-                return response
-        return {'slug': first_tag, "title": self.title_formater(first_tag), "url": first_tag}
+                    response['url'] = tag
+                if main_tag:
+                    tagslist.insert(0, response)
+                    main_tag = False
+                else:
+                    tagslist.append(response)        
+            else:
+                response = {'slug': tag, "title": self.title_formater(tag), "url": tag}
+                tagslist.append(response)
+
+        return tagslist
+
     
     def title_formater(self, title):
         return title.capitalize().replace("-"," ").replace("_"," ")
@@ -448,7 +458,7 @@ class Web:
 
     def navigation(self, post):
 
-        main_tag =  self.main_tag(post['tagslist'])
+        main_tag =  post['tagslist'][0]
         if not main_tag:
             return None
 
@@ -486,7 +496,7 @@ class Web:
 
     def tag_2_post(self, post):
         post = dict(post)
-        post['main'] = self.main_tag([post['tag']])
+        post['main'] = self.extract_tags( post['tag'] )[0]
         post['pub_date'] = time.time()
         post['pub_update'] = post['pub_date']
         post['title'] = self.title_formater(post['main']['title'])
@@ -552,7 +562,7 @@ class Web:
             print("Tag list")
 
         tag['type'] = 5
-        tag['main'] = self.main_tag([tag['tag']])
+        tag['main'] = self.extract_tags(tag['tag'])[0]
         tag['path_md'] = tag['tag'] + "/"
         tag['url'] = self.url(tag)
         tag['title'] = tag['main']['title']
@@ -612,7 +622,3 @@ class Web:
         tag['posts'] = numbered_posts
       
         return tag
-
-def home_builder():
-    post = {}
-    return post

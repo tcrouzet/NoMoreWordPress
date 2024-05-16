@@ -90,7 +90,7 @@ class Db:
             if c.rowcount > 0:
                 self.used_tags.update( tags_set )
                 date_time = datetime.datetime.fromtimestamp(post['pub_date'])
-                self.used_years.update( date_time.year )
+                self.used_years.add( date_time.year )
                 return 1, 0
             else:
                 return 0, 0

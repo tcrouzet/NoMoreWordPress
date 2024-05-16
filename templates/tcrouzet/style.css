@@ -1000,13 +1000,13 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
 
   .poster-title div.poster-menu{
     font-size: smaller;
-    height: 2rem;
   }
 
   .splash{text-align: left;}
 
   .splash #mailchimp{
-    text-align: left
+    text-align: left;
+    padding: 0;
   }
   .splash #thema{
     justify-content: left;
@@ -1109,7 +1109,6 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
 
 /* Mode portrait */
 @media (orientation: portrait){
-  .splash{margin-top: 20vw}
 }
 
 

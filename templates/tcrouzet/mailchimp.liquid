@@ -1,20 +1,20 @@
-{% assign tous = "" %}
-{% assign carnets='' %}
-{% assign born = "" %}
-{% assign wip = "" %}
-{% assign genlog = "" %}
+{% assign tous = '' %}
+{% assign carnets = '' %}
+{% assign born = '' %}
+{% assign wip = '' %}
+{% assign genlog = '' %}
 {% assign page_guter = '' %}
 
-{% if post.navigation and post.navigation.maintag.slug == "carnet-de-route" %}
+{% if post.navigation and post.navigation.maintag.slug == "carnets" %}
     {% assign carnets='checked="1" ' %}
-{% elif post.navigation and post.navigation.maintag.slug == "borntobike" %}
+{% elif post.navigation and post.navigation.maintag.slug == "velo" %}
     {% assign born = 'checked="1" ' %}
 {% elif post.navigation and post.navigation.maintag.slug == "ecriture" %}
     {% assign wip = 'checked="1" ' %}
 {% else %}
     {% assign tous = 'checked="1" ' %}
     {% assign carnets = 'checked="1" ' %}
-    {% assign born = 'checked="1" ' %}
+    {% assign born = 'checked="" ' %}
     {% assign wip = 'checked="1" ' %}
     {% assign genlog = 'checked="1" ' %}
 {% endif %}

@@ -31,6 +31,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const minimumMarginTop = parseInt(window.getComputedStyle(container).marginTop, 0);
   
     function adjustContentPosition() {
+      
+      if (window.innerHeight > window.innerWidth) {
+        container.style.marginTop = ''; // Reset margin-top in portrait mode
+        return;
+      }
+
       if (container.offsetHeight < window.innerHeight) {
         let marginTop = (window.innerHeight - container.offsetHeight) / 4;
         marginTop = Math.max(marginTop, minimumMarginTop);

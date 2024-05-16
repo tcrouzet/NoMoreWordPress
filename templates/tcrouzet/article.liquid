@@ -69,7 +69,7 @@
                             href="https://tcrouzet-com.translate.goog{{ post.url }}/?_x_tr_sl=fr&_x_tr_tl=en&_x_tr_hl=en">Version
                             EN/US</a></li>
                     <li><a href="/abonnement-par-mail/">Abonne-toi</a></li>
-                    <li>Tags : {% for tag in post.tagslist %}<a href="/tag/{{tag}}">{{tag | capitalize}} </a> | {% endfor %}</li>
+                    <li>Tags : {% for tag in post.tagslist %}<a href="/tag/{{ tag.url }}">{{tag.title | capitalize}} </a> | {% endfor %}</li>
                     <li><a href="http://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr"
                             class="footertitre">(cc)</a>&#8239;<a
                             href="/informations/">Thierry&#8239;Crouzet</a></li>
