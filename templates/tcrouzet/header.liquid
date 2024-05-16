@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns="http://www.w3.org/1999/xhtml" xmlns:og="http://opengraphprotocol.org/schema/" xmlns:fb="http://www.facebook.com/2008/fbml">
-
 <head profile="http://gmpg.org/xfn/11">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,19 +8,18 @@
     <link rel="alternate" type="application/rss+xml" title="Thierry Crouzet" href="/feeds/feed.xml" />
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
     <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
     <meta name="google-site-verification" content="EmtKKbIk2-Tz3Nyp7hJRPjcMbgf68Vwq6yJYs1hvsqA" />
     <meta name="msvalidate.01" content="805E5BFBA891A41968028F5C97A228D3" />
     <title>{{ post.title }} - {{ blog.title }}</title>
-    <meta name="description" content="{{ post.description }}" />
+    <meta name="description" content="{% if post.description %}{{ post.description }}{% else %}{{ blog.description }}{% endif %}" />
     <link rel="canonical" href="{{ post.canonical }}" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="{{ post.title }}" />
-    <meta property="og:description" content="{{ post.description }}" />
+    <meta property="og:description" content="{% if post.description %}{{ post.description }}{% else %}{{ blog.description }}{% endif %}" />
     <meta property="og:url" content="{{ post.canonical }}" />
     <meta property="og:site_name" content="{{ blog.title }}" />
     <meta property="article:publisher" content="https://www.facebook.com/ThierryCrouzetAuteur/" />

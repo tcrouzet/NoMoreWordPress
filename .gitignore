@@ -4,3 +4,5 @@ venv/
 .env
 tools/wp_export_secret.py
 site.yml
+test.html
+test.json

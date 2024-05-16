@@ -192,23 +192,37 @@ class Web:
             return None
 
 
+    def striptags(self, html_text):
+        return re.sub(r'<[^>]+>', '', html_text)
+    
+    def stripmd(self, markdown_text):
+        # Remove images
+        markdown_text = re.sub(r'!\[.*?\]\(.*?\)', '', markdown_text)
+        # Remove links but keep the text
+        markdown_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', markdown_text)
+        markdown_text = markdown_text.replace("*","")
+        return markdown_text
+
     def resume_paragraph(self, paragraph):
         # Longueur maximale du résumé
         max_length = 160
-        
+
+        c_paragraph = self.striptags(paragraph)
+        c_paragraph = self.stripmd(c_paragraph)
+
         # Si le paragraphe est déjà assez court, le retourner entier
-        if len(paragraph) <= max_length:
-            return paragraph
+        if len(c_paragraph) <= max_length:
+            return c_paragraph
         
         # Couper le paragraphe aux 160 premiers caractères pour trouver un point
-        end_index = paragraph.rfind('.', 0, max_length)
+        end_index = c_paragraph.rfind('.', 0, max_length)
         
         # Si un point est trouvé dans la limite, retourner jusqu'au point inclus
         if end_index != -1:
-            return paragraph[:end_index + 1]
+            return c_paragraph[:end_index + 1]
         
         # Si aucun point n'est trouvé, couper à 157 caractères et ajouter "..."
-        return paragraph[:157] + "..."
+        return c_paragraph[:159] + "…"
 
 
     def is_post_otherwise_delete(self, post):
@@ -268,7 +282,10 @@ class Web:
             md = ''.join(lines)
             if len(frontmatter_lines) == 0:
                 frontmatter = None
-            return {"content": md.strip(), "description":self.resume_paragraph(lines[0].strip()), "frontmatter": frontmatter}
+
+            description = self.resume_paragraph(lines[0].strip())
+            
+            return {"content": md.strip(), "description":description, "frontmatter": frontmatter}
 
         except Exception as e:
             #print(e)
