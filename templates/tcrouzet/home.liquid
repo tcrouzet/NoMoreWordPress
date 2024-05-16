@@ -15,8 +15,8 @@
         <h2><a href="/tag/borntobike/">Vélo</a></h2>
         <h3><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
 
-        <h2><a href="https://daylog.tcrouzet.com/">Genlog</a></h2>
-        <h3><a href="https://daylog.tcrouzet.com/" id="daylog_link">Mes dernières lectures</a></h3>
+        <h2><a href="https://genlog.tcrouzet.com/">Genlog</a></h2>
+        <h3 id="genlog"><a href="https://genlog.tcrouzet.com/">Mes dernières lectures</a></h3>
 
         {% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
         {% include mailchimp_path %}
@@ -24,6 +24,7 @@
     </div>
 </div>
 
+<script src="https://genlog.tcrouzet.com/genlog_fr.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -48,24 +49,11 @@ document.addEventListener("DOMContentLoaded", function() {
     adjustContentPosition();
     window.addEventListener('resize', adjustContentPosition);
 
-    var now = new Date();
-    var year = now.getFullYear();
-    var month = ('0' + (now.getMonth() + 1)).slice(-2);
-    var day = ('0' + now.getDate()).slice(-2);
-    var hour = now.getHours();
-    if (hour < 19) {
-      now.setDate(now.getDate() - 1);
-      year = now.getFullYear();
-      month = ('0' + (now.getMonth() + 1)).slice(-2);
-      day = ('0' + now.getDate()).slice(-2);
+    function displayLink(link) {
+      var genlogDiv = document.getElementById('genlog');
+      genlogDiv.innerHTML = '<a href="' + link.url + '">' + link.title + '</a>';
     }
-
-    var link = `https://daylog.tcrouzet.com/${year}/${month}/${day}_fr/`;
-    var linkElement = document.getElementById('daylog_link');
-    linkElement.setAttribute('href', link);
-
-    var formattedDate = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(year, month - 1, day));
-    linkElement.textContent = formattedDate;
+    loadContent(displayLink);
 
   });
 </script>
