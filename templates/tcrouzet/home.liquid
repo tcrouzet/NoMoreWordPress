@@ -24,7 +24,6 @@
     </div>
 </div>
 
-<script src="https://genlog.tcrouzet.com/genlog_fr.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -53,8 +52,19 @@ document.addEventListener("DOMContentLoaded", function() {
       var genlogDiv = document.getElementById('genlog');
       genlogDiv.innerHTML = '<a href="' + link.url + '">' + link.title + '</a>';
     }
-    loadContent(displayLink);
 
+    const script = document.createElement('script');
+    script.src = "https://genlog.tcrouzet.com/genlog_fr.js?t=" + new Date().getTime();
+    script.onload = function() {
+      loadContent(displayLink);
+    }
+    script.onload = function() {
+      loadContent(displayLink);
+    };
+    script.onerror = function() {
+      console.error('Failed to load the script');
+    };
+    document.body.appendChild(script);
   });
 </script>
 

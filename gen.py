@@ -1,13 +1,12 @@
 import yaml
 import os, sys
-from tqdm import tqdm
+#from tqdm import tqdm
 import tools.db
 import tools.layout
 import tools.web
 import tools.logs
 import tools.sitemap
 import tools.feed
-import json
 from datetime import datetime
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
@@ -38,7 +37,7 @@ print(db.updated_posts, "updated posts")
 posts = db.get_posts_updated()
 total = len(posts)
 if total >0:
-    pbar = tqdm(total=total, desc='Posts:')
+    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
         supercharged = web.supercharge_post(post)
         if not supercharged:
@@ -54,7 +53,7 @@ if total >0:
 if db.new_posts > 0:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts()
-    pbar = tqdm(total=len(posts), desc='Sitemap-posts:')
+    pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
         supercharge = web.supercharge_post(post)
         sitemap.add_post( supercharge )
@@ -136,7 +135,7 @@ if len(db.used_tags) > 0:
     sitemap.open("sitemap-tags")
     tags = db.get_tags()
     total = len(tags)
-    pbar = tqdm(total=total, desc='Tags:')
+    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
         tag = web.supercharge_tag(tag)
         sitemap.add_post(tag)

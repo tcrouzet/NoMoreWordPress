@@ -1,4 +1,6 @@
 import datetime, sys
+from tqdm import tqdm
+
 
 class DualOutput:
     def __init__(self, fichier):
@@ -25,6 +27,24 @@ class DualOutput:
         if self.log:
             self.log.close()
             self.log = None
+
+    @staticmethod
+    def dual_tqdm(*args, **kwargs):
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        try:
+            # Temporarily restore original stdout and stderr for tqdm
+            sys.stdout = original_stdout.terminal
+            sys.stderr = original_stderr.terminal_stderr
+
+            # Create tqdm progress bar
+            pbar = tqdm(*args, **kwargs)
+        finally:
+            # Restore stdout and stderr to DualOutput
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
+        return pbar
+
 
 def timestamp_to_date(timestamp):
     date_time = datetime.datetime.fromtimestamp(timestamp)
