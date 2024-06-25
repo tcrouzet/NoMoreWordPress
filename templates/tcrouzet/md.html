@@ -42,7 +42,7 @@
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(file => {
-                            if (file.type === 'dir' && !file.name.startsWith('_')) {
+                            if (file.type === 'dir' && !file.name.startsWith('_')  && !file.name.startsWith('.')) {
                                 const listItem = createListItem(file.name, true);
                                 listItem.classList.add(isMonth ? 'month' : 'year');
                                 parentElement.appendChild(listItem);
