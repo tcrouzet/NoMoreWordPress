@@ -1,5 +1,4 @@
 import yaml
-import subprocess
 from tqdm import tqdm
 import os, sys
 import shutil
@@ -8,7 +7,6 @@ import hashlib
 from PIL import Image
 from git import Repo
 from datetime import datetime
-
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -78,7 +76,6 @@ def sync_files(src, dst):
     pbar.close()
 
 
-
 def clean_files(src, dst, preserved_files):
 
     # Étape 2: Nettoyer la destination
@@ -104,9 +101,19 @@ def clean_files(src, dst, preserved_files):
             print(f"Removed {dst_path}")
 
 
+def index():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    src_path = os.path.join(script_dir, "templates", config['template'], "md.html")
+    dst_path = os.path.join(config['export_github_md'], "index.html")
+
+    if not os.path.exists(dst_path) or calculate_hash(src_path) != calculate_hash(dst_path):
+        shutil.copy2(src_path, dst_path)
+
+
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
 clean_files(config['vault'], config['export_github_md'], preserved_files)
+index()
 
 
 repo = Repo(config['export_github_md'])
