@@ -86,17 +86,20 @@ filter_and_copy_images(source_img, target_img)
 copy_and_update_html(config['export'], config['export_github_html'])
 
 
-print(config['export_github_html'])
 repo = Repo(config['export_github_html'])
 repo.git.add(all=True)
 
-# Créer un commit
-now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-commit_message = f"Auto-{now}"
-repo.git.commit('-m', commit_message)
+if repo.is_dirty(untracked_files=True) or repo.git.diff('--cached'):
+    print("Action en cours, le commit n'est pas effectué.")
+else:
 
-# Pousser les changements
-origin = repo.remote(name='origin')
-origin.push('main', set_upstream=True)
+    # Créer un commit
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    commit_message = f"Auto-{now}"
+    repo.git.commit('-m', commit_message)
 
-print("Github commit done")
+    # Pousser les changements
+    origin = repo.remote(name='origin')
+    origin.push('main', set_upstream=True)
+
+    print("Github commit done")
