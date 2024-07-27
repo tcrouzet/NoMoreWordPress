@@ -4,8 +4,6 @@ import subprocess
 import boto3
 from datetime import datetime, timezone
 
-os.system('clear')
-
 with open('site.yml', 'r') as file:
     config = yaml.safe_load(file)
 

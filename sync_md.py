@@ -8,10 +8,11 @@ from PIL import Image
 from git import Repo, GitCommandError
 from datetime import datetime
 
+if os.isatty(0):
+    os.system('clear')
+
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
-
-os.system('clear')
 
 with open('site.yml', 'r') as file:
     config = yaml.safe_load(file)
@@ -44,7 +45,6 @@ def sync_files(src, dst):
             rel_path = os.path.relpath(src_path, src)
             dst_path = os.path.join(dst, rel_path)
 
-
             if file.endswith('.md'):
                 # Pour les fichiers Markdown, copier si différent ou inexistant
                 if not os.path.exists(dst_path) or calculate_hash(src_path) != calculate_hash(dst_path):
@@ -69,6 +69,9 @@ def sync_files(src, dst):
 
                         except Exception as e:
                             print(e)
+
+                        # print(src_path)
+                        # exit()
 
                     else:
                         shutil.copy2(src_path, dst_path)
@@ -112,25 +115,24 @@ def index():
 
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
-clean_files(config['vault'], config['export_github_md'], preserved_files)
+#clean_files(config['vault'], config['export_github_md'], preserved_files)
 index()
 
 repo = Repo(config['export_github_md'])
+
 repo.git.add(all=True)
 
-if repo.is_dirty(untracked_files=True) or repo.git.diff('--cached'):
-    print("Action en cours, le commit n'est pas effectué.")
-else:
-    # Créer un commit
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    commit_message = f"Auto-{now}"
-    try:
-        repo.git.commit('-m', commit_message)
-        
-        # Pousser les changements
-        origin = repo.remote(name='origin')
-        origin.push('main', set_upstream=True)
+# Créer un commit
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+commit_message = f"Force update - {now}"
 
-        print("Github MD commit done")
-    except GitCommandError as e:
-        print(f"Erreur lors du commit : {e}")
+try:
+    repo.git.commit('-m', commit_message, allow_empty=True)
+    
+    # Pousser les changements
+    origin = repo.remote(name='origin')
+    origin.push('main', force=True)
+
+    print("Github MD commit done")
+except GitCommandError as e:
+    print(f"Erreur lors du commit : {e}")

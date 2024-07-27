@@ -5,17 +5,47 @@ import tools.logs
 from git import Repo
 from datetime import datetime
 
+#chmod -R 777 /Users/thierrycrouzet/Documents/GitHub/blog/images_tc
 
+if os.isatty(0):
+    os.system('clear')
+    
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-os.system('clear')
+print(f"GitHub commit…")
 
 with open('site.yml', 'r') as file:
     config = yaml.safe_load(file)
 
 
+def copy_if_new(source, target):
+    if os.path.exists(target):
+        return 0
+    try:
+        shutil.copy2(source, target)
+        return 1
+    except Exception as e:
+        print(f"Erreur lors de la copie de {source} vers {target}: {e}")
+        return -1
+
+
+def test_directory_creation(path):
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+            print(f"Directory created: {path}")
+        else:
+            print(f"Directory already exists: {path}")
+    except Exception as e:
+        print(f"Error creating directory {path}: {e}")
+        exit()
+
+
 def filter_and_copy_images(source_dir, target_dir):
+
+    print(f"source: {source_dir} target: {target_dir}")
+    total = 0
 
     os.makedirs(target_dir,  exist_ok=True)
 
@@ -23,25 +53,37 @@ def filter_and_copy_images(source_dir, target_dir):
 
         dest_root = root.replace(source_dir, target_dir)
         os.makedirs(dest_root, exist_ok=True)
-
+        # if not os.path.exists(dest_root):
+        #     print(dest_root)
+        #     os.makedirs(dest_root, exist_ok=True)
+        #     test_directory_creation(dest_root)
+    
         # Filtrer et copier les fichiers
         for file in files:
 
             file_path = os.path.join(root, file)
+            target = os.path.join( dest_root, file.replace("-1024.",".") )
             
             if "-1024." in file:
-                shutil.copy2(file_path, os.path.join(dest_root, file.replace("-1024.",".") ))
+                total += copy_if_new(file_path,target)
             elif "-250." in file:
                 continue
             elif ".webp" in file:
                 continue
             else:
-                shutil.copy2(file_path, os.path.join(dest_root, file ))
+                total += copy_if_new(file_path,target)
+
+    print(f"Total new images: {total}")
 
 
 def copy_and_update_html(source_dir, target_dir):
 
+    #print(f"source: {source_dir} target: {target_dir}")
+
     images_dir_full_path = os.path.abspath(os.path.join(source_dir, config['images_dir'].strip("/")))
+    #print(images_dir_full_path)
+    #exit()
+
 
     for root, dirs, files in os.walk(source_dir):
 
@@ -62,8 +104,10 @@ def copy_and_update_html(source_dir, target_dir):
 
                 try:
 
-                    #print(file_path)
                     target_path = file_path.replace(source_dir, target_dir)
+                    #print(f"source: {file_path} target: {target_path}")
+                    #exit()
+
                     #print(target_path)
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
@@ -85,21 +129,21 @@ target_img = os.path.join(config['export_github_html'], config['images_dir'].str
 filter_and_copy_images(source_img, target_img)
 copy_and_update_html(config['export'], config['export_github_html'])
 
-
 repo = Repo(config['export_github_html'])
+
+# Nettoyage du dépôt
+# repo.git.reset('--hard')
+# repo.git.clean('-fd')
+
 repo.git.add(all=True)
 
-if repo.is_dirty(untracked_files=True) or repo.git.diff('--cached'):
-    print("Action en cours, le commit n'est pas effectué.")
-else:
+# Créer un commit
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+commit_message = f"Force update - {now}"
+repo.git.commit('-m', commit_message, allow_empty=True)
 
-    # Créer un commit
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    commit_message = f"Auto-{now}"
-    repo.git.commit('-m', commit_message)
+# Pousser les changements
+origin = repo.remote(name='origin')
+origin.push('main', force=True)
 
-    # Pousser les changements
-    origin = repo.remote(name='origin')
-    origin.push('main', set_upstream=True)
-
-    print("Github commit done")
+print("Github commit done")
