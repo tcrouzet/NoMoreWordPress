@@ -115,7 +115,7 @@ def index():
 
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
-#clean_files(config['vault'], config['export_github_md'], preserved_files)
+clean_files(config['vault'], config['export_github_md'], preserved_files)
 index()
 
 repo = Repo(config['export_github_md'])
