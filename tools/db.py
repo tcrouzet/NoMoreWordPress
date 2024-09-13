@@ -74,8 +74,9 @@ class Db:
                     WHERE path_md = :path_md;'''
             c.execute(query, post)
 
-            existing_tags_set = set(json.loads(existing_post['tags']))
-            self.used_tags.update( existing_tags_set - tags_set )
+            # existing_tags_set = set(json.loads(existing_post['tags']))
+            # self.used_tags.update( existing_tags_set - tags_set )
+            self.used_tags.update( tags_set )
 
             return 0, 1
 
