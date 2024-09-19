@@ -4,4 +4,3 @@ venv/
 site.yml
 test.html
 test.json
-.pylintrc

@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+#Constante majuscule
+disable=invalid-name
+#String description fonctions
+disable=C0116
