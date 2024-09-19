@@ -117,6 +117,8 @@ class Web:
         return '/'.join(normalized_parts)
 
     def source_image(self, src, post):
+        """Media manager"""
+
         if not src:
             return None
         
@@ -156,7 +158,8 @@ class Web:
                         "url": url,
                         "url_absolu": self.config['domain'] + url.strip("/"),
                         "url_1024": url,
-                        "url_250": url
+                        "url_250": url,
+                        "jpeg": url
                     }
 
                 sizes = {'1024': None, '250': None}
@@ -184,12 +187,45 @@ class Web:
                         "url": url,
                         "url_absolu": self.config['domain'] + url.strip("/"),
                         "url_1024": sizes['1024'],
-                        "url_250": sizes['250']
+                        "url_250": sizes['250'],
+                        "jpeg": ""
                     }
 
         except Exception as e:
             #print("bug",e)
             return None
+    
+
+    def makeJPEGthumb(self, thumb):
+        """Make jpeg for facebook share"""
+
+        if not thumb:
+            return thumb
+
+        thumb['jpeg'] =  f"{os.path.splitext(thumb['url'])[0]}.jpeg".strip("/")
+        jpeg_path = os.path.join(self.config['export'], thumb['jpeg'])
+
+        if thumb['format'] == "image/webp" and not os.path.exists(jpeg_path) :
+            # Make jpeg file
+            try:
+                img = Image.open(thumb['path'])
+     
+                # if img.width > 1024:
+                #     # Calculer le ratio de réduction
+                #     ratio = 1024 / img.width
+                #     new_height = int(img.height * ratio)
+                #     img = img.resize((1024, new_height), Image.Resampling.LANCZOS)
+                
+                img.convert("RGB").save(jpeg_path, 'JPEG', quality=85, optimize=True, progressive=True)
+                
+                # Fermer l'image
+                img.close()
+                
+            except Exception as e:
+                print(f"Erreur lors de la conversion thumb JEPG : {e}")
+                return False
+            
+        return thumb
 
 
     def striptags(self, html_text):
@@ -290,8 +326,10 @@ class Web:
         except Exception as e:
             #print(e)
             return {"content": "", "description":"", "frontmatter": None}
-        
+
+
     def image_manager(self, html, post):
+        """Optimize HTML for images"""
 
         soup = BeautifulSoup(html, 'html.parser')
         images = soup.find_all('p')
@@ -511,6 +549,7 @@ class Web:
     
         
     def supercharge_post(self, post, maximal=True):
+        """Get all post datas (text,tags, medias…)"""
 
         if isinstance(post, self.db.get_row_factory()):
             post = dict(post)
@@ -539,7 +578,7 @@ class Web:
         post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
         post['pub_update_str'] = self.format_timestamp_to_paris_time(post['pub_update'])
         post['thumb'] = self.source_image(post['thumb_path'], post)
-        #print(post)
+        post['thumb'] = self.makeJPEGthumb(post['thumb'])
         # if post['thumb']:
         #     post['thumb']["alt"] = post['thumb_legend']
         #     post['thumb']['tag'] = self.img_tag(post['thumb'])
@@ -555,6 +594,7 @@ class Web:
         return post
 
     def supercharge_tag(self, tag, posts=None):
+        """Get all tag datas"""
 
         if isinstance(tag, self.db.get_row_factory()):
             tag = dict(tag)

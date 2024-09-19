@@ -26,7 +26,7 @@
     <meta property="article:author" content="https://www.facebook.com/ThierryCrouzetAuteur/" />
     <meta property="article:published_time" content="{{ post.pub_date_str }}" />
     <meta property="article:modified_time" content="{{ post.pub_update_str }}" />
-    <meta property="og:image" content="http://tcrouzet.000.pe/webp2jpeg.php?url={{ post.thumb.url_absolu }}" />
+    <meta property="og:image" content="{{ blog.domain }}{{ post.thumb.jpeg }}" />
     <meta property="og:image:width" content="{{ post.thumb.width }}" />
     <meta property="og:image:height" content="{{ post.thumb.height }}" />
     <meta property="og:image:type" content="image/jpeg" />

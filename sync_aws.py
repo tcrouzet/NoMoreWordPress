@@ -132,6 +132,7 @@ if len(uploaded_files)>0:
             DistributionId=config['distribution_id'],
             InvalidationBatch=invalidation_data
         )
-        print("Invalidation créée:", response)
+        #print("Invalidation créée:", response)
+        print("Invalidation créée…")
 else:
     print("Aucun fichier modifié, aucune invalidation nécessaire.")
