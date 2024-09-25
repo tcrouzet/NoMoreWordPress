@@ -1,3 +1,5 @@
+"""Changer site.yml si mise à jour template"""
+
 import yaml
 import os, sys
 #from tqdm import tqdm
@@ -8,6 +10,9 @@ import tools.logs
 import tools.sitemap
 import tools.feed
 from datetime import datetime
+
+#Force updating home screen
+new_home_template = True
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -106,13 +111,13 @@ if  db.new_posts >0 or db.updated_posts > 0:
 
 
 #HOME
-if  db.new_posts >0 or db.updated_posts > 0:
+if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
     last_post=posts[0]
     last_carnet = db.get_posts_by_tag("carnets", 1)
-    last_bile = db.get_posts_by_tag("velo", 1)
+    last_bike = db.get_posts_by_tag("velo", 1)
     home = web.supercharge_post(last_post, False)
     home['carnet'] = web.supercharge_post(last_carnet, False)
-    home['bike'] = web.supercharge_post(last_bile, False)
+    home['bike'] = web.supercharge_post(last_bike, False)
     layout.home_gen( home )
     sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
     print("Home done")

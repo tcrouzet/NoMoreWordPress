@@ -8,9 +8,6 @@ from PIL import Image
 from git import Repo, GitCommandError
 from datetime import datetime
 
-if os.isatty(0):
-    os.system('clear')
-
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 

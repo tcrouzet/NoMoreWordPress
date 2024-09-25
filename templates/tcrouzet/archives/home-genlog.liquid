@@ -15,6 +15,9 @@
         <h2><a href="/tag/borntobike/">Vélo</a></h2>
         <h3><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
 
+        <h2><a href="https://genlog.tcrouzet.com/">Genlog</a></h2>
+        <h3 id="genlog"><a href="https://genlog.tcrouzet.com/">Mes dernières lectures</a></h3>
+
         {% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
         {% include mailchimp_path %}
 
@@ -44,6 +47,26 @@ document.addEventListener("DOMContentLoaded", function() {
     }  
     adjustContentPosition();
     window.addEventListener('resize', adjustContentPosition);
-})
 
+    function displayLink(link) {
+      var genlogDiv = document.getElementById('genlog');
+      genlogDiv.innerHTML = '<a href="' + link.url + '">' + link.title + '</a>';
+    }
+
+    const script = document.createElement('script');
+    script.src = "https://genlog.tcrouzet.com/genlog_fr.js?t=" + new Date().getTime();
+    script.onload = function() {
+      loadContent(displayLink);
+    }
+    script.onload = function() {
+      loadContent(displayLink);
+    };
+    script.onerror = function() {
+      console.error('Failed to load the script');
+    };
+    document.body.appendChild(script);
+  });
 </script>
+
+
+

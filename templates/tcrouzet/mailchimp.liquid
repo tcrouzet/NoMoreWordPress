@@ -2,7 +2,6 @@
 {% assign carnets = '' %}
 {% assign born = '' %}
 {% assign wip = '' %}
-{% assign genlog = '' %}
 {% assign page_guter = '' %}
 
 {% if post.navigation and post.navigation.maintag.slug == "carnets" %}
@@ -16,31 +15,27 @@
     {% assign carnets = 'checked="1" ' %}
     {% assign born = 'checked="" ' %}
     {% assign wip = 'checked="1" ' %}
-    {% assign genlog = 'checked="1" ' %}
 {% endif %}
 	
 {% if post.type == 0 %}
     {% assign page_guter = ' class="pageGutter"' %}
+{% else %}
+    {% assign page_guter = '' %}
 {% endif %}
 
-<form id="mailchimp"{{ page_guter }}>
+<form id="mailchimp"{{ page_guter }} action="https://tcrouzet.us3.list-manage.com/subscribe/post?u=4346e7140965015f0594fffcd&amp;id=f8567ebe86&amp;f_id=00354ee2f0" method="post">
 <div id="thema">
-<label class="checkbox" for="mc-blog"><input {{ tous }} type="checkbox" value="1" name="mc-blog" id="mc-blog" />Blog</label>
-<label class="checkbox" for="mc-carnet"><input {{ carnets }} type="checkbox" value="2" name="mc-carnet" id="mc-carnet" />Carnets</label>
-<label class="checkbox" for="mc-ecriture"><input {{ wip }} type="checkbox" value="3" name="mc-ecriture" id="mc-ecriture" />Écriture</label>
-<label class="checkbox" for="mc-bike"><input {{ born }} type="checkbox" value="4" name="mc-bike" id="mc-bike" />Vélo</label>
-<label class="checkbox" for="mc-daylog"><input {{ genlog }}type="checkbox" value="1" name="mc-daylog" id="mc-daylog" />Genlog</label>
+<label class="checkbox" for="group[21501][1]"><input {{ tous }} type="checkbox" value="1" name="group[21501][1]" />Blog</label>
+<label class="checkbox" for="group[21501][2]"><input {{ carnets }} type="checkbox" value="2" name="group[21501][2]" />Carnets</label>
+<label class="checkbox" for="group[21501][8]"><input {{ wip }} type="checkbox" value="3" name="group[21501][8]" />Écriture</label>
+<label class="checkbox" for="group[21501][4]"><input {{ born }} type="checkbox" value="4" name="group[21501][4]" />Vélo</label>
 </div>
 
 <div aria-hidden="true" style="position: absolute; left: -5000px;">
-{% comment %} Blog {% endcomment %}
 <input type="text" name="b_4346e7140965015f0594fffcd_f8567ebe86" tabindex="-1" value="">
-{% comment %} Daylog {% endcomment %}
-<input type="text" name="b_b7e4cf04c803fc0f26b2fff20_4580f38547" tabindex="-1" value="">
 </div>
 
-<input aria-label="Votre email" type="email" name="mc-email" id="mc-email" onblur="if (this.value==\'\') this.value=\'Ton mail\'" value="Ton mail" onfocus="if (this.value==\'Ton mail\') this.value=\'\'" />
+<input aria-label="Votre email" type="email" name="EMAIL" onblur="if (this.value=='') this.value='Ton mail'" value="Ton mail" onfocus="if (this.value=='Ton mail') this.value=''" />
 <input type="hidden" value="blog-crouzet" name="feed_id"/>
 <input type="submit" name="subscribe" value="Abonne-toi" alt="Abonne-toi" title="Abonne-toi" />
-<div id="mc-message"></div>
 </form>

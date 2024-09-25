@@ -6,9 +6,6 @@ from git import Repo
 from datetime import datetime
 
 #chmod -R 777 /Users/thierrycrouzet/Documents/GitHub/blog/images_tc
-
-if os.isatty(0):
-    os.system('clear')
     
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
