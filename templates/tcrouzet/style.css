@@ -445,6 +445,7 @@ h1.menu{
   max-width: var(--justif-text);
   text-align: var(--alignement-text);
   margin-top: var(--margin-top-post);
+  margin-bottom: 0;
   margin-left: auto;
   margin-right: auto;
   padding-left: var(--page-guter);
@@ -473,14 +474,16 @@ h1.menu{
   padding-left: 2rem;
   padding-right: 1rem;
   padding-top:0;
-  padding-bottom: 1rem;
+  padding-bottom: 0;
   text-align:inherit;
   max-width: var(--justif-text);
   margin-left: auto;
   margin-right: auto;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 .post ul{list-style-type:circle}
-.post ol{list-style-type:decimal}
+.post ol{list-style-type:decimal;}
 .post li{padding: var(--margin-top-post) 0em 0em 0.25em}
 .post li p{margin:0;padding:0}
 

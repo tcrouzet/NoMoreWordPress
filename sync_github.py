@@ -128,6 +128,9 @@ copy_and_update_html(config['export'], config['export_github_html'])
 
 repo = Repo(config['export_github_html'])
 
+for remote in repo.remotes:
+    print(remote.name, remote.url)
+
 # Nettoyage du dépôt
 # repo.git.reset('--hard')
 # repo.git.clean('-fd')
@@ -141,6 +144,11 @@ repo.git.commit('-m', commit_message, allow_empty=True)
 
 # Pousser les changements
 origin = repo.remote(name='origin')
-origin.push('main', force=True)
+
+try:
+    #origin.push('main', force=True)
+    origin.push('main')
+except Exception as e:
+    print(f"An error occurred: {e}")
 
 print("Github commit done")
