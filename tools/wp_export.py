@@ -30,7 +30,7 @@ prefix = config['WP_DB_PREFIX']
 # Connexion à la base de données MySQL
 conn = mysql.connector.connect(
     host=config['WP_DB_HOST'],
-    port=config['wp_export_secret'],
+    port=config['WP_DB_PORT'],
     user=config['WP_DB_USER'],
     password=config['WP_DB_PASSWORD'],
     database=config['WP_DB_NAME'],

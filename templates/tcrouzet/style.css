@@ -586,17 +586,41 @@ iframe{
 
 .post audio{width: inherit;}
 
-/*
-div.comments-area{
-  margin: 2rem 0 0 0;
-  text-align: left;
-  box-sizing: content-box;
+
+/* Comments */
+div.comments{
+  display: none;
+  max-width: var(--justif-text);
+  text-align: var(--alignement-text);
+  margin-top: var(--margin-top-post);
+  margin-bottom: 0;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--page-guter);
+  padding-right: var(--page-guter);
 }
-div.comments-area h2{
-  margin-bottom: 0rem;
+
+.comment {
+    margin-bottom: 1.5em;
+    padding: 0 0 1rem 0;
+    border-bottom: 1px solid var(--color--plus);
 }
-div.comment-body p{margin-bottom: 0.4em}
-*/
+.comment-header {
+    margin-bottom: 0.5em;
+}
+.comment-author {
+    font-weight: bold;
+}
+.comment-date {
+    color: var(--color--medium);
+    margin-left: 1em;
+    font-size: 0.9em;
+}
+.comment-content {
+    line-height: 1.4;
+    font-size: smaller;
+}
+
 
 .date {position: relative;}
 

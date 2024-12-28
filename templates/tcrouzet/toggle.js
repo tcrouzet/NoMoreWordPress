@@ -174,14 +174,36 @@ function doAPIcall(type, url, flag, callback) {
 }
 
 //share function
+// function copyText() {
+//     navigator.clipboard.writeText(window.location.href)
+//       .then(() => {
+//         copyMessage('Adresse de l\'article copiée !<br/>À coller dans votre réseau social préféré.');
+//       })
+//       .catch(err => {
+//         console.error('Erreur lors de la copie :', err);
+//       });
+// }
+
 function copyText() {
-    navigator.clipboard.writeText(window.location.href)
-      .then(() => {
-        copyMessage('Adresse de l\'article copiée !<br/>À coller dans votre réseau social préféré.');
-      })
-      .catch(err => {
-        console.error('Erreur lors de la copie :', err);
-      });
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            url: window.location.href
+        }).then(() => {
+            console.log('Partage réussi');
+        }).catch((error) => {
+            console.error('Erreur lors du partage :', error);
+        });
+    } else {
+        // Fallback : copier le lien dans le presse-papier
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                copyMessage('Adresse de l\'article copiée !<br/>À coller dans votre réseau social préféré.');
+            })
+            .catch((error) => {
+                console.error('Erreur lors de la copie du lien :', error);
+            });
+    }
 }
 
 function copyMessage(msg) {
@@ -196,4 +218,87 @@ function copyMessage(msg) {
     setTimeout(() => {
         messageElement.style.visibility = 'hidden';
     }, 5000); 
+}
+
+async function showComments(button) {
+    console.log('showComments');
+    const article = button.closest('article');
+    if (article) {
+        const commentsDiv = article.querySelector('.comments');
+        const metaUrl = article.querySelector('meta[itemprop="url"]');
+        if (metaUrl) {
+            let postUrl = metaUrl.content.split('tcrouzet.com')[1];
+            postUrl = postUrl.replace(/(\d{4})\/0?(\d|1[0-2])\/\d{2}\/(.+?)\/?$/, '$1/$2/$3.md');
+            console.log('postUrl:', postUrl);
+
+
+            if (commentsDiv && postUrl) {
+                commentsDiv.style.display = 'block';
+                commentsDiv.scrollIntoView({ behavior: 'smooth' });
+                try {
+                    const comments = await loadComments(postUrl);
+                    commentsDiv.innerHTML = comments;
+                } catch (error) {
+                    commentsDiv.innerHTML = 'Erreur lors du chargement des commentaires';
+                }
+            }else{
+                console.error('Impossible de trouver comments');
+            }
+        }else{
+            console.error('Impossible de trouver metaUrl');
+        }
+    }else{
+        console.error('Impossible de trouver article');
+    }
+}
+
+async function loadComments(postUrl) {
+    console.log(postUrl);
+    const response = await fetch(`https://api.github.com/repos/tcrouzet/BlogComments/contents/${postUrl}?ref=main`);
+    const file = await response.json();
+    const rawContent = new TextDecoder('utf-8').decode(Uint8Array.from(atob(file.content), c => c.charCodeAt(0)));
+    return formatComments(rawContent);
+}
+
+function convertLinks(text) {
+    return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+}
+
+
+
+function formatComments(rawContent) {
+    // Supprimer le lien initial vers l'article
+    let content = rawContent.replace(/\[.*?\]\(.*?\)\s*---\s*/, '');
+    
+    // Séparer les commentaires
+    const comments = content.split('---').map(comment => comment.trim());
+    
+    const formattedComments = comments.map(comment => {
+        const matches = comment.match(/^(.*?)\s*@\s*(.*?)(\d{2}:\d{2}):\d{2}\s+(.*)/s);
+        if (!matches) return '';
+        
+        const [, author, date, time, text] = matches;
+        
+        // Formater la date
+        const formattedDate = `${new Date(date).toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })} @ ${time}`;
+        
+        // Retourner le commentaire formaté en HTML
+        return `
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">${author}</span>
+                    <span class="comment-date">${formattedDate}</span>
+                </div>
+                <div class="comment-content">
+                    ${convertLinks(text.replace(/http:\/\/t\.co\/\w+/g, ''))}
+                </div>
+            </div>
+        `;
+    });
+
+    return  formattedComments.join('');
 }
