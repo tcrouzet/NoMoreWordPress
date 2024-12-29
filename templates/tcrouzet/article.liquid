@@ -118,7 +118,13 @@
     
 <div class="sharebas pageGutter">{% include share_path %}</div>
 
-<div class="comments">Loading…</div>
+<div class="comments">
+    <form id="commentForm">
+        <input type="text" id="author" placeholder="Votre nom*" required>
+        <textarea id="comment" placeholder="Votre commentaire*" required></textarea>
+        <button type="submit">Envoyer</button>
+    </form>
+</div>
 
 </div>
 

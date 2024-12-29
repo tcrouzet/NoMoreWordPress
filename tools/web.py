@@ -547,6 +547,10 @@ class Web:
             post['url'] = "tag/"+post['tag']
         return post
     
+    def post_comment_total(self, post_url):
+        # self.config['comments_root']
+        exit(post_url)
+    
         
     def supercharge_post(self, post, maximal=True):
         """Get all post datas (text,tags, medias…)"""
@@ -573,6 +577,7 @@ class Web:
             frontmatter = ft.Frontmatter(content['frontmatter'])
             post['frontmatter'] = frontmatter.supercharge()
             #print(post['frontmatter'])
+            post['comments'] = self.post_comment_total(post['url'])
         
         post['canonical'] = self.config['domain'] + post['url']
         post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
