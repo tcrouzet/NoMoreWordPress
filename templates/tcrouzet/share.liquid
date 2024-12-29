@@ -1,7 +1,9 @@
 <div class="sharemain">
     <div class="share">
         <div class="crunchify-social">
-            <a class="icon_com icon" href="javascript:void(0);" onclick="showComments(this)" title="Commenter"></a>
+            <a class="icon_com icon" href="javascript:void(0);" onclick="showComments(this)" title="Commenter">
+                <span class="count">{{ post.comments }}</span>
+            </a>
             <a class="icon_share icon" href="javascript:void(0);" onclick="copyText()" title="Partager"></a>
         </div>
     </div>

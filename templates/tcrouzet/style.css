@@ -110,7 +110,7 @@ button {
  }
 
 /* fonts */
-button,input,select,textarea,div.iconcom,label{font-family: var(--global--font-headings);color: var(--color--form)}
+button,input,select,textarea,div.iconcom,label,a.icon_com .count{font-family: var(--global--font-headings);color: var(--color--form)}
 h1,h2,/*.poster,*/.resume-contenair,#route-resume,div.bottomnav,.poster-title div.poster-menu{font-family: var(--global--font-headings)}
 h3,h4,div.sharebas{font-family: var(--font--global);color: var(--color--form)}
 h1,h2,h3,h4{font-weight: bold}
@@ -600,6 +600,11 @@ div.comments{
   padding-right: var(--page-guter);
 }
 
+.commentForm{
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color--plus);
+}
+
 .comment {
     margin-bottom: 1.5em;
     padding: 0 0 1rem 0;
@@ -621,7 +626,6 @@ div.comments{
     font-size: smaller;
 }
 
-
 .date {position: relative;}
 
 /* Plus button */
@@ -636,6 +640,7 @@ div.plus{
   color:var(--color--plus);
   font-size: var(--font-size-plus);
   vertical-align: sub;
+  margin-left: 0.8rem;
 }
 div.plus:hover > ul{display:block}
 div.plus ul{
@@ -937,7 +942,7 @@ div.sharemain{
   margin-top: 1rem;
   display: inline;
 }
-div.share{display: inline-block;margin-left: 0.6em}
+div.share{display: inline-block;margin-left: 0}
 
 .share a,.share a:visited,.share a:hover{
 	border-bottom: none;
@@ -953,13 +958,20 @@ div.sharebas{
 a.all{margin-left: 1rem;}
 a.all:before{color:var(--color--medium);font: 400 1.3rem/1 icomoon!important;content:'\e933'}
 
-a.icon:before{vertical-align: -0.3rem;padding: 0 0.8rem 0 0}
+a.icon:before{vertical-align: -0.3rem;padding: 0}
 a.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e902'}
 /*a.icon_fb:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e904'}*/
 /*a.icon_twitter:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e907'}*/
 a.icon_mail:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e945'}
 a.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea7d'}
 /*a.icon_linkedin:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e903'}*/
+
+a.icon_com .count {
+  font-size: 0.75rem;
+  position: relative;
+  top: -.8rem;
+  left: -.4rem;
+}
 
 #copyMessage {
   visibility: hidden;

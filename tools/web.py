@@ -73,6 +73,35 @@ class Web:
         return url
 
 
+    def comment_url(self, post):
+
+        if not post:
+            return None
+
+        if "comment_url" in post:
+            return post['comment_url']
+                
+        base = os.path.basename(post['path_md'])        
+        file_name_without_extension = os.path.splitext(base)[0]
+        if post['type'] == 0:
+
+            #POST
+            date = datetime.fromtimestamp(post['pub_date'])
+            path = date.strftime("/%Y/%-m/")
+            url = '/'.join([path.strip('/'), file_name_without_extension]) + ".md"
+        
+        elif post['type'] == 1:
+
+            #PAGES
+            url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + ".md"
+        
+        else:
+
+            url = None
+
+        return url
+    
+
     def url_image(self, src, post):
         if post['type'] == 5:
             file_name = os.path.basename(post['thumb_path'])
@@ -547,10 +576,16 @@ class Web:
             post['url'] = "tag/"+post['tag']
         return post
     
-    def post_comment_total(self, post_url):
-        # self.config['comments_root']
-        exit(post_url)
-    
+    def post_comment_total(self, post):
+        comment_url = os.path.join(self.config['comments_root'],self.comment_url(post))
+
+        try:
+            with open(comment_url, 'r', encoding='utf-8') as file:
+                content = file.read()
+                count = content.count('---\n\n')
+        except FileNotFoundError:
+            count = 0
+        return count    
         
     def supercharge_post(self, post, maximal=True):
         """Get all post datas (text,tags, medias…)"""
@@ -577,7 +612,7 @@ class Web:
             frontmatter = ft.Frontmatter(content['frontmatter'])
             post['frontmatter'] = frontmatter.supercharge()
             #print(post['frontmatter'])
-            post['comments'] = self.post_comment_total(post['url'])
+            post['comments'] = self.post_comment_total(post)
         
         post['canonical'] = self.config['domain'] + post['url']
         post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
