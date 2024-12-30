@@ -584,7 +584,7 @@ class Web:
                 content = file.read()
                 count = content.count('---\n\n')
         except FileNotFoundError:
-            count = 0
+            count = "&nbsp;&nbsp;"
         return count    
         
     def supercharge_post(self, post, maximal=True):

@@ -1,5 +1,5 @@
 import yaml
-import os, sys
+import os, sys, re
 import shutil
 import tools.logs
 from git import Repo
@@ -109,10 +109,10 @@ def copy_and_update_html(source_dir, target_dir):
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
 
-                    updated_content = content.replace("-250.webp", ".webp").replace("-1024.webp", ".webp")
+                        updated_content = content.replace("-250.webp", ".webp").replace("-1024.webp", ".webp")
 
-                    with open(target_path, 'w', encoding='utf-8') as f:
-                        f.write(updated_content)
+                        with open(target_path, 'w', encoding='utf-8') as f:
+                            f.write(updated_content)
 
                 except Exception as e:
                     print(e)

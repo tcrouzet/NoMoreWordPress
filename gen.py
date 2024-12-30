@@ -2,7 +2,8 @@
 
 import yaml
 import os, sys
-#from tqdm import tqdm
+import subprocess
+
 import tools.db
 import tools.layout
 import tools.web
@@ -10,6 +11,14 @@ import tools.logs
 import tools.sitemap
 import tools.feed
 from datetime import datetime
+
+
+def run_script(script_name):
+    try:
+        subprocess.run(['python3', script_name], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while running {script_name}: {e}")
+
 
 #Force updating home screen
 new_home_template = True
@@ -22,6 +31,7 @@ os.system('clear')
 with open('site.yml', 'r', encoding='utf-8') as file:
     config = yaml.safe_load(file)
 
+version = int(config['version'])
 db = tools.db.Db(config)
 web = tools.web.Web(config, db)
 layout = tools.layout.Layout(config)
@@ -112,15 +122,16 @@ if  db.new_posts >0 or db.updated_posts > 0:
 
 #HOME
 if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
-    last_post=posts[0]
-    last_carnet = db.get_posts_by_tag("carnets", 1)
-    last_bike = db.get_posts_by_tag("velo", 1)
-    home = web.supercharge_post(last_post, False)
-    home['carnet'] = web.supercharge_post(last_carnet, False)
-    home['bike'] = web.supercharge_post(last_bike, False)
-    layout.home_gen( home )
-    sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
-    print("Home done")
+    if posts:
+        last_post=posts[0]
+        last_carnet = db.get_posts_by_tag("carnets", 1)
+        last_bike = db.get_posts_by_tag("velo", 1)
+        home = web.supercharge_post(last_post, False)
+        home['carnet'] = web.supercharge_post(last_carnet, False)
+        home['bike'] = web.supercharge_post(last_bike, False)
+        layout.home_gen( home )
+        sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
+        print("Home done")
 
 
 sitemap.add_page("archives/index.html")
@@ -222,3 +233,12 @@ layout.e404_gen()
 
 #END SITEMAP
 sitemap.save_index('sitemap',4)
+
+
+#EXPORT
+if version>0:
+    run_script('sync_aws.py')
+    run_script('sync_github.py')
+    run_script('sync_md.py')
+else:
+    print("No export")

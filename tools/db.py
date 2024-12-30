@@ -213,7 +213,8 @@ class Db:
 
         for root, dirs, files in os.walk(root_dir):
             # Exlude images dirs
-            dirs[:] = [d for d in dirs if not d.startswith('_i')]
+            # dirs[:] = [d for d in dirs if not d.startswith('_i')]
+            dirs[:] = [d for d in dirs if not d.startswith('_i') and d not in self.config['no_export']]
 
             for file in files:
                 if file.endswith('.md'):
@@ -221,7 +222,7 @@ class Db:
                     #print(root,file,root.replace(root_dir,""))
                     post = self.markdown_extract(md_path)
                     if post['pub_date'] == 0:
-                        print("post not ready",post['title'])
+                        print("post not ready",post['title'],md_path)
                         continue
 
                     post['path_md'] = os.path.join(root.replace(root_dir,"").strip("/"), file)

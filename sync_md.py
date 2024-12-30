@@ -1,6 +1,6 @@
 import yaml
 from tqdm import tqdm
-import os, sys
+import os, sys, re
 import shutil
 import tools.logs
 import hashlib
@@ -33,9 +33,13 @@ def sync_files(src, dst):
     total = count_files(src)
     pbar = tqdm(total=total, desc='MD:')
     for root, dirs, files in os.walk(src):
+
+        # Exclude directories that start with a dot
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
+
         for file in files:
 
-            if file == ".DS_Store":
+            if file == "LICENSE" or file == "README.md" or file.startswith(".")  or file.startswith("_"):
                 continue
 
             src_path = os.path.join(root, file)
@@ -44,6 +48,18 @@ def sync_files(src, dst):
 
             if file.endswith('.md'):
                 # Pour les fichiers Markdown, copier si différent ou inexistant
+
+                if "/comments/" not in src_path:
+
+                    with open(src_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    # Vérifie si tag date présent
+                    match = re.search(r'#\d{4}-\d{2}-\d{2}-\d{2}h\d{2}', content)
+                    if not match:
+                        # Not yet on line
+                        continue
+
                 if not os.path.exists(dst_path) or calculate_hash(src_path) != calculate_hash(dst_path):
                     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                     shutil.copy2(src_path, dst_path)
@@ -116,10 +132,23 @@ clean_files(config['vault'], config['export_github_md'], preserved_files)
 index()
 
 repo = Repo(config['export_github_md'])
+origin = repo.remote(name='origin')
 
-repo.git.add(all=True)
+# Stasher les changements non validés
+repo.git.stash('save')
+
+# Tirer les dernières modifications du dépôt distant
+try:
+    origin.pull('main')
+    print("GitHub MD: Pull completed successfully.")
+except GitCommandError as e:
+    print(f"Erreur lors du pull : {e}")
+
+# Restaurer les changements
+repo.git.stash('apply')
 
 # Créer un commit
+repo.git.add(all=True)
 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 commit_message = f"Force update - {now}"
 
@@ -127,7 +156,6 @@ try:
     repo.git.commit('-m', commit_message, allow_empty=True)
     
     # Pousser les changements
-    origin = repo.remote(name='origin')
     origin.push('main', force=True)
 
     print("Github MD commit done")

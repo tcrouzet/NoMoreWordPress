@@ -216,6 +216,7 @@ async function showComments(button) {
         const messageTypeSection = article.querySelector('.messageTypeSection');
         const metaUrl = article.querySelector('meta[itemprop="url"]');
         const datePublishedMeta = article.querySelector('meta[itemprop="datePublished"]');
+
         if (metaUrl) {
             let postUrl = metaUrl.content.split('tcrouzet.com')[1];
             postUrl = postUrl.replace(/(\d{4})\/0?(\d|1[0-2])\/\d{2}\/(.+?)\/?$/, '$1/$2/$3.md');
@@ -270,7 +271,7 @@ async function showComments(button) {
 
 async function loadComments(postUrl) {
     console.log(postUrl);
-    const response = await fetch(`https://api.github.com/repos/tcrouzet/BlogComments/contents/${postUrl}?ref=main`);
+    const response = await fetch(`https://api.github.com/repos/tcrouzet/md/contents/comments${postUrl}?ref=main`);
     const file = await response.json();
     const rawContent = new TextDecoder('utf-8').decode(Uint8Array.from(atob(file.content), c => c.charCodeAt(0)));
     return formatComments(rawContent);
@@ -321,6 +322,19 @@ function submitComment(form) {
     const formData = new FormData(form);
     const messageDiv = form.querySelector('.message');
     const actionUrl = "https://formspree.io/f/mgebvkwn";
+    const githubUrl = "https://geo.zefal.com/tools/_github_comments.php";
+
+    // Function to handle the response
+    const handleResponse = async (response, serviceName) => {
+        const data = await response.json();
+        console.log(data);
+
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.message || `Erreur lors de l'envoi à ${serviceName}.`);
+        }
+    };
   
     fetch(actionUrl, {
       method: "POST",
@@ -329,15 +343,27 @@ function submitComment(form) {
         'Accept': 'application/json'
       }
     })
-    .then(response => {
-      if (response.ok) {
+    .then(response => handleResponse(response, 'Formspree'))
+    .then(() => {
+        // Check if the message type is public before sending to GitHub
+        if (formData.get('messageType') === 'public') {
+            return fetch(githubUrl, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => handleResponse(response, 'GitHub'));
+        }
+    })
+    .then(() => {
         form.reset(); // Clear the form fields
-        messageDiv.innerHTML = "<div style='color: green;'>Message envoyé. Je vous répondrai au plus vite.</div>";
-      } else {
-        return response.json().then(data => {
-          throw new Error(data.error || "Erreur lors de l'envoi.");
-        });
-      }
+        if (formData.get('messageType') === 'public') {
+            messageDiv.innerHTML = "<div style='color: green;'>Le message sera vite publié.</div>";
+        } else {
+            messageDiv.innerHTML = "<div style='color: green;'>Message envoyé.</div>";
+        }
     })
     .catch(error => {
       messageDiv.innerHTML = "<div style='color: red;'>Erreur : " + error.message + "</div>";

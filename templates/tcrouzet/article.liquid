@@ -121,6 +121,7 @@
 <div class="comments">
     <form method="POST" onsubmit="submitComment(this); return false;" class="commentForm">
         <input type="hidden" name="postUrl" value="{{ post.url }}">
+        <input type="hidden" name="postTitle" value="{{ post.title }}">
         <label>Email:
           <input autocomplete="off" name="email" type="email" style="width: 100%;" placeholder="Votre email" required>  
         </label>
