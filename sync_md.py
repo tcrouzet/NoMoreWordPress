@@ -3,10 +3,9 @@ from tqdm import tqdm
 import os, sys, re
 import shutil
 import tools.logs
+import tools.github
 import hashlib
 from PIL import Image
-from git import Repo, GitCommandError
-from datetime import datetime
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -29,6 +28,7 @@ def count_files(directory):
 
 def sync_files(src, dst):
 
+    print(f"Syncing {src} to {dst}")
     # Étape 1: Copier de la source vers la destination
     total = count_files(src)
     pbar = tqdm(total=total, desc='MD:')
@@ -49,15 +49,18 @@ def sync_files(src, dst):
             if file.endswith('.md'):
                 # Pour les fichiers Markdown, copier si différent ou inexistant
 
+                # print(f"{src_path}")
                 if "/comments/" not in src_path:
 
                     with open(src_path, 'r', encoding='utf-8') as f:
                         content = f.read()
 
                     # Vérifie si tag date présent
-                    match = re.search(r'#\d{4}-\d{2}-\d{2}-\d{2}h\d{2}', content)
+                    match = re.search(r'#\d{4}-\d{1,2}-\d{1,2}-\d{1,2}h\d{1,2}', content)
+
                     if not match:
                         # Not yet on line
+                        print(f"Missing date tag in {src_path}")
                         continue
 
                 if not os.path.exists(dst_path) or calculate_hash(src_path) != calculate_hash(dst_path):
@@ -126,38 +129,12 @@ def index():
         shutil.copy2(src_path, dst_path)
 
 
+gh = tools.github.MyGitHub(config, "md", config['export_github_md'])
+
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
 clean_files(config['vault'], config['export_github_md'], preserved_files)
 index()
 
-repo = Repo(config['export_github_md'])
-origin = repo.remote(name='origin')
-
-# Stasher les changements non validés
-repo.git.stash('save')
-
-# Tirer les dernières modifications du dépôt distant
-try:
-    origin.pull('main')
-    print("GitHub MD: Pull completed successfully.")
-except GitCommandError as e:
-    print(f"Erreur lors du pull : {e}")
-
-# Restaurer les changements
-repo.git.stash('apply')
-
-# Créer un commit
-repo.git.add(all=True)
-now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-commit_message = f"Force update - {now}"
-
-try:
-    repo.git.commit('-m', commit_message, allow_empty=True)
-    
-    # Pousser les changements
-    origin.push('main', force=True)
-
-    print("Github MD commit done")
-except GitCommandError as e:
-    print(f"Erreur lors du commit : {e}")
+gh.pull()
+gh.push()

@@ -2,8 +2,8 @@ import yaml
 import os, sys, re
 import shutil
 import tools.logs
-from git import Repo
-from datetime import datetime
+import tools.github
+
 
 #chmod -R 777 /Users/thierrycrouzet/Documents/GitHub/blog/images_tc
     
@@ -121,34 +121,12 @@ def copy_and_update_html(source_dir, target_dir):
                 shutil.copy2(file_path, os.path.join(dest_root, file ))
 
 
+gh = tools.github.MyGitHub(config, "blog", config['export_github_html'])
+
 source_img = os.path.join(config['export'], config['images_dir'].strip("/"))
 target_img = os.path.join(config['export_github_html'], config['images_dir'].strip("/"))
 filter_and_copy_images(source_img, target_img)
 copy_and_update_html(config['export'], config['export_github_html'])
 
-repo = Repo(config['export_github_html'])
-
-for remote in repo.remotes:
-    print(remote.name, remote.url)
-
-# Nettoyage du dépôt
-# repo.git.reset('--hard')
-# repo.git.clean('-fd')
-
-repo.git.add(all=True)
-
-# Créer un commit
-now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-commit_message = f"Force update - {now}"
-repo.git.commit('-m', commit_message, allow_empty=True)
-
-# Pousser les changements
-origin = repo.remote(name='origin')
-
-try:
-    #origin.push('main', force=True)
-    origin.push('main')
-except Exception as e:
-    print(f"An error occurred: {e}")
-
-print("Github commit done")
+gh.pull()
+gh.push()
