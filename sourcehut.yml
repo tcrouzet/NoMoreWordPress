@@ -1,0 +1,17 @@
+image: alpine/3.19
+oauth: pages.sr.ht/PAGES:RW
+packages:
+  - hut
+  - offpunk
+environment:
+  site1: tcrouzet.srht.site
+tasks:
+  - package-gemini: |
+      tar -cvzh tcrouzet > capsule.tar.gz
+  - deploy-gemini: |
+      hut pages publish capsule.tar.gz -p GEMINI -d $site1
+  - ping-antenna: |
+      offpunk --version
+      offpunk --fetch-later gemini://warmedal.se/~antenna/submit?gemini://$site1/index.gmi
+      offpunk --fetch-later gemini://gemini.smallweb.space/antenna/submit?gemini://$site1/index.gmi
+      offpunk --sync --assume-yes

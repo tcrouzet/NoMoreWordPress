@@ -15,3 +15,5 @@ feedgen
 htmlmin
 boto3
 GitPython
+md2gemini
+

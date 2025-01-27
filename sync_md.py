@@ -1,36 +1,21 @@
-import yaml
 from tqdm import tqdm
 import os, sys, re
 import shutil
+import tools.tools
 import tools.logs
 import tools.github
-import hashlib
 from PIL import Image
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-with open('site.yml', 'r') as file:
-    config = yaml.safe_load(file)
-
-def calculate_hash(filepath):
-    hasher = hashlib.sha256()
-    with open(filepath, 'rb') as f:
-        buf = f.read()
-        hasher.update(buf)
-    return hasher.hexdigest()
-
-def count_files(directory):
-    file_count = 0
-    for root, dirs, files in os.walk(directory):
-        file_count += len(files)
-    return file_count
+config = tools.tools.site_yml('site.yml')
 
 def sync_files(src, dst):
 
     print(f"Syncing {src} to {dst}")
     # Étape 1: Copier de la source vers la destination
-    total = count_files(src)
+    total = tools.tools.count_files(src)
     pbar = tqdm(total=total, desc='MD:')
     for root, dirs, files in os.walk(src):
 
@@ -49,11 +34,11 @@ def sync_files(src, dst):
             if file.endswith('.md'):
                 # Pour les fichiers Markdown, copier si différent ou inexistant
 
-                # print(f"{src_path}")
                 if "/comments/" not in src_path:
 
-                    with open(src_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
+                    content = tools.tools.read_file(src_path)
+                    if content is None:
+                        continue
 
                     # Vérifie si tag date présent
                     match = re.search(r'#\d{4}-\d{1,2}-\d{1,2}-\d{1,2}h\d{1,2}', content)
@@ -63,7 +48,7 @@ def sync_files(src, dst):
                         print(f"Missing date tag in {src_path}")
                         continue
 
-                if not os.path.exists(dst_path) or calculate_hash(src_path) != calculate_hash(dst_path):
+                if not os.path.exists(dst_path) or tools.tools.calculate_hash(src_path) != tools.tools.calculate_hash(dst_path):
                     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                     shutil.copy2(src_path, dst_path)
             else:
@@ -130,6 +115,9 @@ def index():
 
 
 gh = tools.github.MyGitHub(config, "md", config['export_github_md'])
+
+# Quand des fichiers montent pas
+# gh.sync_local_with_github()
 
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])

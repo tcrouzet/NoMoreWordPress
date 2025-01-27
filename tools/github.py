@@ -1,15 +1,18 @@
 import requests
 import sys
+import os
 from git import Repo, GitCommandError
+from git.exc import GitCommandError
 from datetime import datetime
 
 class MyGitHub:
 
-    def __init__(self, config, repo_name, repo_dir):
+    def __init__(self, config, repo_name, repo_dir, mode="sourcehut"):
         self.config = config
         self.token = config['GITHUB_TOKEN']
         self.owner = config['REPO_OWNER']
         self.repo_name = repo_name
+        self.mode = mode
 
         # self.test_connection()
         # sys.exit()
@@ -17,13 +20,19 @@ class MyGitHub:
         if self.is_github_action_running():
             print("GitHub actions running. No commit.")
             sys.exit()
+
         self.repo = Repo(repo_dir)
+
         self.clean()
 
         self.origin = self.repo.remote(name='origin')
 
 
     def is_github_action_running(self):
+        
+        if self.mode != "github":
+            return False
+        
         url = f"https://api.github.com/repos/{self.owner}/{self.repo_name}/actions/runs"
         headers = {
             "Authorization": f"token {self.token}",
@@ -72,7 +81,6 @@ class MyGitHub:
             commit_message = f"Auto-commit uncommited files - {now}"
             self.repo.git.commit('-m', commit_message, allow_empty=True)
             print("Auto-commit done, waiting for push…")
-            sys.exit()
 
 
     def delete_all_workflow_runs(self):
@@ -141,3 +149,70 @@ class MyGitHub:
                 print(f"Erreur lors du commit : {e}")
         else:
             print("Aucun changement à committer.")
+
+
+    def list_github_files(self):
+        """
+        Utilise l'API GitHub pour lister les fichiers dans le dépôt distant.
+        """
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo_name}/git/trees/main?recursive=1"
+        headers = {
+            "Authorization": f"token {self.token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            tree = response.json().get('tree', [])
+            return [item['path'] for item in tree if item['type'] == 'blob']
+        else:
+            print(f"Erreur lors de la récupération des fichiers GitHub: {response.status_code}")
+            return []
+        
+
+    def sync_local_with_github(self):
+        """
+        Compare la hiérarchie des fichiers locaux avec celle sur GitHub et pousse les fichiers manquants.
+        """
+        # Lister les fichiers locaux
+        local_files = []
+        for root, dirs, files in os.walk(self.repo.working_tree_dir):
+
+            # Exclude directories that start with a dot
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+
+            for file in files:
+
+                if file.startswith('.'):
+                    continue
+
+                local_files.append(os.path.relpath(os.path.join(root, file), self.repo.working_tree_dir))
+
+        # Lister les fichiers sur GitHub
+        github_files = self.list_github_files()
+
+        # Identifier les fichiers manquants sur GitHub
+        files_to_push = set(local_files) - set(github_files)
+
+        if files_to_push:
+            print("Fichiers manquants sur GitHub :")
+            for file in files_to_push:
+                print(f"Ajout de : {file}")
+
+            # Ajouter et committer les fichiers manquants
+            for file in files_to_push:
+                self.repo.git.add(file, f=True)  # Utilise -f pour forcer l'ajout
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            commit_message = f"Ajout de fichiers manquants - {now}"
+            self.repo.git.commit('-m', commit_message, allow_empty=True)
+
+            # Pousser les changements
+            try:
+                self.origin.push('main')
+                print(f"Fichiers manquants poussés vers {self.repo_name}.")
+            except GitCommandError as e:
+                print(f"Erreur lors du push : {e}")
+
+        else:
+            print("Aucun fichier manquant à pousser.")
+
