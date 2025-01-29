@@ -1,9 +1,9 @@
 """Changer site.yml si mise à jour template"""
 
-import yaml
 import os, sys
 import subprocess
 
+import tools.tools
 import tools.db
 import tools.layout
 import tools.web
@@ -28,8 +28,7 @@ sys.stderr = sys.stdout
 
 os.system('clear')
 
-with open('site.yml', 'r', encoding='utf-8') as file:
-    config = yaml.safe_load(file)
+config = tools.tools.site_yml('site.yml')
 
 version = int(config['version'])
 db = tools.db.Db(config)

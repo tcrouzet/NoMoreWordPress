@@ -216,3 +216,45 @@ class MyGitHub:
         else:
             print("Aucun fichier manquant à pousser.")
 
+
+    def sync_and_push(self):
+        """
+        Synchronise les fichiers locaux avec GitHub et pousse les changements.
+        """
+        # Lister les fichiers locaux
+        local_files = []
+        for root, dirs, files in os.walk(self.repo.working_tree_dir):
+            # Exclure les répertoires commençant par un point
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for file in files:
+                if not file.startswith('.'):
+                    local_files.append(os.path.relpath(os.path.join(root, file), self.repo.working_tree_dir))
+
+        # Lister les fichiers sur GitHub
+        github_files = self.list_github_files()
+
+        # Identifier les fichiers manquants sur GitHub
+        files_to_push = set(local_files) - set(github_files)
+
+        if files_to_push:
+            print("Fichiers manquants sur GitHub :")
+            for file in files_to_push:
+                print(f"Ajout de : {file}")
+                self.repo.git.add(file, f=True)  # Forcer l'ajout des fichiers
+
+        # Ajouter tous les fichiers modifiés ou nouveaux
+        if self.repo.index.diff(None) or self.repo.untracked_files:
+            self.repo.git.add(all=True)
+
+        # Créer un commit et pousser les changements
+        if self.repo.index.diff('HEAD') or files_to_push:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            commit_message = f"Auto-update - {now}"
+            try:
+                self.repo.git.commit('-m', commit_message, allow_empty=True)
+                self.origin.push('main')
+                print(f"GitHub {self.repo_name} : Synchronisation et push réussis.")
+            except GitCommandError as e:
+                print(f"Erreur lors du commit ou du push : {e}")
+        else:
+            print("Aucun changement à synchroniser.")

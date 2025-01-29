@@ -361,6 +361,17 @@ class Db:
         
         return tags
 
+    def get_last_published_post(self):
+        c = self.conn.cursor()
+        query = '''
+        SELECT * FROM posts
+        ORDER BY pub_date DESC
+        LIMIT 1
+        '''
+        c.execute(query)
+        post = c.fetchone()
+        return post
+
     def timestamp_to_date(self, timestamp):
         date_time = datetime.datetime.fromtimestamp(timestamp)
         readable_date = date_time.strftime("%Y-%m-%d")

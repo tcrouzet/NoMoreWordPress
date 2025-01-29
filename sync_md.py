@@ -110,14 +110,15 @@ def index():
     src_path = os.path.join(script_dir, "templates", config['template'], "md.html")
     dst_path = os.path.join(config['export_github_md'], "index.html")
 
-    if not os.path.exists(dst_path) or calculate_hash(src_path) != calculate_hash(dst_path):
+    if not os.path.exists(dst_path) or tools.tools.calculate_hash(src_path) != tools.tools.calculate_hash(dst_path):
         shutil.copy2(src_path, dst_path)
 
 
 gh = tools.github.MyGitHub(config, "md", config['export_github_md'])
 
 # Quand des fichiers montent pas
-# gh.sync_local_with_github()
+#gh.sync_local_with_github()
+# exit()
 
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
@@ -126,3 +127,4 @@ index()
 
 gh.pull()
 gh.push()
+# gh.sync_and_push()

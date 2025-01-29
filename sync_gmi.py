@@ -38,52 +38,6 @@ def markdown_to_gemini(markdown_text, year, month):
     return gemini, title
 
 
-def markdown_to_gemini_Old(markdown_text, year, month):
-
-    title = None
-    lines = markdown_text.split('\n')    
-    # Find first title
-    for line in lines:
-        if line.startswith('# ') and not title:
-            title = line.strip('# ').strip()
-            break
-
-    base_url = f"https://github.com/tcrouzet/md/raw/main/{year}/{month}/"
-
-    # Convert headers (only one level in Gemini)
-    # gemini_text = re.sub(r'^(#{1,6})\s*(.*)', r'# \2', markdown_text, flags=re.MULTILINE)
-    gemini_text = re.sub(r'^#{1,6}\s(.+)$', r'# \1', markdown_text, flags=re.MULTILINE)
-
-    # Convert links
-    # gemini_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'=> \2 \1', gemini_text)
-    gemini_text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\n=> \2 \1\n', gemini_text)
-
-    # Convert lists
-    gemini_text = re.sub(r'^\s*[-*]\s+', '* ', gemini_text, flags=re.MULTILINE)
-
-
-    # Remove other Markdown formatting (bold, italics)
-    gemini_text = re.sub(r'\*\*([^*]+)\*\*', r'\1', gemini_text)
-    gemini_text = re.sub(r'\*([^*]+)\*', r'\1', gemini_text)
-    gemini_text = re.sub(r'__([^_]+)__', r'\1', gemini_text)
-    gemini_text = re.sub(r'(?<!\S)_([^_]+)_(?!\S)', r'\1', gemini_text)
-
-    # Convert images to links
-    # ![Saint-Georges](_i/2024-12-31-110013.webp)
-    # https://github.com/tcrouzet/md/raw/main/2024/12/_i/IMG_4173.webp
-    gemini_text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', r'=> \2 \1', gemini_text)
-    # gemini_text = gemini_text.replace("_i/", f"]({base_url}_i/")
-    # gemini_text = gemini_text.replace("](", "")
-    # gemini_text = gemini_text.replace("!=>", "=>")
-
-
-    gemini_text = gemini_text.replace("<sup>", "")
-    gemini_text = gemini_text.replace("</sup>", "")
-
-
-    return gemini_text, title
-
-
 def sync_files(src, dst):
 
     print(f"GMI syncing {src} to {dst}")
@@ -138,6 +92,7 @@ def sync_files(src, dst):
                 
                 os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                 if not os.path.exists(dst_path) or tools.tools.calculate_hash(dst_path) != tools.tools.hash_content(gmi):
+                    print("New file: ", dst_path)
                     with open(dst_path, 'w', encoding='utf-8') as f:
                         f.write(gmi)
 
@@ -164,8 +119,3 @@ sync_files(config['export_github_md'], config['gemini_export'] )
 
 gh = tools.github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
 gh.push()
-
-
-
-
-
