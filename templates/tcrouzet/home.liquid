@@ -15,8 +15,8 @@
         <h2><a href="/tag/borntobike/">Vélo</a></h2>
         <h3><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
 
-        {% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
-        {% include mailchimp_path %}
+        {% assign mail_path = blog.template  | append: '/substack.liquid' %}
+        {% include mail_path %}
 
     </div>
 </div>

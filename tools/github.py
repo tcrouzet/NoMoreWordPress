@@ -243,11 +243,13 @@ class MyGitHub:
                 self.repo.git.add(file, f=True)  # Forcer l'ajout des fichiers
 
         # Ajouter tous les fichiers modifiés ou nouveaux
-        if self.repo.index.diff(None) or self.repo.untracked_files:
+        # if self.repo.index.diff(None) or self.repo.untracked_files:
+        #     self.repo.git.add(all=True)
+        if self.repo.is_dirty(untracked_files=True):
             self.repo.git.add(all=True)
 
         # Créer un commit et pousser les changements
-        if self.repo.index.diff('HEAD') or files_to_push:
+        if self.repo.is_dirty(index=True, working_tree=True, untracked_files=True) or files_to_push:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             commit_message = f"Auto-update - {now}"
             try:
@@ -258,3 +260,37 @@ class MyGitHub:
                 print(f"Erreur lors du commit ou du push : {e}")
         else:
             print("Aucun changement à synchroniser.")
+
+
+    def resend_html(self):
+        """
+        Synchronise tous les fichiers HTML locaux avec GitHub et pousse les changements.
+        """
+        # Lister tous les fichiers HTML locaux
+        html_files = []
+        for root, dirs, files in os.walk(self.repo.working_tree_dir):
+            # Exclure les répertoires commençant par un point
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for file in files:
+                if file.endswith('.html') and not file.startswith('.'):
+                    html_files.append(os.path.relpath(os.path.join(root, file), self.repo.working_tree_dir))
+
+        if html_files:
+            print("Fichiers HTML à ajouter :")
+            for file in html_files:
+                # print(f"Ajout de : {file}")
+                self.repo.git.rm(file, cached=True, ignore_unmatch=True)  # Supprime de l'index sans supprimer le fichier
+                self.repo.git.add(file, f=True)  # Ajoute à nouveau le fichier à l'index
+
+        # Créer un commit et pousser les changements
+        if html_files:  # Si nous avons des fichiers HTML à traiter
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            commit_message = f"Force update HTML - {now}"
+            try:
+                self.repo.git.commit('-m', commit_message, allow_empty=True)
+                self.origin.push('main')
+                print(f"GitHub {self.repo_name} : Synchronisation et push des fichiers HTML réussis.")
+            except GitCommandError as e:
+                print(f"Erreur lors du commit ou du push : {e}")
+        else:
+            print("Aucun fichier HTML trouvé pour synchronisation.")

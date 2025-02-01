@@ -583,7 +583,10 @@ class Web:
             with open(comment_url, 'r', encoding='utf-8') as file:
                 content = file.read()
                 count = content.count('---\n\n')
+                    
         except FileNotFoundError:
+            count = 0
+        if count == 0:
             count = "&nbsp;&nbsp;"
         return count    
         

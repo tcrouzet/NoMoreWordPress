@@ -1,8 +1,9 @@
-{% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
+{% comment %} {% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %} {% endcomment %}
+{% assign mail_path = blog.template  | append: '/substack.liquid' %}
 
 <div id="content" class="infinite" role="main">
 {{ article }}
-{% include mailchimp_path %}
+{% include mail_path %}
 </div>
 
 {% if post.type == 0 and post.navigation%}

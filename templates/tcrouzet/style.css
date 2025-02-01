@@ -19,7 +19,7 @@
 	--font--global: 'Merriweather', Georgia,'Times New Roman', Times, serif;
   
   /* Colors */
-  --color--bg: #f2f4f8; /* Less white */
+  --color--bg: #fff; /* Less white f2f4f8*/
 	--color--header: var(--color--bg);
 	--color--light: #ddd;
   --color--medium: #aaa;
@@ -669,7 +669,7 @@ div.plus ul li a,li.plus ul li a:visited {
 
 
 /* Mailchimp form */
-#mailchimp{
+/* #mailchimp{
   margin:0 0 2rem 0;
   text-align: center;
 }
@@ -692,7 +692,29 @@ div.plus ul li a,li.plus ul li a:visited {
 }
 
 #thema .checkbox input[type="checkbox"] {
-  margin-right: 3px; /* Espacement entre la case à cocher et son label */
+  margin-right: 3px;
+} */
+
+/* Substack */
+
+.substack-iframe {
+    width: -webkit-fill-available;
+    height: auto;
+    overflow: hidden;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border: none;
+}
+
+.substack-hide {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 46%;
+  background: var(--color--bg);
+  z-index: 1
 }
 
 /* form */

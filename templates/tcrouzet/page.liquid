@@ -1,4 +1,5 @@
-{% assign mailchimp_path = blog.template  | append: '/mailchimp.liquid' %}
+{% comment %} {% assign mail_path = blog.template  | append: '/mailchimp.liquid' %} {% endcomment %}
+{% assign mail_path = blog.template  | append: '/substack.liquid' %}
 
 <div id="content" role="main">
 
@@ -12,5 +13,5 @@
 <div class="post hentry" itemprop="articleBody">
     {{ post.content }}
 </div>
-{% include mailchimp_path %}
+{% include mail_path %}
 </div>

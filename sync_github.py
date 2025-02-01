@@ -128,5 +128,7 @@ target_img = os.path.join(config['export_github_html'], config['images_dir'].str
 filter_and_copy_images(source_img, target_img)
 copy_and_update_html(config['export'], config['export_github_html'])
 
+# gh.sync_and_push()
 gh.pull()
 gh.push()
+# gh.resend_html()
