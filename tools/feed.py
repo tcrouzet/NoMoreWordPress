@@ -5,8 +5,6 @@ import re, os
 from html import unescape
 from bs4 import BeautifulSoup
 
-
-
 class Feed:
 
     def __init__(self, config, web):
@@ -34,7 +32,12 @@ class Feed:
         return str(soup)
 
 
-    def builder(self, posts, filename, description):
+    def clean_content(self, content):
+        """Supprimer les caractères de contrôle et les octets NULL"""
+        return re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', content)
+
+
+    def builder(self, posts, filename, description, last_posts=5):
         
         rssname = f"{filename}.xml"
 
@@ -50,8 +53,11 @@ class Feed:
         fg.description(self.striptags(description))
         fg.lastBuildDate(date)
 
+        # If last_post is None, take all posts
+        limit = last_posts or len(posts)
+
         # Add post to flux
-        for post in reversed(posts[:5]):
+        for post in reversed(posts[:limit]):
             
             post = self.web.supercharge_post(post)
             if not post:
@@ -64,7 +70,9 @@ class Feed:
             fe.id(str(post['id']))
             fe.title(post['title'])
             fe.link(href=self.config["domain"]+post['url'])
-            fe.content( self.add_domains(post['html'].strip()), type='CDATA')
+
+            cleaned_content = self.clean_content(self.add_domains(post['html'].strip()))
+            fe.content( cleaned_content, type='CDATA')
 
             fe.author(name=self.config["author"])
 

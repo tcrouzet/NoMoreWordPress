@@ -1,7 +1,7 @@
 """Changer site.yml si mise à jour template"""
 
 import os, sys
-import subprocess
+from datetime import datetime
 
 import tools.tools
 import tools.db
@@ -10,14 +10,6 @@ import tools.web
 import tools.logs
 import tools.sitemap
 import tools.feed
-from datetime import datetime
-
-
-def run_script(script_name):
-    try:
-        subprocess.run(['python3', script_name], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while running {script_name}: {e}")
 
 
 #Force updating home screen
@@ -236,8 +228,8 @@ sitemap.save_index('sitemap',4)
 
 #EXPORT
 if version>0:
-    run_script('sync_aws.py')
-    run_script('sync_github.py')
-    run_script('sync_md.py')
+    tools.tools.run_script('sync_aws.py')
+    tools.tools.run_script('sync_github.py')
+    tools.tools.run_script('sync_md.py')
 else:
     print("No export")

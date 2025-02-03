@@ -7,10 +7,10 @@ import tools.db
 
 class Webot:
 
-    def __init__(self, config):
+    def __init__(self, config, substack_url):
         self.config = config
         self.profile = config['playwright_profile'] # Chemin du profil
-        self.substack_url = config['substack_url']
+        self.substack_url = substack_url
 
         p = sync_playwright().start()
 
@@ -97,9 +97,17 @@ class Webot:
 
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
-last = db.get_last_published_post()
-print(last['path_md'])
-path = os.path.join( config['export_github_md'], last['path_md'])
+mode = "EN"
 
-bot = Webot(config)
-bot.substack(path)
+if mode == "FR":
+    last = db.get_last_published_post()
+    print(last['path_md'])
+    path = os.path.join( config['export_github_md'], last['path_md'])
+
+    bot = Webot(config, config['substack_fr'])
+    bot.substack(path)
+
+else:
+    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/2025/01/technofascism.md" 
+    bot = Webot(config, config['substack_us'])
+    bot.substack(path)

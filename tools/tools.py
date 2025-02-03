@@ -1,11 +1,20 @@
 import yaml
 import hashlib
 import os
+import subprocess
 
 
 def site_yml(path):
     with open(path, 'r') as file:
         return yaml.safe_load(file)
+    
+def run_script(script_name):
+    try:
+        subprocess.run(['python3', script_name], check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while running {script_name}: {e}")
+        return False
 
 def calculate_hash(filepath):
     hasher = hashlib.sha256()
