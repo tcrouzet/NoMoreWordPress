@@ -97,7 +97,7 @@ class Webot:
 
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
-mode = "EN"
+mode = "FR"
 
 if mode == "FR":
     last = db.get_last_published_post()

@@ -1,4 +1,3 @@
-from tqdm import tqdm
 import os, sys, re
 import shutil
 import tools.tools
@@ -34,6 +33,7 @@ def markdown_to_gemini(markdown_text, year, month):
     gemini = md2gemini(markdown_text, links="copy")
 
     gemini = gemini.replace("=> _i/", f"=> https://github.com/tcrouzet/md/raw/main/{year}/{month}/_i/")
+    gemini = gemini.replace("**","")
 
     return gemini, title
 
@@ -41,9 +41,6 @@ def markdown_to_gemini(markdown_text, year, month):
 def sync_files(src, dst):
 
     print(f"GMI syncing {src} to {dst}")
-
-    total = tools.tools.count_files(src)
-    pbar = tqdm(total=total, desc='MD:')
 
     entries = defaultdict(list)
 
@@ -96,8 +93,6 @@ def sync_files(src, dst):
                     with open(dst_path, 'w', encoding='utf-8') as f:
                         f.write(gmi)
 
-            pbar.update(1)
-    pbar.close()
 
     if entries:
         sorted_keys = sorted(entries.keys(), reverse=True)
