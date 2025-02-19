@@ -1,33 +1,25 @@
-import yaml
 import json, os
 import subprocess
 import boto3
 from datetime import datetime, timezone
+import tools.tools
 
-with open('site.yml', 'r') as file:
-    config = yaml.safe_load(file)
+config = tools.tools.site_yml('site.yml')
 
 # Chemins et identifiants
 invalidation_file = os.path.join(config['export'], 'update.json')
 output_file_path = os.path.join(config['export'], 'sync.json')
 output_brut_path = os.path.join(config['export'], 'sync.txt')
 
-
-def get_root(path):
-    directory = path.strip("/")
-    parts = directory.split('/')
-    root = parts[0].strip()
-    if not root:
-        root = "/"
-    return root
-
 test = False
 
 if not test:
     # Exécution de la synchronisation S3
     command = f'aws s3 sync {config['export']} s3://{config['bucket_name']}  --delete --output json'
+    print(command)
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     output = result.stdout
+    print("AWS command done")
 
     # Sauvegarde des fichiers téléchargés en JSON pour une utilisation ultérieure
     with open(output_brut_path, 'w') as file:
@@ -85,7 +77,7 @@ if len(uploaded_files)>0:
     root_dirs = {}
     for directory, files in folders.items():
 
-        root = get_root(directory)
+        root = tools.tools.get_root(directory)
         if root in root_dirs:
             root_dirs[root] += len(files)
         else:
@@ -95,7 +87,7 @@ if len(uploaded_files)>0:
     invalidation_paths = set()
     for directory, files in folders.items():
 
-        root = get_root(directory)
+        root = tools.tools.get_root(directory)
         if root == "/":
             print(root)
             for file in files:

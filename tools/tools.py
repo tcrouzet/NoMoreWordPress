@@ -38,3 +38,26 @@ def read_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
     return None
+
+def get_root(path):
+    directory = path.strip("/")
+    parts = directory.split('/')
+    root = parts[0].strip()
+    if not root:
+        root = "/"
+    return root
+
+def find_latest_file(directory):
+    latest_file = None
+    latest_time = 0
+
+    for root, _, files in os.walk(directory):  # Traverse directory
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_time = os.path.getmtime(file_path)  # Get modification time
+
+            if file_time > latest_time:  # Check if it's the latest
+                latest_time = file_time
+                latest_file = file_path
+
+    return latest_file

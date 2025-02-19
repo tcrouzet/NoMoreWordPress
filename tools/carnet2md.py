@@ -1,14 +1,17 @@
-"""Export only the Carnet or spectific tag in _output dir"""
+"""Export only the Carnet or spectific tag in _output dir
+python3 tools/carnet2md.py
+"""
+
 
 import os, yaml
 import re
 import csv
 from datetime import datetime
+import tools
 
 os.system('clear')
 
-with open('site.yml', 'r', encoding='utf-8') as file:
-    config = yaml.safe_load(file)
+config = tools.site_yml('site.yml')
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))

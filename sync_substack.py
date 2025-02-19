@@ -108,6 +108,7 @@ if mode == "FR":
     bot.substack(path)
 
 else:
-    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/2025/01/technofascism.md" 
+    path = tools.tools.find_latest_file(config['vault_us'])
+    print(path)
     bot = Webot(config, config['substack_us'])
     bot.substack(path)

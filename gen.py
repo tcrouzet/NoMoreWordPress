@@ -225,6 +225,7 @@ layout.e404_gen()
 #END SITEMAP
 sitemap.save_index('sitemap',4)
 
+print("Gen ended")
 
 #EXPORT
 if version>0:
