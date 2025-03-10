@@ -46,7 +46,7 @@ class Webot:
             """
             (html) => {
                 const editor = document.querySelector('div[data-testid="editor"]');
-                editor.innerHTML = html;  // Insérer le HTML directement
+                editor.innerHTML = html;  // Insérer le HTML directement    
             }
             """,
             html
@@ -91,19 +91,84 @@ class Webot:
         markdown_text = markdown_text.replace("_i/",f"https://github.com/tcrouzet/md/raw/main/{year}/{month}/_i/")
 
         html = markdown.markdown(markdown_text)
+        html = self.html_optimize(html)
+        # print(html)
+        # exit()
 
         return html, title
+
+
+    def html_optimize_1(self, html):
+        """
+        Optimise le HTML pour Substack en ajoutant des espaces uniquement entre les images consécutives
+        en utilisant des expressions régulières
+        """
+        # Détecter les images consécutives (avec ou sans paragraphes)
+        # Cas 1: <img>...</img><img>
+        html = re.sub(r'(<img[^>]+>)(\s*)(<img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
+        
+        # Cas 2: <p><img>...</p><p><img>
+        html = re.sub(r'(<p><img[^>]+></p>)(\s*)(<p><img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
+        
+        # Cas 3: <img>...</img><p><img>
+        html = re.sub(r'(<img[^>]+>)(\s*)(<p><img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
+        
+        # Cas 4: <p><img>...</p><img>
+        html = re.sub(r'(<p><img[^>]+></p>)(\s*)(<img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
+        
+        return html
+
+
+    def html_optimize(self, html):
+        """
+        Version simplifiée qui se concentre uniquement sur les paragraphes contenant des images.
+        """
+        from bs4 import BeautifulSoup
+        
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # Trouver tous les paragraphes contenant des images
+        img_paragraphs = []
+        for p in soup.find_all('p'):
+            if p.find('img'):
+                img_paragraphs.append(p)
+        
+        # Si nous avons au moins deux paragraphes avec des images
+        if len(img_paragraphs) >= 2:
+            # Parcourir les paragraphes consécutifs
+            for i in range(len(img_paragraphs) - 1):
+                current = img_paragraphs[i]
+                next_p = img_paragraphs[i + 1]
+                
+                # Vérifier si les paragraphes sont directement consécutifs
+                # en vérifiant si le prochain élément après current est next_p
+                next_elem = current.next_sibling
+                while next_elem and (not next_elem.name or next_elem.name not in ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+                    next_elem = next_elem.next_sibling
+                
+                if next_elem == next_p:
+                    # Ajouter un espaceur entre les deux paragraphes
+                    spacer = soup.new_tag('p')
+                    current.insert_after(spacer)
+        
+        return str(soup)
 
 
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
 mode = "FR"
+mode = "DIGEST"
 
 if mode == "FR":
     last = db.get_last_published_post()
     print(last['path_md'])
     path = os.path.join( config['export_github_md'], last['path_md'])
 
+    bot = Webot(config, config['substack_fr'])
+    bot.substack(path)
+
+elif mode == "DIGEST":
+    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/2025/03/digest3.md"
     bot = Webot(config, config['substack_fr'])
     bot.substack(path)
 

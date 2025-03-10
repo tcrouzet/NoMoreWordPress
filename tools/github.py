@@ -131,9 +131,10 @@ class MyGitHub:
             self.repo.git.stash('apply')
 
 
-    def push(self):
+    def push_old(self):
         # Créer un commit seulement si des changements sont présents
         if self.repo.index.diff(None) or self.repo.untracked_files:
+            print("Build a commit…")
             self.repo.git.add(all=True)
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             commit_message = f"Auto-update - {now}"
@@ -142,13 +143,44 @@ class MyGitHub:
                 self.repo.git.commit('-m', commit_message, allow_empty=True)
                 
                 # Pousser les changements
-                self.origin.push('main')
+                self.origin.push('main', set_upstream=True)
 
                 print(f"Github {self.repo_name} commit done")
             except GitCommandError as e:
                 print(f"Erreur lors du commit : {e}")
         else:
             print("Aucun changement à committer.")
+
+
+    def push(self):
+        # Vérifier s'il y a des commits à pousser
+        local_commits = list(self.repo.iter_commits('origin/main..main'))
+        
+        if local_commits:
+            print(f"Pushing {len(local_commits)} commit(s) to remote...")
+            try:
+                self.origin.push('main')
+                print(f"Github {self.repo_name} push done")
+            except GitCommandError as e:
+                print(f"Erreur lors du push : {e}")
+        else:
+            # Vérifier s'il y a des changements à committer
+            if self.repo.index.diff(None) or self.repo.untracked_files:
+                print("Build a commit…")
+                self.repo.git.add(all=True)
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                commit_message = f"Auto-update - {now}"
+
+                try:
+                    self.repo.git.commit('-m', commit_message, allow_empty=True)
+                    
+                    # Pousser les changements
+                    self.origin.push('main')
+                    print(f"Github {self.repo_name} commit done")
+                except GitCommandError as e:
+                    print(f"Erreur lors du commit : {e}")
+            else:
+                print("Aucun changement à committer ou pousser.")
 
 
     def list_github_files(self):
