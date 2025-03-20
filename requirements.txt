@@ -17,4 +17,4 @@ boto3
 GitPython
 md2gemini
 playwright
-
+numpy

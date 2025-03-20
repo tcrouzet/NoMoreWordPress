@@ -4,13 +4,21 @@ import markdown
 import tools.tools
 import tools.db
 
+import requests
+from PIL import Image
+from io import BytesIO
+import tempfile
+import base64
+
 
 class Webot:
 
-    def __init__(self, config, substack_url):
+    def __init__(self, config, substack_url=None):
         self.config = config
         self.profile = config['playwright_profile'] # Chemin du profil
         self.substack_url = substack_url
+
+        self.base_dir = None
 
         p = sync_playwright().start()
 
@@ -57,20 +65,113 @@ class Webot:
         input("Appuyez sur Entrée pour fermer le navigateur...")
         self.browser.close()
 
+
+    def convert_webp_to_jpeg(self, html):
+        # Trouver toutes les balises d'image dans le HTML
+        img_pattern = re.compile(r'<img[^>]+src=["\'](.*?\.webp)["\'][^>]*>', re.IGNORECASE)
+        img_tags = img_pattern.findall(html)
+        
+        for webp_url in img_tags:
+            try:
+                # Télécharger l'image WebP
+                response = requests.get(webp_url)
+                if response.status_code == 200:
+                    # Ouvrir l'image avec PIL
+                    img = Image.open(BytesIO(response.content))
+                    
+                    # Créer un fichier temporaire pour l'image JPEG
+                    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+                        # Convertir et sauvegarder en JPEG
+                        if img.mode in ('RGBA', 'LA'):
+                            # Si l'image a une couche alpha, convertir en RGB
+                            background = Image.new('RGB', img.size, (255, 255, 255))
+                            background.paste(img, mask=img.split()[3])  # 3 est l'index du canal alpha
+                            background.save(temp_file.name, 'JPEG', quality=85)
+                        else:
+                            img.convert('RGB').save(temp_file.name, 'JPEG', quality=85)
+                    
+                    # Lire l'image JPEG et la convertir en base64
+                    with open(temp_file.name, 'rb') as jpeg_file:
+                        jpeg_data = jpeg_file.read()
+                        base64_jpeg = base64.b64encode(jpeg_data).decode('utf-8')
+                    
+                    # Créer une URL data pour l'image JPEG
+                    jpeg_data_url = f"data:image/jpeg;base64,{base64_jpeg}"
+                    
+                    # Remplacer l'URL WebP par l'URL data JPEG dans le HTML
+                    html = html.replace(webp_url, jpeg_data_url)
+                    
+                    # Supprimer le fichier temporaire
+                    os.unlink(temp_file.name)
+            
+            except Exception as e:
+                print(f"Erreur lors de la conversion de l'image {webp_url}: {e}")
+        
+        return html
+
+
     def load_markdown(self, url):
-        # Expression régulière pour extraire l'année et le mois
+
+        md = tools.tools.read_file(url)
         match = re.search(r'/(\d{4})/(\d{1,2})/', url)
 
         if match:
             year = match.group(1)  # Extrait l'année (4 chiffres)
             month = match.group(2)   # Extrait le mois (1 ou 2 chiffres)
-            md = tools.tools.read_file(url)
             return md, year, month
-        return None, None, None
+        return md, None, None
+
+
+    def replace_with_base64(self, match):
+        img_src = match.group(1)
+        img_attrs = match.group(2)
+        
+        # Si l'image commence par _i/, c'est une image locale
+        if img_src.startswith('_i/'):
+            # Construire le chemin complet de l'image
+            img_path = os.path.join(self.base_dir, img_src)
+            
+            # Vérifier si l'image existe
+            if os.path.exists(img_path):
+                try:
+                    # Déterminer le type MIME en fonction de l'extension
+                    mime_type = 'image/jpeg'  # Par défaut
+                    if img_path.lower().endswith('.png'):
+                        mime_type = 'image/png'
+                    elif img_path.lower().endswith('.gif'):
+                        mime_type = 'image/gif'
+                    elif img_path.lower().endswith('.webp'):
+                        mime_type = 'image/webp'
+                    
+                    # Lire l'image et la convertir en base64
+                    with open(img_path, 'rb') as img_file:
+                        img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                        
+                    # Créer l'URL data
+                    data_url = f"data:{mime_type};base64,{img_data}"
+                    
+                    # Retourner la balise img avec l'URL data
+                    return f'<img src="{data_url}"{img_attrs}>'
+                except Exception as e:
+                    print(f"Erreur lors de la conversion de l'image {img_path}: {e}")
+    
+
+    def embed_local_images(self, html, markdown_path):
+        """
+        Remplace les chemins d'images par des données base64 incorporées
+        """        
+        # Trouver toutes les balises d'image dans le HTML
+        img_pattern = re.compile(r'<img[^>]+src=["\'](.*?)["\'](.*?)>', re.IGNORECASE)
+
+        # Remplacer toutes les balises d'image
+        html = img_pattern.sub(self.replace_with_base64, html)
+        
+        return html
 
 
     def markdown2html(self, markdown_path):
 
+        self.base_dir = os.path.dirname(markdown_path)
         markdown_text, year, month = self.load_markdown(markdown_path)
 
         title = None
@@ -87,36 +188,19 @@ class Webot:
         # Supprimer tags
         markdown_text = re.sub(r'^#\S+(?:\s+#\S+)*\s*$', '', markdown_text, flags=re.MULTILINE)
 
-        # Chemin img
-        markdown_text = markdown_text.replace("_i/",f"https://github.com/tcrouzet/md/raw/main/{year}/{month}/_i/")
-
         html = markdown.markdown(markdown_text)
+
+        # Chemin img
+        if year and month:
+            html = html.replace("_i/",f"https://github.com/tcrouzet/md/raw/main/{year}/{month}/_i/")
+        else:
+            html = self.embed_local_images(html, markdown_path)
+            
         html = self.html_optimize(html)
         # print(html)
         # exit()
 
         return html, title
-
-
-    def html_optimize_1(self, html):
-        """
-        Optimise le HTML pour Substack en ajoutant des espaces uniquement entre les images consécutives
-        en utilisant des expressions régulières
-        """
-        # Détecter les images consécutives (avec ou sans paragraphes)
-        # Cas 1: <img>...</img><img>
-        html = re.sub(r'(<img[^>]+>)(\s*)(<img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
-        
-        # Cas 2: <p><img>...</p><p><img>
-        html = re.sub(r'(<p><img[^>]+></p>)(\s*)(<p><img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
-        
-        # Cas 3: <img>...</img><p><img>
-        html = re.sub(r'(<img[^>]+>)(\s*)(<p><img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
-        
-        # Cas 4: <p><img>...</p><img>
-        html = re.sub(r'(<p><img[^>]+></p>)(\s*)(<img[^>]+>)', r'\1<p>&nbsp;</p>\3', html)
-        
-        return html
 
 
     def html_optimize(self, html):
@@ -157,7 +241,8 @@ class Webot:
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
 mode = "FR"
-mode = "DIGEST"
+# mode = "DIGEST"
+mode = "PHONE"
 
 if mode == "FR":
     last = db.get_last_published_post()
@@ -168,7 +253,12 @@ if mode == "FR":
     bot.substack(path)
 
 elif mode == "DIGEST":
-    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/2025/03/digest3.md"
+    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/2025/03/digest4.md"
+    bot = Webot(config, config['substack_fr'])
+    bot.substack(path)
+
+elif mode == "PHONE":
+    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/Phones/001.md"
     bot = Webot(config, config['substack_fr'])
     bot.substack(path)
 
