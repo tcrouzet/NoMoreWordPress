@@ -232,6 +232,6 @@ if version>0:
     tools.tools.run_script('sync_aws.py')
     tools.tools.run_script('sync_github.py')
     tools.tools.run_script('sync_md.py')
-    tools.tools.run_script('sync_gmi.py')
+    # tools.tools.run_script('sync_gmi.py')
 else:
     print("No export")

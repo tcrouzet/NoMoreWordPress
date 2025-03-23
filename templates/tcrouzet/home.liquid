@@ -1,21 +1,21 @@
 <div id="content" role="main" class="splash">
     <div class="pageGutter">
 
-        <p><a href="/page/informations/">Je suis heureux quand j’écris,<br/>alors j’écris…</a></p>
+        <p><a href="/page/informations/">j’écris…</a></p>
 
         <h2><a href="/bibliographie/">Livres</a></h2>
         <h3><a href="/books/le-code-houellebecq/"><em>Le Code Houellebecq</em></a></h3>
 
-        <h2><a href="/blog/">Blog</a></h2>
+        <h2><a href="/blog/">Digressions</a></h2>
         <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
 
         <h2><a href="/tag/carnet-de-route/">Carnets</a></h2>
         <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
 
         <h2><a href="/tag/borntobike/">Vélo</a></h2>
-        <h3><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
+        <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
 
-        {% assign mail_path = blog.template  | append: '/substack.liquid' %}
+        {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
         {% include mail_path %}
 
     </div>
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function() {
       } else {
         container.style.marginTop = '';
       }
-    }  
+    }
     adjustContentPosition();
     window.addEventListener('resize', adjustContentPosition);
 })

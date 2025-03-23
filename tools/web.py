@@ -376,16 +376,26 @@ class Web:
 
                     if img_data["format"].startswith("image/"):
 
-                        new_div = soup.new_tag('div', id=f"image-{post['id']}-{index}", **{'class': 'image'})
+                        if img_data['width'] < img_data['height']:
+                            myclass = 'portrait'
+                            myclasslegend = 'legend-center'
+                        else:
+                            myclass = 'paysage'
+                            myclasslegend = 'legend-right'
+                        if img_data['width'] < 1500:
+                            myclass += ' small'
+                            myclasslegend = 'legend-center'
+
+                        new_div = soup.new_tag('figure', id=f"image-{post['id']}-{index}", **{'class': 'image'})
                         new_img = soup.new_tag('img', src=f"{img_data['url']}",
-                            **{'class': 'alignnone size-full paysage',
+                            **{'class': myclass,
                             'alt': alt_text, 'width': img_data['width'], 'height': img_data['height'],
                             'loading': 'lazy', 'decoding': 'async',
                             'srcset': f'{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w',
                             'sizes': '(max-width: 1600px) 100vw, 1600px'})
-                        
                         new_div.append(new_img)
-                        new_legend = soup.new_tag('div', **{'class': 'legend'})
+
+                        new_legend = soup.new_tag('figcaption', **{'class': f'legend {myclasslegend}'})
                         new_legend.string = alt_text
                         new_div.append(new_legend)
                         p.replace_with(new_div)
@@ -511,16 +521,12 @@ class Web:
         current_time = datetime.fromtimestamp(post['pub_date'])
         date_iso = current_time.strftime('%Y-%m-%dT%H:%M:00')
         time_published = current_time.strftime('%H:%M')
-        date_link = current_time.strftime('/%Y/%m/')
+        # date_link = current_time.strftime('/%Y/%m/')
         year_link = current_time.strftime('/%Y/')
-        
         day_month = current_time.strftime('%d %B')
         
-        msg = f'<span itemprop="datePublished" content="{date_iso}" title="Publié à {time_published}">'
-        # msg += f' <a href="{date_link}">{day_month}</a>'
-        msg += f' <a href="{year_link}">{day_month} {current_time.year}</a>'
-        msg += '</span>'
-        
+        msg = f'<a href="{year_link}" itemprop="datePublished" content="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</a>'
+
         return msg
 
     def navigation(self, post):

@@ -6,6 +6,10 @@ var toggleSearch = document.getElementById('toggle-search');
 var search = document.getElementById('access-search');
 var searchLoaded = false;
 
+var newsletter = document.getElementById('newsletter');
+var newsletterLoaded = false;
+
+
 function toggleMenu(){
     toggle.classList.toggle("close");
     access.classList.toggle("shown");
@@ -29,7 +33,7 @@ function searchMenu(){
 
     if(searchLoaded) return;
     doAPIcall(
-        "GET","/ajax-search.html", 2,
+        "GET","/ajax-search.html?2", 2,
         function (data) {
             if(data){
                 search.innerHTML=data;
@@ -38,6 +42,33 @@ function searchMenu(){
     );
     searchLoaded=true;
 };
+
+function toggleNewsletter() {
+    // Si la newsletter est déjà visible, la cacher
+    if (newsletter.style.display === 'block') {
+        newsletter.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Réactiver le défilement
+        return;
+    }
+    
+    // Si la newsletter n'est pas encore chargée
+    if (!newsletterLoaded) {
+        doAPIcall(
+            "GET", "/ajax-newsletter.html?15", false,
+            function (data) {
+                if (data) {
+                    newsletter.innerHTML = data;
+                    newsletter.style.display = 'block';
+                    newsletterLoaded = true;
+                }
+            }
+        );
+    } else {
+        // Si déjà chargée, simplement l'afficher
+        newsletter.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Empêcher le défilement
+    }
+}
 
 toggle.addEventListener("click", toggleMenu, false);
 toggleSearch.addEventListener("click", searchMenu, false);
@@ -51,7 +82,6 @@ window.addEventListener('load', function() {
 });
 
 //Infinite scroll
-var firstLoad=true;
 var more="";
 var oktoload=true;
 document.addEventListener("DOMContentLoaded", function() {
@@ -77,14 +107,9 @@ function scrollFire(){
 
     //console.log(scrollPoint);
 
-    //if(scrollPoint >= totalPageHeight-500 || firstLoad) {
     if(scrollPoint >= totalPageHeight-500 && oktoload) {
 
         oktoload=false;
-        if (!firstLoad) {
-            updateNextURL();
-        }
-        firstLoad = false
         loadMoreContent();
 
     }
@@ -93,6 +118,8 @@ function scrollFire(){
 
 function loadMoreContent() {
     const more = document.getElementById("loadMore");
+    if (!more) return;
+
     var url = more.getAttribute('next-url');
     console.log("LoadMore " + url);
     if (url !== ""){
@@ -100,6 +127,7 @@ function loadMoreContent() {
         if (!url.includes('.html'))
             url += "content.html";
         console.log(url);
+        more.parentElement.removeChild(more);
         fetchContent(url);
     }else{
         oktoload = false
@@ -107,6 +135,7 @@ function loadMoreContent() {
 }
 
 
+// Charge nouvelle page
 function fetchContent(url) {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function () {
@@ -116,29 +145,13 @@ function fetchContent(url) {
                 if (infiniteContainer) {
                     infiniteContainer.insertAdjacentHTML('beforeend', xmlhttp.responseText);
                     oktoload = true;
-                }else{
-                    more.style.display = "none";
                 }
-            } else {
-                more.style.display = "none";
             }
         }
     };
     xmlhttp.open("GET", url, true);
     xmlhttp.send();
 }
-
-function updateNextURL() {
-    var loadMoreUrls = document.querySelectorAll('.load-more-url');
-    if (loadMoreUrls.length > 0) {
-        var lastUrlElement = loadMoreUrls[loadMoreUrls.length - 1]; // Prend le dernier élément de la liste
-        var nextURL = lastUrlElement.getAttribute('next-url');
-        //console.log("Next URL found:", nextURL);
-        const more = document.getElementById("loadMore");
-        more.setAttribute('next-url', nextURL);
-    }
-}
-
 
 function doAPIcall(type, url, flag, callback) {
     var xmlhttp = new XMLHttpRequest();

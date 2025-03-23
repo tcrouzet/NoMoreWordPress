@@ -1,0 +1,54 @@
+<div class="newsletter-overlay" onclick="if(event.target===this)toggleNewsletter()"></div>
+<div class="newsletter-content">
+  <button class="newsletter-close" onclick="toggleNewsletter()">×</button>
+  <iframe 
+    src="https://tcrouzet.substack.com/embed" 
+    class="substack-iframe"
+    frameborder="0" 
+    scrolling="no">
+  </iframe>
+  <iframe 
+    src="https://727bikepacking.substack.com/embed" 
+    class="substack-iframe"
+    frameborder="0" 
+    scrolling="no">
+  </iframe>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Récupérer les éléments après leur insertion dans le DOM
+  const overlay = document.querySelector('.newsletter-overlay');
+  const closeButton = document.querySelector('.newsletter-close');
+  
+  // Ajouter les gestionnaires d'événements
+  if (overlay) {
+    overlay.addEventListener('click', function(event) {
+      if (event.target === this) {
+        closeNewsletter();
+      }
+    });
+  }
+  
+  if (closeButton) {
+    closeButton.addEventListener('click', closeNewsletter);
+  }
+  
+  // Fonction pour fermer la newsletter
+  function closeNewsletter() {
+    const newsletter = document.getElementById('newsletter');
+    if (newsletter) {
+      newsletter.style.display = 'none';
+      document.body.style.overflow = 'auto'; // Réactiver le défilement
+    }
+  }
+  
+  // Empêcher le défilement du body quand la newsletter est ouverte
+  document.body.style.overflow = 'hidden';
+});
+
+// Si vous avez besoin de réinitialiser l'état pour permettre de rouvrir la newsletter plus tard
+window.resetNewsletter = function() {
+  window.parent.newsletterLoaded = false;
+};
+</script>
