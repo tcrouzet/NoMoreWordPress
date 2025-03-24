@@ -2,6 +2,7 @@ import yaml
 import hashlib
 import os
 import subprocess
+import json
 
 
 def site_yml(path):
@@ -61,3 +62,13 @@ def find_latest_file(directory):
                 latest_file = file_path
 
     return latest_file
+
+def load_json(state_file):
+    if os.path.exists(state_file):
+        with open(state_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+def save_json(state_file, state):
+    with open(state_file, 'w', encoding='utf-8') as f:
+        json.dump(state, f, ensure_ascii=False, indent=4)

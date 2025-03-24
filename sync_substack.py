@@ -39,8 +39,11 @@ class Webot:
 
         html, title = self.markdown2html(markdown_text)
 
+
         # Naviguer vers Substack
-        self.page.goto(f'{self.substack_url}/publish/post/')
+        # self.page.goto(f'{self.substack_url}/publish/post/')
+        self.page.goto('https://727bikepacking.substack.com/publish/post/159771263')
+
         self.page.wait_for_selector('#post-title')
 
         # Remplir le champ de titre
@@ -241,7 +244,8 @@ class Webot:
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
 mode = "FR"
-mode = "DIGEST"
+mode = "BIKE"
+# mode = "DIGEST"
 # mode = "PHONE"
 
 if mode == "FR":
@@ -250,6 +254,14 @@ if mode == "FR":
     path = os.path.join( config['export_github_md'], last['path_md'])
 
     bot = Webot(config, config['substack_fr'])
+    bot.substack(path)
+
+elif mode == "BIKE":
+    last = db.get_last_published_post()
+    print(last['path_md'])
+    path = os.path.join( config['export_github_md'], last['path_md'])
+
+    bot = Webot(config, config['substack_727'])
     bot.substack(path)
 
 elif mode == "DIGEST":

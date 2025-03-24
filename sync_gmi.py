@@ -1,20 +1,20 @@
 import os, sys, re
+from datetime import date
 import shutil
 import tools.tools
 import tools.logs
 import tools.github
+import tools.sync_files
 from md2gemini import md2gemini
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw
 
 import numpy as np
 import subprocess
 
-
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
 config = tools.tools.site_yml('site.yml')
-
 
 def mount_synology_volume():
     server_address = "smb://NasZone._smb._tcp.local/Web"
@@ -237,6 +237,7 @@ def extract_image_links(gmi_text):
 def sync_images(gmi, source_dir, output_dir):
 
     # Créer un dossier 'i' pour les images optimisées
+    # print(source_dir, output_dir)
     images_dir = os.path.join(output_dir, "i")
     os.makedirs(images_dir, exist_ok=True)
 
@@ -336,9 +337,14 @@ def sync_files(src, dst):
                 entries[r['date']] = r['link']
 
     if entries:
+
+        date_courante = date.today()
+        date_formatee = date_courante.strftime("%Y-%m-%d")
+
         sorted_keys = sorted(entries.keys(), reverse=True)
         index_gmi = "# Thierry Crouzet\n"
         gemfeed_gmi = index_gmi
+        index_gmi += f"=> gemfeed.gmi {date_formatee} - Gemfeed\n"
         old_year = ""
         old_month = ""
         i = 0
@@ -369,11 +375,14 @@ def sync_files(src, dst):
 # exit()
 
 sync_files(config['export_github_md'], config['gemini_export'] )
-# shutil.copy2("sourcehut.yml", os.path.join(config['gemini_export'], ".build.yml") )
 
-mount_synology_volume()
-command = 'rsync -av --update --exclude=".DS_Store" --exclude=".*/" --delete --checksum=false ~/Documents/gemini/ /Volumes/docker/gemini/content/'
-subprocess.run(command, shell=True, check=True)
+sync = tools.sync_files.SyncFiles(config['gemini_export'],'/Volumes/docker/gemini/content')
+
+# command = 'rsync -av --update --exclude=".DS_Store" --exclude=".*/" --delete --checksum=false ~/Documents/gemini/ /Volumes/docker/gemini/content'
+# subprocess.run(command, shell=True, check=True)
 
 gh = tools.github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
 gh.push()
+
+
+# rsync -av --update --exclude=".DS_Store" --exclude=".*/" --delete --checksum=false ~/Documents/gemini/ /Volumes/docker/gemini/content
