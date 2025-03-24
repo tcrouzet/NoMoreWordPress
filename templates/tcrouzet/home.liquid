@@ -1,49 +1,24 @@
-<div id="content" role="main" class="splash">
-    <div class="pageGutter">
+<div id="splashcenter">
+  <div id="content" role="main" class="splash pageGutter">
+      {% comment %} <div class="pageGutter"> {% endcomment %}
 
-        <p><a href="/page/informations/">j’écris…</a></p>
+          <p><a href="/page/informations/">j’écris…</a></p>
 
-        <h2><a href="/bibliographie/">Livres</a></h2>
-        <h3><a href="/books/le-code-houellebecq/"><em>Le Code Houellebecq</em></a></h3>
+          <h2><a href="/bibliographie/">Livres</a></h2>
+          <h3><a href="/books/le-code-houellebecq/"><em>Le Code Houellebecq</em></a></h3>
 
-        <h2><a href="/blog/">Digressions</a></h2>
-        <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
+          <h2><a href="/blog/">Digressions</a></h2>
+          <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
 
-        <h2><a href="/tag/carnet-de-route/">Carnets</a></h2>
-        <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
+          <h2><a href="/tag/carnet-de-route/">Carnets</a></h2>
+          <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
 
-        <h2><a href="/tag/borntobike/">Vélo</a></h2>
-        <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
+          <h2><a href="/tag/borntobike/">Vélo</a></h2>
+          <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
 
-        {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
-        {% include mail_path %}
+          {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
+          {% include mail_path %}
 
-    </div>
+      {% comment %} </div> {% endcomment %}
+  </div>
 </div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-
-    const container = document.querySelector('.splash');
-    const minimumMarginTop = parseInt(window.getComputedStyle(container).marginTop, 0);
-  
-    function adjustContentPosition() {
-      
-      if (window.innerHeight > window.innerWidth) {
-        container.style.marginTop = ''; // Reset margin-top in portrait mode
-        return;
-      }
-
-      if (container.offsetHeight < window.innerHeight) {
-        let marginTop = (window.innerHeight - container.offsetHeight) / 4;
-        marginTop = Math.max(marginTop, minimumMarginTop);
-        container.style.marginTop = `${marginTop}px`;
-      } else {
-        container.style.marginTop = '';
-      }
-    }
-    adjustContentPosition();
-    window.addEventListener('resize', adjustContentPosition);
-})
-
-</script>

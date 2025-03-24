@@ -59,18 +59,18 @@
 <div class="post hentry" itemprop="articleBody" id="post-{{ post.id }}">
 
     {% if post.frontmatter.exergue %}
-        <h2 class="bookshop book_exergue">{{ post.frontmatter.exergue }}</h2>
+        <div class="book_exergue">{{ post.frontmatter.exergue }}</div>
     {% endif %}
 
     {% if post.frontmatter.lire %}
-        <h5 class="bookshop"><a href="{{ post.frontmatter.lire }}">Extrait</a></h5>
+        <div class="book_sub"><a href="{{ post.frontmatter.lire }}">Extrait</a></div>
     {% endif %}
 
     {% if post.frontmatter.papier %}
-        <h5 class="bookshop">{{ post.frontmatter.papier }}</h5>
+        <div class="book_sub">{{ post.frontmatter.papier }}</div>
     {% endif %}
     {% if post.frontmatter.ebook %}
-        <h5 class="bookshop">{{ post.frontmatter.ebook }}</h5>
+        <div class="book_sub">{{ post.frontmatter.ebook }}</h5></div>
     {% endif %}
 
 
@@ -87,7 +87,6 @@
         {% if post.frontmatter.isbne %}<li>ISBN papier: {{ post.frontmatter.isbne }}</li>{% endif %}
     </ul>
     {% endif %}
-
         
     {% include share_path %}
     {% include mail_path %}

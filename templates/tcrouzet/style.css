@@ -116,7 +116,7 @@ button {
 
 /* fonts */
 button,input,select,textarea,div.iconcom,label,a.icon_com .count{font-family: var(--global--font-headings);color: var(--color--form)}
-h1,h2,h3,.resume-contenair,#route-resume,div.bottomnav,div.plus,div.menu-page,.newsletter-button,nav,header{font-family: var(--global--font-headings)}
+h1,h2,h3,.resume-contenair,#route-resume,div.bottomnav,div.plus,div.menu-page,.newsletter-button,nav,header,div.book_exergue,div.book_sub{font-family: var(--global--font-headings)}
 h4,div.shar{font-family: var(--font--global);color: var(--color--form)}
 h1,h2,h3,h4{font-weight: bold}
 
@@ -137,10 +137,6 @@ a,a:visited,a:hover{color:inherit;text-decoration:none}
 }
 
 /* Top layour */
-.spacertop{
-  display: block;
-  padding-top:7em
-}
 
 .pointer{
   cursor: pointer;
@@ -310,31 +306,7 @@ hr.menu{
 .footertitre{white-space: nowrap;font-weight: bold;}
 
 
-/* Fond d'image titre */
-.poster-bg {position: relative}
-.poster-bg:before {
-  background: var(--color--header);
-  content: "";
-  height: 70vh;
-  position: absolute;
-  top: 0;
-  width: 100%;
-}
-.poster {
-  position: relative;
-  margin: auto;
-  max-width: var(--max-justif);
-}
-/* .poster-spacer {
-  position: relative;
-  margin: auto;
-  padding-top: var(--topheight);
-}
-.poster-big-spacer {
-  position: relative;
-  margin: auto;
-  padding-top: calc(1*var(--topheight));
-} */
+
 .poster-img {
   position: relative;
   width:100%;
@@ -404,13 +376,6 @@ div.menu-page a{
 
 /* Post */
 
-.post-contenair {
-  position: relative;
-  clear: both;
-  margin: 2rem auto 0rem;
-  padding-bottom: 1rem;
-  max-width: var(--justif-text);
-}
 .post {
   position: relative;
   font-size: var(--font-size-post);
@@ -606,11 +571,6 @@ figcaption a{border: none}
 }
 
 .post div.iframe iframe{width: -webkit-fill-available}
-
-div.bottomnav{text-align: center;margin-top: 1rem;margin-bottom: 1rem;}
-div.bottomnav a,div.bottomnav a:visited,div.bottomnav a:hover{border-bottom:none}
-
-div.olderposts{text-align: center;padding: 0.5em;  background: var(--color--light);}
 
 
 iframe{
@@ -921,13 +881,6 @@ input[type="submit"]{
   margin:0;
 }
 
-.resume-book{
-  object-fit: cover;
-  width:100%;
-  height:23rem;
-  margin:0 0 0.5rem 0;
-}
-
 .resume-number{
   font-weight: bold;
   text-align: center;
@@ -960,16 +913,27 @@ div.smenu li{display: inline-block;line-height: 0.8rem;margin: 0;padding:0.2rem 
 div.smenu img.flag{height:11px;width:16px;margin:0} */
 
 /* bookshop */
-/* .bookshop, figure.book{
-  display: block;
-  max-width: var(--justif-text);
-  text-align:center;
-  margin: 0 auto;
+
+
+div.book_exergue{
+  max-width: var(--h1-justif);
+  margin-left: auto;
+  margin-right: auto;
   padding-left: var(--page-guter);
   padding-right: var(--page-guter);
-} */
+  text-align: center;
+  font-size: var(--font-size-h3);
+  }
+div.book_sub{
+  max-width: var(--justif-text);
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 0.5rem;
+  padding-left: var(--page-guter);
+  padding-right: var(--page-guter);
 
-.book_exergue{margin-top: 1rem;line-height: 2rem;}
+}
 
 .book_genre{color:var(--color--titre-medium);font-variant: small-caps}
 
@@ -1012,7 +976,19 @@ div.smenu img.flag{height:11px;width:16px;margin:0} */
 .book_quote a.title{font-family: var(--global--font-headings);font-variant: all-small-caps}
 
 /* Splash */
-.splash{text-align: center;padding-top: 1rem;}
+
+#splashcenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin-top: -3rem;
+}
+
+.splash{
+  text-align: center;
+  padding-top: 1rem;
+}
 .splash h2{
   margin-top: 1rem;
   margin-bottom: 0.5rem;
@@ -1032,7 +1008,6 @@ div.smenu img.flag{height:11px;width:16px;margin:0} */
 .splash p{margin: 0.5rem 0;hyphens: none;}
 .splash p:first-child {font-weight: normal;margin-top: 0;}
 .splash img {width:20ch;height: auto}
-.splash #mailchimp {margin-top:2rem;background: none}
 
 /* Share */
 
@@ -1197,14 +1172,7 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
     display: flex;
     justify-content: space-between;
   }
-  
-  .poster-book{
-    position: absolute;
-    top: -50vh;
-    left:30vw;
-    width:50vw;
-  }  
-  
+   
   div.plus-contenair{
     display:inline-block;
     line-height: 1rem;
@@ -1220,11 +1188,6 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
     height:calc(15vw);
   }*/
  
-  .book{
-    width: 12rem;
-    height: 18rem;
-  }
-
 }
 
 /* Plus grand que 1020px */
@@ -1235,9 +1198,6 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
   }*/
   .poster-legend{
     display: block;
-  }
-  .poster-spacer {
-    padding-top: calc(1.5 * var(--topheight));
   }
 
   #menu{
@@ -1263,9 +1223,6 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
 
   .resume-img{
     height:12rem;
-  }
-  .resume-book{
-    height:25rem;
   }
 
 }

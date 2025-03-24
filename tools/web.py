@@ -672,7 +672,7 @@ class Web:
         else:
             menu.append({"title": tag['title'], "url": "/tag/"+tag['tag']})
         if tag['tag'] != "blog":
-            menu.append({"title": "Blog", "url": "/blog/"})
+            menu.append({"title": "Digressions", "url": "/blog/"})
         if tag['tag'] != "series":
             menu.append({"title": "…", "url": "/series/"})
         index = len(menu)

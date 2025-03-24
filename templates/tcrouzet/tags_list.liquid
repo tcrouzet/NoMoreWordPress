@@ -12,19 +12,22 @@
         {% endif %}
         
         </a>
-        <div class="resume-number"><a href="/{{ tag_post.url }}">{{ tag_post.order }}</a></div>
-        {% comment %} {% if tag_post.type !=5 %} {% endcomment %}
-        {% if tag_post.navigation.maintag.title != 'None' and post.tag != tag_post.navigation.maintag.slug %}
-            <div class="resume-serie"><a href="tag/{{ tag_post.navigation.maintag.url }}">{{ tag_post.navigation.maintag.title }}</a></div>
+
+        {% if post.url != "bibliographie" %}
+            <div class="resume-number"><a href="/{{ tag_post.url }}">{{ tag_post.order }}</a></div>
+            {% comment %} {% if tag_post.type !=5 %} {% endcomment %}
+            {% if tag_post.navigation.maintag.title != 'None' and post.tag != tag_post.navigation.maintag.slug %}
+                <div class="resume-serie"><a href="tag/{{ tag_post.navigation.maintag.url }}">{{ tag_post.navigation.maintag.title }}</a></div>
+            {% endif %}
+            <div class="resume-title"><a href="/{{ tag_post.url }}">
+                {% if tag_post.type ==5 %}
+                    <b>{{ tag_post.title }}</b>
+                {% else %}
+                    {{ tag_post.title }}
+                {% endif %}
+                </a>
+            </div>
         {% endif %}
-        <div class="resume-title"><a href="/{{ tag_post.url }}">
-        {% if tag_post.type ==5 %}
-            <b>{{ tag_post.title }}</b>
-        {% else %}
-            {{ tag_post.title }}
-        {% endif %}
-        </a>
-        </div>
     </div>
     
 {% endfor %}

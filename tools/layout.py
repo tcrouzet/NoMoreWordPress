@@ -123,9 +123,9 @@ class Layout:
                 tag['next_url'] = ""
             else:
                 tag['next_url'] = "/" + tag['url'].strip("/") + "/" + f"contener{page+1}.html"
-            list_html = self.tags_list.render(post=tag)
+            list_html = self.tags_list.render(post=tag, blog=self.config)
             if page == 1:
-                tag_html = self.tag.render(post=tag, list=list_html)
+                tag_html = self.tag.render(post=tag, list=list_html, blog=self.config)
                 self.save(header_html + tag_html + footer_html, tag['url'], "index.html")
             else:
                 self.save(list_html, tag['url'], file_name)
