@@ -21,7 +21,7 @@ web = tools.web.Web(config, db)
 feed = tools.feed.Feed(config, web)
 
 #Blog feed
-exclude = ("invisible", "carnets", "velo", "retroblogging","ecriture")
+exclude = ("invisible", "carnets", "velo", "retroblogging")
 posts = db.get_blog_posts(exclude)
 feed.builder(posts,"blog-all", "Derniers articles de Thierry Crouzet", None)
 print("Blog done")

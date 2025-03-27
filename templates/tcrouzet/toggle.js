@@ -222,163 +222,77 @@ function copyMessage(msg) {
     }, 5000); 
 }
 
-async function showComments(button) {
-    const article = button.closest('article');
-    if (article) {
-        const commentsDiv = article.querySelector('.comments');
-        const messageTypeSection = article.querySelector('.messageTypeSection');
-        const metaUrl = article.querySelector('meta[itemprop="url"]');
-        const datePublishedMeta = article.querySelector('meta[itemprop="datePublished"]');
+// Fonction pour afficher les commentaires
 
-        if (metaUrl) {
-            let postUrl = metaUrl.content.split('tcrouzet.com')[1];
-            postUrl = postUrl.replace(/(\d{4})\/0?(\d|1[0-2])\/\d{2}\/(.+?)\/?$/, '$1/$2/$3.md');
-            // console.log('postUrl:', postUrl);
+let commentScriptLoaded = false;
 
-            if (commentsDiv && postUrl) {
-                commentsDiv.style.display = 'block';
-                commentsDiv.scrollIntoView({ behavior: 'smooth' });
+function showComments(commentId) {
+    // Récupérer directement la div des commentaires par son ID
+    const commentsDiv = document.getElementById(commentId);
+    if (!commentsDiv) {
+        console.error('Impossible de trouver la div des commentaires avec ID:', commentId);
+        return;
+    }
 
-                if (datePublishedMeta && messageTypeSection) {
-                    const postDate = new Date(datePublishedMeta.content);
-                    const currentDate = new Date();
-                    const diffTime = Math.abs(currentDate - postDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    console.log('diffDays:', diffDays);
-        
-                    // Logic for messageTypeSection based on post age
-                    if (diffDays <= 30) {
-                        messageTypeSection.innerHTML = `
-                            <label>
-                              <input type="radio" name="messageType" value="public" checked>
-                              Public
-                            </label>
-                            <label>
-                              <input type="radio" name="messageType" value="private">
-                              Privé
-                            </label><br/>
-                        `;
+    // Si la div est déjà visible, simplement faire défiler jusqu'à elle
+    if (commentsDiv.style.display === 'block') {
+        commentsDiv.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+
+    // Afficher la div des commentaires
+    commentsDiv.style.display = 'block';
+    commentsDiv.scrollIntoView({ behavior: 'smooth' });
+
+    // Si le contenu est vide, charger les commentaires
+    if (commentsDiv.innerHTML.trim() === '') {
+        // Charger le formulaire de commentaires via doAPIcall
+        doAPIcall(
+            "GET", 
+            "/ajax-comment.html?9", 
+            false,
+            function (htmlData) {
+                if (htmlData) {
+                    // Insérer le HTML
+                    commentsDiv.innerHTML = htmlData;
+                    
+                    // Si le script est déjà chargé, initialiser directement
+                    if (commentScriptLoaded && typeof initCommentSystem === 'function') {
+                        initCommentSystem(commentId);
                     } else {
-                        messageTypeSection.innerHTML = `
-                            <input type="hidden" name="messageType" value="private">
-                            <div>Fil de commentaire fermé. Vous pouvez m'envoyer un message privé.</div>
-                        `;
+                        // Sinon, charger le script
+                        loadCommentScript(commentId);
                     }
                 }
-
-                try {
-                    const comments = await loadComments(postUrl);
-                    commentsDiv.innerHTML += comments;
-                } catch (error) {
-                }
-            }else{
-                console.error('Impossible de trouver comments');
             }
-        }else{
-            console.error('Impossible de trouver metaUrl');
-        }
-    }else{
-        console.error('Impossible de trouver article');
+        );
     }
 }
 
-async function loadComments(postUrl) {
-    console.log(postUrl);
-    const response = await fetch(`https://api.github.com/repos/tcrouzet/md/contents/comments${postUrl}?ref=main`);
-    const file = await response.json();
-    const rawContent = new TextDecoder('utf-8').decode(Uint8Array.from(atob(file.content), c => c.charCodeAt(0)));
-    return formatComments(rawContent);
-}
-
-function convertLinks(text) {
-    return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-}
-
-function formatComments(rawContent) {
-    // Supprimer le lien initial vers l'article
-    let content = rawContent.replace(/\[.*?\]\(.*?\)\s*---\s*/, '');
+// Fonction pour charger le script des commentaires une seule fois
+function loadCommentScript(commentId) {
+    console.log('Chargement du script de commentaires pour ID:', commentId);
     
-    // Séparer les commentaires
-    const comments = content.split('---').map(comment => comment.trim());
+    // Si le script est déjà en cours de chargement, ne pas le recharger
+    if (document.getElementById('comment-script')) {
+        return;
+    }
+
+    // Créer un nouvel élément script
+    const script = document.createElement('script');
+    script.id = 'comment-script';
+    script.src = '/ajax-comment.js?t=' + new Date().getTime();
     
-    const formattedComments = comments.map(comment => {
-        const matches = comment.match(/^(.*?)\s*@\s*(.*?)(\d{2}:\d{2}):\d{2}\s+(.*)/s);
-        if (!matches) return '';
+    // Configurer l'événement onload
+    script.onload = function() {
+        commentScriptLoaded = true;
         
-        const [, author, date, time, text] = matches;
-        
-        // Formater la date
-        const formattedDate = `${new Date(date).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        })} @ ${time}`;
-        
-        // Retourner le commentaire formaté en HTML
-        return `
-            <div class="comment">
-                <div class="comment-header">
-                    <span class="comment-author">${author}</span>
-                    <span class="comment-date">${formattedDate}</span>
-                </div>
-                <div class="comment-content">
-                    ${convertLinks(text.replace(/http:\/\/t\.co\/\w+/g, ''))}
-                </div>
-            </div>
-        `;
-    });
-
-    return  formattedComments.join('');
-}
-
-function submitComment(form) {
-    const formData = new FormData(form);
-    const messageDiv = form.querySelector('.message');
-    const actionUrl = "https://formspree.io/f/mgebvkwn";
-    const githubUrl = "https://geo.zefal.com/tools/_github_comments.php";
-
-    // Function to handle the response
-    const handleResponse = async (response, serviceName) => {
-        const data = await response.json();
-        console.log(data);
-
-        if (response.ok) {
-            return data;
-        } else {
-            throw new Error(data.message || `Erreur lors de l'envoi à ${serviceName}.`);
+        // Initialiser la zone de commentaires actuelle
+        if (typeof initCommentSystem === 'function') {
+            initCommentSystem(commentId);
         }
     };
-  
-    fetch(actionUrl, {
-      method: "POST",
-      body: formData,
-      headers: {
-        'Accept': 'application/json'
-      }
-    })
-    .then(response => handleResponse(response, 'Formspree'))
-    .then(() => {
-        // Check if the message type is public before sending to GitHub
-        if (formData.get('messageType') === 'public') {
-            return fetch(githubUrl, {
-                method: "POST",
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => handleResponse(response, 'GitHub'));
-        }
-    })
-    .then(() => {
-        form.reset(); // Clear the form fields
-        if (formData.get('messageType') === 'public') {
-            messageDiv.innerHTML = "<div style='color: green;'>Le message sera vite publié.</div>";
-        } else {
-            messageDiv.innerHTML = "<div style='color: green;'>Message envoyé.</div>";
-        }
-    })
-    .catch(error => {
-      messageDiv.innerHTML = "<div style='color: red;'>Erreur : " + error.message + "</div>";
-    });
-  }
+    
+    // Ajouter le script au document
+    document.body.appendChild(script);
+}

@@ -45,7 +45,7 @@ def sync_files(src, dst):
 
                     if not match:
                         # Not yet on line
-                        print(f"Missing date tag in {src_path}")
+                        # print(f"Missing date tag in {src_path}")
                         continue
 
                 if not os.path.exists(dst_path) or tools.tools.calculate_hash(src_path) != tools.tools.calculate_hash(dst_path):

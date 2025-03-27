@@ -41,8 +41,8 @@ class Webot:
 
 
         # Naviguer vers Substack
-        # self.page.goto(f'{self.substack_url}/publish/post/')
-        self.page.goto('https://727bikepacking.substack.com/publish/post/159771263')
+        self.page.goto(f'{self.substack_url}/publish/post/')
+        # self.page.goto('https://727bikepacking.substack.com/publish/post/159771263')
 
         self.page.wait_for_selector('#post-title')
 
