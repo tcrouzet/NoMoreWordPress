@@ -3,7 +3,7 @@ import hashlib
 import os
 import subprocess
 import json
-
+import re
 
 def site_yml(path):
     with open(path, 'r') as file:
@@ -72,3 +72,22 @@ def load_json(state_file):
 def save_json(state_file, state):
     with open(state_file, 'w', encoding='utf-8') as f:
         json.dump(state, f, ensure_ascii=False, indent=4)
+
+def remove_markdown_images(markdown_text):
+    """
+    Supprime toutes les images d'un texte Markdown.
+    Gère à la fois la syntaxe standard ![alt](url) et les variantes avec légendes.
+    
+    Args:
+        markdown_text (str): Le texte Markdown d'entrée
+        
+    Returns:
+        str: Le texte Markdown sans images
+    """
+    # Motif pour capturer les images markdown standard ![texte alt](url)
+    pattern = r'!\[.*?\]\(.*?\)'
+    
+    # Suppression des images
+    text_without_images = re.sub(pattern, '', markdown_text)
+    
+    return text_without_images

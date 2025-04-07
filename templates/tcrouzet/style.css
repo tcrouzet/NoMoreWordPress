@@ -306,6 +306,19 @@ hr.menu{
 .footertitre{white-space: nowrap;font-weight: bold;}
 
 
+figure.poster {
+  display: block;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  unicode-bidi: isolate;
+  width: 100%;
+  max-width: 110ch;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 .poster-img {
   position: relative;
@@ -1122,8 +1135,12 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
   figcaption.legend-center{
     text-align: right;
   }
-  
-  .poster-img{height:40vh}
+  figure.poster{
+    width: 100%
+  }  
+  .poster-img{
+    height:40vh;
+  }
   a.icon:before{padding: 0 0.4rem}
   div.share{
     margin: 1em 0 0.5rem 0;

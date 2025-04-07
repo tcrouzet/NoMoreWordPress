@@ -54,7 +54,9 @@
 
   <div id="author">
     <div id="toggle" class="open" aria-label="Menu"></div>
-    <a id="nomsmall" href="/" title="Accueil, Thierry Crouzet">Thierry <b>CROUZET</b></a>
+    <a id="nomsmall"
+      href="{% if blog.domain == post.canonical %}/page/informations/{% else %}/{% endif %}"
+      title="{% if blog.domain == post.canonical %}Informations, Thierry Crouzet{% else %}Accueil, Thierry Crouzet{% endif %}">Thierry <b>CROUZET</b></a>
   </div>
   <div id="toggle-search" aria-label="Recherche"></div>
   <div id="access" class="access pageGutter"></div>
