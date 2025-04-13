@@ -564,7 +564,7 @@ figcaption.legend-right{
 }
 figcaption a{border: none}
 
-.post h3,.post h4{
+.post h3,.post h4,.post h5{
   max-width: var(--justif-text);
   margin-top: var(--line-height-post);
   margin-left: auto;
@@ -576,6 +576,11 @@ figcaption a{border: none}
   padding-right: var(--page-guter);
   /*text-transform: uppercase;*/
   }
+  .post h5{
+    text-align: right;
+    font-size: var(--font-size-post);
+  }
+
 
 .post hr{
   width: 10ch;

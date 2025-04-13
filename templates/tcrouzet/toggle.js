@@ -16,7 +16,7 @@ function toggleMenu(){
 
     if(accessLoaded) return;
     doAPIcall(
-        "GET","/ajax-menu.html?15", false,
+        "GET","/ajax-menu.html?16", false,
         function (data) {
             if(data){
                 access.innerHTML=data;
@@ -33,7 +33,7 @@ function searchMenu(){
 
     if(searchLoaded) return;
     doAPIcall(
-        "GET","/ajax-search.html?2", 2,
+        "GET","/ajax-search.html?3", 2,
         function (data) {
             if(data){
                 search.innerHTML=data;
