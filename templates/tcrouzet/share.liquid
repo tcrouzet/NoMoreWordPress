@@ -1,17 +1,15 @@
-<div class="share">
-    <div class="social">
-        <a class="icon_com icon" href="javascript:void(0);" onclick="showComments('com{{ post.id }}')" title="Commenter">
-            <span class="count">{{ post.comments }}</span>
-        </a>
-        <a class="icon_share icon" href="javascript:void(0);" onclick="copyText()" title="Partager"></a>
-    </div>
-    <div class="plus">&bull;&bull;&bull;
-        <ul>
-        <li><a href="http://www.printfriendly.com/print?url={{ post.canonical }}">Imprime le billet/PDF</a></li>
-        <li><a href="https://tcrouzet-com.translate.goog/{{ post.url }}?_x_tr_sl=fr&_x_tr_tl=en&_x_tr_hl=fr&_x_tr_pto=wapp">Version EN/US</a></li>
-        <li>Tags : {% for tag in post.tagslist %}<a href="/tag/{{ tag.url }}">{{tag.title | capitalize}} </a> {% endfor %}</li>
-        <li><a href="http://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" class="footertitre">(cc)</a>&#8239;<a href="/page/informations/">Thierry&#8239;Crouzet</a></li>
-        </ul>
-    </div>    
+<div class="social">
+    <a class="icon_com icon" href="javascript:void(0);" onclick="showComments('com{{ post.id }}')" title="Commenter">
+        <span class="count">{{ post.comments }}</span>
+    </a>
+    <a class="icon_share icon" href="javascript:void(0);" onclick="copyText()" title="Partager"></a>
 </div>
+{% comment %} <div class="plus">&bull;&bull;&bull;
+    <ul>
+    <li><a href="http://www.printfriendly.com/print?url={{ post.canonical }}">Imprime le billet/PDF</a></li>
+    <li><a href="https://tcrouzet-com.translate.goog/{{ post.url }}?_x_tr_sl=fr&_x_tr_tl=en&_x_tr_hl=fr&_x_tr_pto=wapp">Version EN/US</a></li>
+    <li>Tags : {% for tag in post.tagslist %}<a href="/tag/{{ tag.url }}">{{tag.title | capitalize}} </a> {% endfor %}</li>
+    <li><a href="http://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" class="footertitre">(cc)</a>&#8239;<a href="/page/informations/">Thierry&#8239;Crouzet</a></li>
+    </ul>
+</div>     {% endcomment %}
 <div class="comments" id="com{{ post.id }}" data-post-url="{{ post.url }}" data-post-title="{{ post.title }}" data-post-date="{{ post.pub_date_str }}"></div>

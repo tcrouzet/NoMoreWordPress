@@ -1027,7 +1027,7 @@ div.book_sub{
 .splash p:first-child {font-weight: normal;margin-top: 0;}
 .splash img {width:20ch;height: auto}
 
-/* Share */
+/* Social */
 
 div.iconcom{position:relative;transition: background-color 0.3s;min-width:1.2em;height:1.2em;
   background:var(--color--social);
@@ -1046,23 +1046,18 @@ div.iconcom:hover{
   cursor:pointer
 }
 
-div.share{
-  /* display: inline-block; */
-  margin:0.5rem auto;
-  text-align: center;
-}
-
-.share a,.share a:visited,.share a:hover{
+div.social a,div.social a:visited,div.social a:hover{
 	border-bottom: none;
   background: none;
 }
 
 div.social {
-  display: inline;
-  margin-top: -0.2em;
+  display: block;
+  margin: 0.5rem;
   -webkit-font-smoothing: antialiased;
   font-size: 1em;
-  line-height: 1em
+  line-height: 1em;
+  text-align: center;
 }
 
 
@@ -1147,9 +1142,6 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
     height:40vh;
   }
   a.icon:before{padding: 0 0.4rem}
-  div.share{
-    margin: 1em 0 0.5rem 0;
-  }
   #toggle {
     margin-right: 0.5rem;
   }
