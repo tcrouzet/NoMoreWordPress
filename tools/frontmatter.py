@@ -34,6 +34,8 @@ class Frontmatter:
             return "Librest"
         if "parislibrairies.fr" in url:
             return "Paris Librairies"
+        if "alaflamme.fr" in url:
+            return "À la flamme"
         if "mollat.com" in url:
             return "Mollat"
         if "initiales.org" in url:
@@ -73,9 +75,9 @@ class Frontmatter:
                 if "shops" in self.yalm:
                     for shop in self.yalm["shops"]:
                         self.yalm['papier'] += f'<a href="{shop}">{self.shop(shop)}</a> '
-            if "eprix" in self.yalm:
+            if "eprix" in self.yalm and self.yalm["eprix"]:
                 self.yalm['ebook'] = f"<b>ebook {self.yalm["eprix"]} €</b> "
-                if "eshops" in self.yalm:
+                if "eshops" in self.yalm and self.yalm["eshops"]:
                     for shop in self.yalm["eshops"]:
                         self.yalm['ebook'] += f'<a href="{shop}">{self.shop(shop)}</a> '
 
