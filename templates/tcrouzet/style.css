@@ -29,6 +29,7 @@
   --color--titre: var(--color--bg);
   --color--titre-medium: var(--color--medium);
   --color--newsletter: #893ae1;
+  --color-button: #007BFF;
   
   --color--plus: var(--color--contrast);
   --color--social:  var(--color--contrast);
@@ -782,11 +783,67 @@ div.plus ul li::before {
   border: none;
 }
 
+/* Popup */
 
-/* @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-} */
+#popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 0.5rem;
+  border-radius: 5px;
+  max-width: 80vw;
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.popup-content img {
+  max-width: 35vw;
+  max-height: 35vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.popup-content span.poptitle {
+  font-size: var(--font-size-h3);
+  font-weight: bold;
+  font-family: var(--global--font-headings);
+}
+
+.popup-content button{
+  margin-bottom: 0.5rem;
+}
+
+.less{
+  background-color: var(--color-button);
+}
+
+.close-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 1.7rem;
+  cursor: pointer;
+}
 
 
 /* form */

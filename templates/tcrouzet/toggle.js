@@ -92,6 +92,8 @@ document.addEventListener("DOMContentLoaded", function() {
         //alert("scroll");
     }
 
+    setupScrollTrigger();
+
 });
 
 function scrollFire(){
@@ -186,11 +188,37 @@ function doAPIcall(type, url, flag, callback) {
     xmlhttp.send();
 }
 
-function copyText() {
+// function copyText() {
+//     if (navigator.share) {
+//         navigator.share({
+//             title: document.title,
+//             url: window.location.href
+//         }).then(() => {
+//             console.log('Partage réussi');
+//         }).catch((error) => {
+//             console.error('Erreur lors du partage :', error);
+//         });
+//     } else {
+//         // Fallback : copier le lien dans le presse-papier
+//         navigator.clipboard.writeText(window.location.href)
+//             .then(() => {
+//                 copyMessage('Adresse de l\'article copiée !<br/>À coller dans votre réseau social préféré.');
+//             })
+//             .catch((error) => {
+//                 console.error('Erreur lors de la copie du lien :', error);
+//             });
+//     }
+// }
+
+function copyText(customTitle, customUrl) {
+    // Utiliser les paramètres s'ils sont fournis, sinon utiliser les valeurs par défaut
+    const title = customTitle || document.title;
+    const url = customUrl || window.location.href;
+    
     if (navigator.share) {
         navigator.share({
-            title: document.title,
-            url: window.location.href
+            title: title,
+            url: url
         }).then(() => {
             console.log('Partage réussi');
         }).catch((error) => {
@@ -198,9 +226,9 @@ function copyText() {
         });
     } else {
         // Fallback : copier le lien dans le presse-papier
-        navigator.clipboard.writeText(window.location.href)
+        navigator.clipboard.writeText(url)
             .then(() => {
-                copyMessage('Adresse de l\'article copiée !<br/>À coller dans votre réseau social préféré.');
+                copyMessage('Adresse copiée !<br/>À coller dans votre réseau social préféré.');
             })
             .catch((error) => {
                 console.error('Erreur lors de la copie du lien :', error);
@@ -295,4 +323,105 @@ function loadCommentScript(commentId) {
     
     // Ajouter le script au document
     document.body.appendChild(script);
+}
+
+
+// Fonction pour afficher le popup
+function showBookPopup() {
+  const popup = document.getElementById('popup');
+  
+  // Créer le contenu de la popup avec un bouton de fermeture explicite
+  popup.innerHTML = `
+    <div class="popup-content">
+      <span class="close-btn" onclick="closePopup()">&times;</span>
+      <a href="/books/epicenes/"><img src="/images_tc/2025/05/Epicenes-cover.webp" alt="Épicènes"></a>
+      <p><span class="poptitle">Épicènes</span></p>
+      <p>Mon nouveau roman : amours fusionnels à la frontière du noir et du fantastique</p>
+      <button class="newsletter-button less" onclick="window.location.href='https://alaflamme.fr/wp-content/uploads/2025/02/Epicenes-premieres-pages.pdf'">
+        <span class="newsletter-button-label">Lire</span>
+      </button>
+      <button class="newsletter-button" onclick="window.location.href='https://alaflamme.fr/livre/epicenes/'">
+        <span class="newsletter-button-label">Acheter 16€</span>
+      </button>
+      <button class="newsletter-button less" onclick="copyText('Lisez Épicènes de Thierry Crouzet', 'https://tcrouzet.com/books/epicenes/')">
+        <span class="newsletter-button-label">Partager</span>
+      </button>
+    </div>
+  `;
+
+
+  
+  // Afficher la popup
+  popup.style.display = 'flex';
+  
+  // Enregistrer la date d'affichage
+  localStorage.setItem('popupLastShown', new Date().getTime().toString());
+  
+  // Fermeture en cliquant en dehors
+  popup.addEventListener('click', function(e) {
+    if (e.target === popup) {
+      closePopup();
+    }
+  });
+}
+
+// Fonction pour fermer le popup
+function closePopup() {
+  const popup = document.getElementById('popup');
+  popup.style.display = 'none';
+  
+  // Optionnel : supprimer les écouteurs d'événements pour éviter les doublons
+  popup.replaceWith(popup.cloneNode(true));
+}
+
+function canShowPopup() {
+
+    // Vérifier si l'utilisateur est déjà sur la page du livre
+    const currentPath = window.location.pathname;
+    if (currentPath === '/books/epicenes/' || currentPath.startsWith('/books/epicenes')) {
+        return false;
+    }
+
+    // Pour le test
+    // return true; 
+
+    const now = new Date().getTime();
+    const lastShown = localStorage.getItem('popupLastShown');
+    const fifteenDays = 7 * 24 * 60 * 60 * 1000; // en millisecondes
+    
+    // Peut afficher si jamais affiché ou affiché il y a plus de 15 jours
+    return !lastShown || (now - parseInt(lastShown) > fifteenDays);
+}
+
+// Fonction pour configurer le déclenchement du popup au défilement
+function setupScrollTrigger() {
+  // Vérifier si on peut afficher le popup (pas vu depuis 15 jours)
+  if (!canShowPopup()) {
+    return;
+  }
+  
+  let popupTriggered = false;
+  
+  // Fonction pour vérifier le défilement et afficher le popup
+  function checkScrollForPopup() {
+    // Ne déclencher qu'une seule fois
+    if (popupTriggered) return;
+    
+    // Calculer le pourcentage de défilement
+    const totalPageHeight = document.body.scrollHeight;
+    const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const scrollPercent = (currentScrollPosition / (totalPageHeight - windowHeight)) * 100;
+    
+    // Déclencher à 30% de défilement
+    if (scrollPercent > 10) {
+      popupTriggered = true;
+      showBookPopup();
+      // Retirer l'écouteur après déclenchement
+      window.removeEventListener('scroll', checkScrollForPopup);
+    }
+  }
+  
+  // Ajouter un écouteur d'événements séparé pour le popup
+  window.addEventListener('scroll', checkScrollForPopup);
 }

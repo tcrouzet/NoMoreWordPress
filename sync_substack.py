@@ -243,8 +243,8 @@ class Webot:
 
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
-# mode = "FR"
-mode = "BIKE"
+mode = "FR"
+# mode = "BIKE"
 # mode = "DIGEST"
 # mode = "PHONE"
 

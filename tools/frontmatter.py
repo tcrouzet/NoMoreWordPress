@@ -72,7 +72,7 @@ class Frontmatter:
             #book
             if "prix" in self.yalm:
                 self.yalm['papier'] = f"<b>papier {self.yalm["prix"]} €</b> "
-                if "shops" in self.yalm:
+                if "shops" in self.yalm and self.yalm["shops"]:
                     for shop in self.yalm["shops"]:
                         self.yalm['papier'] += f'<a href="{shop}">{self.shop(shop)}</a> '
             if "eprix" in self.yalm and self.yalm["eprix"]:
