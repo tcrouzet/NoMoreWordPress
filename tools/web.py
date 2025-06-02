@@ -614,7 +614,19 @@ class Web:
         if maximal:
             content = self.get_post_content(path)
             post['content'] = content['content']
-            html = markdown.markdown(content['content'])
+            # html = markdown.markdown(content['content'])
+
+            html = markdown.markdown(
+                content['content'], 
+                extensions=['fenced_code'],
+                extension_configs={
+                    'fenced_code': {
+                        'lang_prefix': ''  # Supprime le préfixe de langage
+                    }
+                }
+            )
+
+
             post['html'] = self.image_manager(html, post)
             post['html'] = self.link_manager(post['html'], post)
             post['description'] = content['description']

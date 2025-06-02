@@ -243,9 +243,9 @@ class Webot:
 
 config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
-mode = "FR"
+# mode = "FR"
 # mode = "BIKE"
-# mode = "DIGEST"
+mode = "DIGEST"
 # mode = "PHONE"
 
 if mode == "FR":
@@ -265,7 +265,7 @@ elif mode == "BIKE":
     bot.substack(path)
 
 elif mode == "DIGEST":
-    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/digest011.md"
+    path = tools.tools.find_latest_file("/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/")
     bot = Webot(config, config['substack_fr'])
     bot.substack(path)
 

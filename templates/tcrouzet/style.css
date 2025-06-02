@@ -444,7 +444,6 @@ div.menu-page a{
   margin-right: auto;
   padding-left: var(--page-guter);
   padding-right: var(--page-guter);
-  background-color: var(--color--contrast);
   color: var(--color--bg);
   hyphens: none;
 }
@@ -608,6 +607,18 @@ iframe{
 
 .post audio{width: inherit;}
 
+code{
+    white-space: pre-wrap;
+    display: block;
+    padding: 1rem;
+    background-color: var(--color--form);
+    color: var(--color--light);
+    border-radius: 4px;
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 0.8m;
+    line-height: auto;
+    overflow-x: auto;  
+}
 
 /* Comments */
 div.comments{
