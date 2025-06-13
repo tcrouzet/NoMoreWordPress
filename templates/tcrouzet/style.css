@@ -591,9 +591,9 @@ figcaption a{border: none}
 .post div.iframe iframe{width: -webkit-fill-available}
 
 
-iframe{
+.post iframe{
   margin:auto;
-  padding:0 0 1em 0;
+  padding:1rem 0 1rem 0;
   display: block;
   width: var(--justif-text)
 }
@@ -1209,6 +1209,10 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
   .poster-img{
     height:40vh;
   }
+  .post iframe{
+    width: 100%
+  }
+
   a.icon:before{padding: 0 0.4rem}
   #toggle {
     margin-right: 0.5rem;

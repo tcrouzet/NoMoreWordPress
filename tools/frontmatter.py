@@ -62,6 +62,8 @@ class Frontmatter:
             return "L'arbre à lettres"
         if "numilog.com" in url:
             return "Numilog"
+        if "vilvio" in url:
+            return "Vilvio"
         
         return url
 
