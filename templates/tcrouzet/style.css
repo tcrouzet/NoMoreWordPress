@@ -570,16 +570,24 @@ figcaption a{border: none}
   margin-left: auto;
   margin-right: auto;
   text-align:left;
-  font-size: var(--font-size-h3);
   line-height: var(--line-height-heading);
   padding-left: var(--page-guter);
   padding-right: var(--page-guter);
   /*text-transform: uppercase;*/
   }
-  .post h5{
-    text-align: right;
-    font-size: var(--font-size-post);
-  }
+
+.post h3{
+  font-size: var(--font-size-h3);
+}
+
+.post h4{
+  font-size: smaller;
+}
+
+.post h5{
+  text-align: right;
+  font-size: var(--font-size-post);
+}
 
 
 .post hr{
