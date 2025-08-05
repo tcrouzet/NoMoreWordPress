@@ -131,6 +131,7 @@ if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
         home['thumb'] = home['digressions']['thumb']
         home['thumb_path'] = home['digressions']['thumb_path']
         home['thumb_legend'] = home['digressions']['thumb_legend']
+        home['on_home'] = 1
 
         layout.home_gen( home )
         sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })

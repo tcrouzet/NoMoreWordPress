@@ -386,6 +386,9 @@ class Web:
                             myclass += ' small'
                             myclasslegend = 'legend-center'
 
+                        if "png" in img_data["format"]:
+                            myclasslegend = 'legend-center'
+
                         new_div = soup.new_tag('figure', id=f"image-{post['id']}-{index}", **{'class': 'image'})
                         new_img = soup.new_tag('img', src=f"{img_data['url']}",
                             **{'class': myclass,

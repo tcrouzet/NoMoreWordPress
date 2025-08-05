@@ -92,8 +92,6 @@ document.addEventListener("DOMContentLoaded", function() {
         //alert("scroll");
     }
 
-    setupScrollTrigger();
-
 });
 
 function scrollFire(){
@@ -326,45 +324,6 @@ function loadCommentScript(commentId) {
 }
 
 
-// Fonction pour afficher le popup
-function showBookPopup() {
-  const popup = document.getElementById('popup');
-  
-  // Créer le contenu de la popup avec un bouton de fermeture explicite
-  popup.innerHTML = `
-    <div class="popup-content">
-      <span class="close-btn" onclick="closePopup()">&times;</span>
-      <a href="/books/epicenes/"><img src="/images_tc/2025/05/Epicenes-cover.webp" alt="Épicènes"></a>
-      <p><span class="poptitle">Épicènes</span></p>
-      <p>Mon nouveau roman : amours fusionnels à la frontière du noir et du fantastique</p>
-      <button class="newsletter-button less" onclick="window.location.href='https://alaflamme.fr/wp-content/uploads/2025/02/Epicenes-premieres-pages.pdf'">
-        <span class="newsletter-button-label">Lire</span>
-      </button>
-      <button class="newsletter-button" onclick="window.location.href='https://alaflamme.fr/livre/epicenes/'">
-        <span class="newsletter-button-label">Acheter 16€</span>
-      </button>
-      <button class="newsletter-button less" onclick="copyText('Lisez Épicènes de Thierry Crouzet', 'https://tcrouzet.com/books/epicenes/')">
-        <span class="newsletter-button-label">Partager</span>
-      </button>
-    </div>
-  `;
-
-
-  
-  // Afficher la popup
-  popup.style.display = 'flex';
-  
-  // Enregistrer la date d'affichage
-  localStorage.setItem('popupLastShown', new Date().getTime().toString());
-  
-  // Fermeture en cliquant en dehors
-  popup.addEventListener('click', function(e) {
-    if (e.target === popup) {
-      closePopup();
-    }
-  });
-}
-
 // Fonction pour fermer le popup
 function closePopup() {
   const popup = document.getElementById('popup');
@@ -393,35 +352,4 @@ function canShowPopup() {
     return !lastShown || (now - parseInt(lastShown) > fifteenDays);
 }
 
-// Fonction pour configurer le déclenchement du popup au défilement
-function setupScrollTrigger() {
-  // Vérifier si on peut afficher le popup (pas vu depuis 15 jours)
-  if (!canShowPopup()) {
-    return;
-  }
   
-  let popupTriggered = false;
-  
-  // Fonction pour vérifier le défilement et afficher le popup
-  function checkScrollForPopup() {
-    // Ne déclencher qu'une seule fois
-    if (popupTriggered) return;
-    
-    // Calculer le pourcentage de défilement
-    const totalPageHeight = document.body.scrollHeight;
-    const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const scrollPercent = (currentScrollPosition / (totalPageHeight - windowHeight)) * 100;
-    
-    // Déclencher à 30% de défilement
-    if (scrollPercent > 10) {
-      popupTriggered = true;
-      showBookPopup();
-      // Retirer l'écouteur après déclenchement
-      window.removeEventListener('scroll', checkScrollForPopup);
-    }
-  }
-  
-  // Ajouter un écouteur d'événements séparé pour le popup
-  window.addEventListener('scroll', checkScrollForPopup);
-}

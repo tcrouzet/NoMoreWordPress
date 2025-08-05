@@ -334,6 +334,14 @@ figure.poster {
 .poster-img-book{
   object-fit: contain;
 }
+.poster-img-book-small{
+  object-fit: fill;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3/4.5;
+  border: 1pt solid var(--color--medium);
+  box-sizing: border-box;
+}
 
 h1{
   text-align: center;
@@ -364,11 +372,13 @@ div.menu-page{
   gap: 1.5rem;
   justify-content: center!important;
   width: 100%;
+  height: auto;
   overflow: hidden;
   white-space: nowrap;
   flex-wrap: wrap;
   text-align: center;
   margin: 0 auto;
+  line-height: 1rem;
 }
 div.menu-page h1{
   position: relative;
@@ -754,6 +764,7 @@ div.plus ul li::before {
   justify-content: center;
   width: 100%;
   margin-bottom: 2rem;
+  gap: 1rem;
 }
 
 .newsletter-button {
@@ -764,7 +775,7 @@ div.plus ul li::before {
   background-color: #e30613;
   color: white;
   border-radius: 30px;
-  padding: 12px 24px;
+  padding: 10px 18px;
   cursor: pointer;
   /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; */
   font-size: 1rem;
