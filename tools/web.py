@@ -598,7 +598,21 @@ class Web:
         if count == 0:
             count = "&nbsp;&nbsp;"
         return count    
-        
+    
+
+    def get_github_url(self, url):
+        if not url.endswith('/'):
+            return ""
+        parts = url.strip('/').split('/')
+        if len(parts) != 4:
+            return ""
+        # Si format AAAA/MM/JJ/..., on enlève le "JJ"
+        if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
+            parts.pop(2)
+        parts[-1] += '.md'
+        return self.config['github_raw'] + '/'.join(parts)
+
+
     def supercharge_post(self, post, maximal=True):
         """Get all post datas (text,tags, medias…)"""
 
@@ -629,7 +643,6 @@ class Web:
                 }
             )
 
-
             post['html'] = self.image_manager(html, post)
             post['html'] = self.link_manager(post['html'], post)
             post['description'] = content['description']
@@ -643,6 +656,8 @@ class Web:
         post['pub_update_str'] = self.format_timestamp_to_paris_time(post['pub_update'])
         post['thumb'] = self.source_image(post['thumb_path'], post)
         post['thumb'] = self.makeJPEGthumb(post['thumb'])
+        post['github'] = self.get_github_url(post['url'])
+
         # if post['thumb']:
         #     post['thumb']["alt"] = post['thumb_legend']
         #     post['thumb']['tag'] = self.img_tag(post['thumb'])
