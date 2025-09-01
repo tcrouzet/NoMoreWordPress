@@ -16,7 +16,7 @@ function toggleMenu(){
 
     if(accessLoaded) return;
     doAPIcall(
-        "GET","/ajax-menu.html?17", false,
+        "GET","/ajax-menu.html?18", false,
         function (data) {
             if(data){
                 access.innerHTML=data;

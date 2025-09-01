@@ -459,8 +459,6 @@ div.menu-page a{
 }
 
 .post ul,.post ol{
-  padding-left: 2rem;
-  padding-right: 1rem;
   padding-top:0;
   padding-bottom: 0;
   text-align:inherit;
@@ -471,7 +469,11 @@ div.menu-page a{
   margin-bottom: 0;
 }
 
-.post ul{list-style-type: none}
+.post ul{
+  list-style-type: none;
+  padding-left: 2rem;
+  padding-right: 1rem;
+}
 
 .post ul li {
   position: relative;
@@ -486,7 +488,6 @@ div.menu-page a{
   line-height: 1;
   color: var(--color--medium);
 }
-
 
 .post ol{list-style-type:decimal;}
 .post li{padding: var(--margin-top-post) 0em 0em 0.25em}
@@ -574,7 +575,7 @@ figcaption.legend-right{
 }
 figcaption a{border: none}
 
-.post h3,.post h4,.post h5{
+.post h2,.post h3,.post h4,.post h5{
   max-width: var(--justif-text);
   margin-top: var(--line-height-post);
   margin-left: auto;
@@ -586,7 +587,7 @@ figcaption a{border: none}
   /*text-transform: uppercase;*/
   }
 
-.post h3{
+.post h2,.post h3{
   font-size: var(--font-size-h3);
 }
 
@@ -1140,7 +1141,7 @@ div.social a,div.social a:visited,div.social a:hover{
 
 div.social {
   display: grid;
-  width: 5rem;
+  width: 10rem;
   margin: 1rem auto;
   -webkit-font-smoothing: antialiased;
   font-size: 1em;
@@ -1148,8 +1149,7 @@ div.social {
   text-align: center;
   gap: 1rem;
   grid-template-columns: 1fr 1fr 1fr;
-  place-items: center;  /* centre horizontal + vertical dans chaque cellule */
-
+  place-items: center;
 }
 
 
@@ -1157,6 +1157,11 @@ a.all{margin-left: 1rem;}
 a.all:before{color:var(--color--medium);font: 400 1.3rem/1 icomoon!important;content:'\e933'}
 a.icon:before{vertical-align: -0.3rem;padding: 0}
 
+a.icon {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
 a.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e96c'}
 a.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea82'}
 a.icon_download:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e9c2'}

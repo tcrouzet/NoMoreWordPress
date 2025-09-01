@@ -2,8 +2,9 @@
 python3 tools/carnet2md.py
 """
 
+# python3 tools/carnet2md.py
 
-import os, yaml
+import os
 import re
 import csv
 from datetime import datetime
@@ -36,7 +37,7 @@ mois_mapping_bdc = {
     "juillet": 7, "aout": 8, "septembre": 9, "octobre": 10, "novembre": 11, "decembre": 12
 }
 
-def extract_date(filename):
+def extract_carnet_date(filename):
     """Fonction pour sélectionner les fichiers du carnet"""
     match = re.search(r'carnet-de-route-(\w+)-(\d{4})\.md', filename)
     if match:
@@ -128,6 +129,44 @@ def modifier_contenu(fichier):
 
     return contenu_modifie
 
+def modifier_contenu2(lignes):
+    contenu_modifie = ""
+    mois, annee = None, None
+
+    for ligne in lignes:
+        # Trouver les titres de mois
+        if ligne.startswith("# "):
+            ligne = "#" + ligne
+            # mois, annee = ligne.strip("# ").split()
+            # mois = mois_mapping[mois.lower()]
+            # continue
+
+        # Modifier les entrées de journal
+        # if ligne.startswith("### "):
+        #     ligne = ligne.replace('1<sup>er</sup>', '1')
+        #     contenu_modifie += modifier_date(ligne, annee, mois)
+        #     continue
+
+        # Supprimer les liens vers les images
+        if re.search(r'!\[.*\]\(.*\)', ligne):
+            continue
+
+        # Supprimer les commentaires
+        ligne = re.sub(r'~[^~]*~', '', ligne)
+        ligne = re.sub(r'<span[^>]*>.*?</span>', '', ligne)
+
+        # Supprime liens
+        ligne = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', ligne)
+
+        contenu_modifie += ligne+"\n\n"
+
+    #Vire triples sauts
+    contenu_modifie = re.sub(r'\n{3,}', '\n\n', contenu_modifie)
+    #Vire 2 sauts au début
+    contenu_modifie = re.sub(r'^\n{1,2}', '', contenu_modifie, count=1)
+
+    return contenu_modifie
+
 
 def convertir_md_en_csv(fichier_md, fichier_csv):
     # Lire le fichier Markdown
@@ -175,28 +214,33 @@ def journal():
     file_dates = []
     for root, dirs, files in os.walk(config['export_github_md']):
         for file in files:
-            date = extract_date(file)
+            date = extract_carnet_date(file)
             if date:
               file_dates.append((os.path.join(root, file), date))
 
-    # Étape 3 : Trier les fichiers en ordre antichronologique
+    # Trier les fichiers en ordre antichronologique
     file_dates.sort(key=lambda x: x[1], reverse=False)
 
-    # Étape 4 : Concaténer les fichiers
+    # Concaténer les fichiers
+    year = None
     with open(carnet_file, 'w', encoding='utf-8') as outfile:
-        for file_path, _ in file_dates:
+        for file_path, file_date in file_dates:
             with open(file_path, 'r', encoding='utf-8') as infile:
+                content = ""
+                if year != file_date.year:
+                    year = file_date.year
+                    content = f"# {year}\n\n"
                 file_content = infile.readlines()
                 tags, file_content = find_tags(file_content)
                 if tags and "carnets" in tags:
-                    outfile.write('\n\n'.join(file_content) + '\n\n')
+                    outfile.write(content + modifier_contenu2(file_content))
 
-    contenu_final = modifier_contenu(carnet_file)
+    # contenu_final = modifier_contenu(carnet_file)
 
     # Écrire le contenu modifié dans un nouveau fichier
-    with open(carnet_file, 'w', encoding='utf-8') as modified_file:
-        modified_file.write("# Journal de Thierry Crouzet\n\n")
-        modified_file.write(contenu_final)
+    # with open(carnet_file, 'w', encoding='utf-8') as modified_file:
+    #     modified_file.write("# Journal de Thierry Crouzet\n\n")
+    #     modified_file.write(contenu_final)
 
 def find_tags(file_content):
     """Recherche les tags dans le texte"""
@@ -263,3 +307,5 @@ def tagpage(tag):
 #convertir_md_en_csv(output_file, output_file_csv)
 
 journal()
+
+

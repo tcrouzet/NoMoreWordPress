@@ -153,20 +153,25 @@ class Db:
         return self.conn.row_factory
 
     def filter_tags(self, tags):
-        date_pattern = re.compile(r'^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2})h(\d{1,2})$')  # 'YYYY-M-D-HhM'
-        year_pattern = re.compile(r'^y(\d{4})$')  # 'yYYYY'
-        filtered_tags = []
-        timestamp = 0
+        try:
+            date_pattern = re.compile(r'^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2})h(\d{1,2})$')  # 'YYYY-M-D-HhM'
+            year_pattern = re.compile(r'^y(\d{4})$')  # 'yYYYY'
+            filtered_tags = []
+            timestamp = 0
 
-        for tag in tags:
-            date_match = date_pattern.match(tag)
-            if date_match:
-                year, month, day, hour, minute = map(int, date_match.groups())
-                date_obj = datetime.datetime(year, month, day, hour, minute)
-                timestamp = round(date_obj.timestamp())
-            elif not year_pattern.match(tag):
-                filtered_tags.append(tag)
-        return filtered_tags, timestamp
+            for tag in tags:
+                date_match = date_pattern.match(tag)
+                if date_match:
+                    year, month, day, hour, minute = map(int, date_match.groups())
+                    date_obj = datetime.datetime(year, month, day, hour, minute)
+                    timestamp = round(date_obj.timestamp())
+                elif not year_pattern.match(tag):
+                    filtered_tags.append(tag)
+            return filtered_tags, timestamp
+        except Exception as e:
+            print("Error in filter_tags:", e)
+            print(tags)
+            exit()
 
     def markdown_extract(self, path):
         creation_time = 0

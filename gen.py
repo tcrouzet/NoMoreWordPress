@@ -21,6 +21,8 @@ sys.stderr = sys.stdout
 os.system('clear')
 
 config = tools.tools.site_yml('site.yml')
+# print(config)
+# exit()
 
 version = int(config['version'])
 db = tools.db.Db(config)
@@ -93,7 +95,7 @@ if len(db.used_tags) > 0:
 
 #BLOG
 if  db.new_posts >0 or db.updated_posts > 0:
-    exclude = ("invisible", "carnets", "velo", "retroblogging")
+    exclude = tuple(config['home_exclude'])
     posts = db.get_blog_posts(exclude)
     first_post = dict(posts[0])
     series = {
@@ -117,11 +119,13 @@ if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
         last_post=posts[0]
         last_carnet = db.get_posts_by_tag("carnets", 1)
         last_bike = db.get_posts_by_tag("velo", 1)
+        last_digest = db.get_posts_by_tag("digest", 1)
 
         home = {}
         home['digressions'] = web.supercharge_post(last_post, False)
         home['carnet'] = web.supercharge_post(last_carnet, False)
         home['bike'] = web.supercharge_post(last_bike, False)
+        home['digest'] = web.supercharge_post(last_digest, False)
 
         home['canonical'] = config['domain']
         home['description'] = config['description']
@@ -169,6 +173,8 @@ if len(db.used_tags) > 0:
                 feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
             if tag['tag']=="mailing":
                 feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
+            if tag['tag']=="digest":
+                feed.builder(tag['posts'],"digest", "De ma terrasse de Thierry Crouzet")
 
             layout.tag_gen(tag)
 
