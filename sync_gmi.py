@@ -21,8 +21,10 @@ def mount_synology_volume():
     try:
         subprocess.run(["osascript", "-e", f'mount volume "{server_address}"'], check=True)
         print("Volume Synology monté avec succès.")
+        return True
     except subprocess.CalledProcessError as e:
         print(f"Erreur lors du montage du volume Synology: {e}")
+        return False
 
 
 # https://github.com/makew0rld/md2gemini
@@ -373,6 +375,12 @@ def sync_files(src, dst):
 
 # sync_one_file('/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet/2025/03/quitter-facebook.md', '/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet', '/Users/thierrycrouzet/Documents/gemini')
 # exit()
+
+print("Starting GMI sync...")
+
+if not mount_synology_volume():
+    print("No NAS connected!")
+    sys.exit(1)
 
 sync_files(config['export_github_md'], config['gemini_export'] )
 
