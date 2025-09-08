@@ -440,6 +440,7 @@ div.menu-page a{
   margin-right: auto;
   padding-left: var(--page-guter);
   padding-right: var(--page-guter);
+  overflow-wrap: break-word;
 }
 .post p:first-child{
   font-weight: 700;
@@ -478,6 +479,7 @@ div.menu-page a{
 .post ul li {
   position: relative;
   padding-left: 1.5em;
+  overflow-wrap: break-word;
 }
 .post ul li::before {
   content: "•";
