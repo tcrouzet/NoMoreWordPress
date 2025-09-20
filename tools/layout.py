@@ -5,6 +5,8 @@ import time
 import htmlmin
 import csscompressor
 import hashlib
+import importlib.util
+import re
 
 
 class Layout:
@@ -32,9 +34,56 @@ class Layout:
 
         self.new_assets = self.copy_assets()
 
+        self.micro = self._load_micro_executor()
+
 
     def load_template(self, name):
         return Liquid( os.path.join(self.template_dir,f"{name}.liquid"))
+
+
+    def _load_micro_executor(self):
+        """
+        Charge templates/<template>/micro_codes.py s'il existe.
+        Attendu: une classe 'MicroCodes'.
+        """
+        path = os.path.join(self.template_dir, "micro_codes.py")
+        if not os.path.isfile(path):
+            return None
+        try:
+            spec = importlib.util.spec_from_file_location("tpl_micro_codes", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.MicroCodes(self)  # On suppose un constructeur acceptant Layout
+        except Exception:
+            return None
+
+    def _apply_microcodes(self, html, context=None):
+        """
+        Remplace [code:func|p1|p2…] par l'appel à MicroCodes.func.
+        - Paramètres passés tels quels (strings).
+        - Si pas de microcodes, retourne html tel quel.
+        """
+        if not self.micro or not html or "[code:" not in html:
+            return html
+
+        pattern = re.compile(r"\[code:([a-zA-Z_]\w*)(?:\|([^\]]+))?\]")
+
+        def repl(m):
+            func_name = m.group(1)
+            params = m.group(2).split("|") if m.group(2) else []
+            func = getattr(self.micro, func_name, None)
+            if not callable(func):
+                return m.group(0)  # laisse le token tel quel
+            try:
+                try:
+                    return str(func(context, *params))  # avec contexte si possible
+                except TypeError:
+                    return str(func(*params))           # sinon sans contexte
+            except Exception:
+                return m.group(0)  # en cas d'erreur, on ne casse rien
+
+        return pattern.sub(repl, html)
+
 
     def copy_assets(self):
 
@@ -155,7 +204,10 @@ class Layout:
         self.save(header_html + page_html + footer_html, "archives/")
 
 
-    def save(self, html, path, file_name="index.html"):
+    def save(self, html, path, file_name="index.html", context=None):
+
+        # Microcodes avant minification
+        html = self._apply_microcodes(html, context)
 
         if self.config["version"]>0:
             html = htmlmin.minify(html, remove_empty_space=True)
