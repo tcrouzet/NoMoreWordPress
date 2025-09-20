@@ -12,7 +12,7 @@ class MicroCodes:
 
     def book_list(self, context=None):
         """
-        Liste toutes les PAGES (type == 1) du tag 'book'.
+        Liste toutes les PAGES du tag 'book'.
         Utilisation dans le contenu : [code:book_list]
         """
         web = getattr(self.layout, "web", None)
@@ -26,20 +26,45 @@ class MicroCodes:
 
         pages = []
         for row in rows:
-            post = web.supercharge_post(row, maximal=False)
-            if post and post.get("type") == 1:
+            post = web.supercharge_post(row, True)
+            if post and post.get("type")==1:
                 pages.append(post)
 
         if not pages:
             return "<!-- book_list: aucune page pour 'book' -->"
 
-        items = []
-        for p in pages:
-            url = "/" + str(p.get("url", "")).strip("/")
-            title = p.get("title")
-            if not title:
-                base = os.path.basename(p.get("path_md", "")) or "Sans titre"
-                title = os.path.splitext(base)[0].replace("-", " ").capitalize()
-            items.append(f'<li><a href="{html.escape(url)}">{html.escape(title)}</a></li>')
 
-        return '<ul class="book-list">\n' + "\n".join(items) + "\n</ul>"
+        romman = ""
+        imaginaire =""
+        essais = ""
+        recit = ""
+        autre =""
+        for p in pages:
+            frontmatter = p.get("frontmatter", None)
+            if frontmatter:
+                genre = frontmatter.get("genre","autre").lower()
+                book = f'<em>{html.escape(p.get("title"))}</em>, {frontmatter.get("date").year} ({genre})<br/>'
+                if genre == "roman":
+                    romman += book
+                elif genre == "imaginaire":
+                    imaginaire += book
+                elif genre == "essai":
+                    essais += book
+                elif genre == "récit":
+                    recit += book
+                else:
+                    autre += book
+
+        msg = ""
+        if imaginaire:
+            msg += f"<h3>Romans SF/imaginaire</h3><p>{imaginaire}</p>"
+        if romman:
+            msg += f"<h3>Romans</h3><p>{romman}</p>"
+        if essais:
+            essais = f"<h3>Essais</h3><p>{essais}</p>"
+        if recit:
+            msg += f"<h3>Récit</h3><p>{recit}</p>"
+        if autre:
+            msg += f"<h3>Autre</h3><p>{autre}</p>"
+
+        return msg
