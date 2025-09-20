@@ -1,4 +1,5 @@
 """Changer site.yml si mise à jour template"""
+# gen.py
 
 import os, sys
 from datetime import datetime
@@ -28,6 +29,7 @@ version = int(config['version'])
 db = tools.db.Db(config)
 web = tools.web.Web(config, db)
 layout = tools.layout.Layout(config)
+layout.web = web
 sitemap = tools.sitemap.Sitemap(config)
 feed = tools.feed.Feed(config, web)
 
