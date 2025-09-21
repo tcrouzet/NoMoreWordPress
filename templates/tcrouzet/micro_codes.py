@@ -43,17 +43,19 @@ class MicroCodes:
             frontmatter = p.get("frontmatter", None)
             if frontmatter:
                 genre = frontmatter.get("genre","autre").lower()
-                book = f'<em>{html.escape(p.get("title"))}</em>, {frontmatter.get("date").year} ({genre})<br/>'
+                url = html.escape(p.get("url","/biliographie/"))
+                book = f'<em>{html.escape(p.get("title"))}</em>, {frontmatter.get("date").year}'
+
                 if genre == "roman":
-                    romman += book
+                    romman += book + "<br/>"
                 elif genre == "imaginaire":
-                    imaginaire += book
+                    imaginaire += book + "<br/>"
                 elif genre == "essai":
-                    essais += book
+                    essais += book + "<br/>"
                 elif genre == "récit":
-                    recit += book
+                    recit += book + "<br/>"
                 else:
-                    autre += book
+                    autre += book  + f" ({genre})<br/>"
 
         msg = ""
         if imaginaire:
@@ -61,7 +63,7 @@ class MicroCodes:
         if romman:
             msg += f"<h3>Romans</h3><p>{romman}</p>"
         if essais:
-            essais = f"<h3>Essais</h3><p>{essais}</p>"
+            msg += f"<h3>Essais</h3><p>{essais}</p>"
         if recit:
             msg += f"<h3>Récit</h3><p>{recit}</p>"
         if autre:
