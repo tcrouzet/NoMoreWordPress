@@ -248,8 +248,8 @@ mode = "FR"
 # mode = "PHONE"
 
 if mode == "FR":
-    # last = db.get_last_published_post()
-    last = db.get_post_by_title("Se soustraire au monde")
+    last = db.get_last_published_post()
+    # last = db.get_post_by_title("Se soustraire au monde")
     print(last['path_md'])
     path = os.path.join( config['export_github_md'], last['path_md'])
 
