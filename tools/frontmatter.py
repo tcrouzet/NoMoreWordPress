@@ -64,6 +64,8 @@ class Frontmatter:
             return "Numilog"
         if "vilvio" in url:
             return "Vilvio"
+        if "laprocure" in url:
+            return "La Procure"
         
         return url
 

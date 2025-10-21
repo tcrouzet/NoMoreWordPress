@@ -306,6 +306,16 @@ class Db:
         post = c.fetchone()
         return post
 
+    def get_post_by_title(self, title):
+        c = self.conn.cursor()
+        query = f'''
+        SELECT * FROM posts
+        WHERE title = ? LIMIT 1
+        '''
+        c.execute(query, (title,))
+        post = c.fetchone()
+        return post
+
 
     def get_posts_by_tag(self, tag, limit=""):
         if not tag:

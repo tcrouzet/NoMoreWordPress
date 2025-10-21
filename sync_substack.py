@@ -245,12 +245,11 @@ config = tools.tools.site_yml('site.yml')
 db = tools.db.Db(config)
 mode = "FR"
 # mode = "BIKE"
-# mode = "DIGEST"
-# mode = "DIGEST_US"
 # mode = "PHONE"
 
 if mode == "FR":
-    last = db.get_last_published_post()
+    # last = db.get_last_published_post()
+    last = db.get_post_by_title("Se soustraire au monde")
     print(last['path_md'])
     path = os.path.join( config['export_github_md'], last['path_md'])
 
