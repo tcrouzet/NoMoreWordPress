@@ -7,10 +7,12 @@
     <span class="newsletter-button-label">Newsletters</span>
   </button>
 
-  {% unless post.on_home == 1 %}
-  <button class="newsletter-button" onclick="window.location.href='/bibliographie/'" style="background-color: cornflowerblue;">
-    <span class="newsletter-button-label">Mes livres</span>
-  </button>
-  {% endunless %}
+  <a 
+    href="/page/me-soutenir/" 
+    class="newsletter-button link-button"
+    style="background: #f6c915 !important"
+  >
+    <span class="newsletter-button-label">Me soutenir</span>
+  </a>
 
 </div>

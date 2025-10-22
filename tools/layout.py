@@ -87,59 +87,79 @@ class Layout:
 
     def copy_assets(self):
 
-        os.makedirs(self.config['export'], exist_ok=True)
-        copied_files = []
+            os.makedirs(self.config['export'], exist_ok=True)
+            copied_files = []
 
-        for item in os.listdir(self.template_dir):
-            if item.endswith('.liquid'):
-                continue
+            for item in os.listdir(self.template_dir):
+                if item.endswith('.liquid'):
+                    continue
 
-            source_item = os.path.join(self.template_dir, item)
-            destination_item = os.path.join(self.config['export'], item)
-            
-            if os.path.isdir(source_item):
-                # Directory
-                if not os.path.exists(destination_item):
-                    shutil.copytree(source_item, destination_item)
-                    for root, dirs, files in os.walk(destination_item):
-                        for file in files:
-                            copied_files.append(os.path.join(root, file))
-            else:
-                ## File
-                if self.copy_file(source_item, destination_item):
-                    copied_files.append(destination_item)
+                source_item = os.path.join(self.template_dir, item)
+                destination_item = os.path.join(self.config['export'], item)
+                
+                if os.path.isdir(source_item):
+                    # Directory
+                    copied_files.extend(self.copy_directory(source_item, destination_item))
+                else:
+                    ## File
+                    if self.copy_file(source_item, destination_item):
+                        copied_files.append(destination_item)
 
-        #print(copied_files)
-        return copied_files
-    
+            #print(copied_files)
+            return copied_files
 
     def copy_file(self, source, target):
+        """
+        Copie un fichier uniquement s'il est plus récent ou différent.
+        Applique la minification pour .html et .css.
+        Retourne True si le fichier a été copié, False sinon.
+        """
+        # Vérifier si le fichier destination existe et est plus récent que la source
+        if os.path.exists(target):
+            source_mtime = os.path.getmtime(source)
+            target_mtime = os.path.getmtime(target)
+            if target_mtime >= source_mtime:
+                # Fichier destination plus récent ou identique en date, pas besoin de copier
+                return False
 
         _, ext = os.path.splitext(source)
         if ext in [".html", ".css"]:
-            with open(source, "r") as file:
+            with open(source, "r", encoding="utf-8") as file:
                 content = file.read()
-            if ext in [".css"]:
+            if ext == ".css":
                 content = csscompressor.compress(content)
-            if ext in [".html"]:
+            elif ext == ".html":
                 content = htmlmin.minify(content)
-
-            # test is the same
-            if os.path.exists(target):
-                with open(target, 'r', encoding='utf-8') as file:
-                    if file.read() == content:
-                        return  False
 
             with open(target, "w", encoding="utf-8") as file:
                 file.write(content)
-                return True
+            return True
         else:
-            if os.path.exists(target) and self.file_hash(source) == self.file_hash(target):
-                return False
-
             shutil.copy2(source, target)
             return True
 
+
+    def copy_directory(self, source_dir, dest_dir):
+            """
+            Copie récursivement un dossier en ne copiant que les fichiers plus récents.
+            Retourne la liste des fichiers copiés.
+            """
+            copied_files = []
+            os.makedirs(dest_dir, exist_ok=True)
+            
+            for root, dirs, files in os.walk(source_dir):
+                # Calculer le chemin relatif depuis source_dir
+                rel_path = os.path.relpath(root, source_dir)
+                dest_root = os.path.join(dest_dir, rel_path) if rel_path != '.' else dest_dir
+                os.makedirs(dest_root, exist_ok=True)
+                
+                for file in files:
+                    source_file = os.path.join(root, file)
+                    dest_file = os.path.join(dest_root, file)
+                    if self.copy_file(source_file, dest_file):
+                        copied_files.append(dest_file)
+            
+            return copied_files
 
     def file_hash(self,file_path):
         hasher = hashlib.sha256()

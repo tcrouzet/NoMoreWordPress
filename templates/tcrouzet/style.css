@@ -2,11 +2,11 @@
 
  @font-face {
   font-family: 'icomoon';
-  src:  url('/fonts/icomoon.eot?3');
-  src:  url('/fonts/icomoon.eot?3x#iefix') format('embedded-opentype'),
-    url('/fonts/icomoon.ttf?3') format('truetype'),
-    url('/fonts/icomoon.woff?3') format('woff'),
-    url('/fonts/icomoon.svg?3#icomoon') format('svg');
+  src:  url('/fonts/icomoon.eot?4');
+  src:  url('/fonts/icomoon.eot?4x#iefix') format('embedded-opentype'),
+    url('/fonts/icomoon.ttf?4') format('truetype'),
+    url('/fonts/icomoon.woff?4') format('woff'),
+    url('/fonts/icomoon.svg?4#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -315,7 +315,8 @@ figure.poster {
   margin-inline-end: 0;
   unicode-bidi: isolate;
   width: 100%;
-  max-width: 110ch;
+  max-width: var(--h1-justif);
+  /* max-width: 110ch; */
   text-align: center;
   margin-left: auto;
   margin-right: auto;
@@ -324,7 +325,7 @@ figure.poster {
 .poster-img {
   position: relative;
   width:100%;
-  height:90vh;
+  height:70vh;
   z-index: 0;
   object-position: center;
 }
@@ -486,7 +487,7 @@ div.menu-page a{
   font-size: 3rem;
   position: absolute;
   left: -0.5rem;
-  top: 0.4rem;
+  top: 0.3rem;
   line-height: 1;
   color: var(--color--medium);
 }
@@ -793,11 +794,20 @@ div.plus ul li::before {
   background-color: #c70512;
   transform: translateY(-1px);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15);
+	border-bottom: none;
+  text-decoration: none;
 }
 
 .newsletter-button:active {
   transform: translateY(1px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	border-bottom: none;
+  text-decoration: none;
+}
+
+.newsletter-button:visited {
+	border-bottom: none;
+  text-decoration: none;
 }
 
 .newsletter-button svg {
@@ -816,6 +826,16 @@ div.plus ul li::before {
   border: none;
 }
 
+
+.post a.link-button,
+.post a.link-button:visited,
+.post a.link-button:hover,
+.post a.link-button:focus,
+.post a.link-button:active {
+  background: #f6c915 !important; /* Écrase tout le background */
+  color: black !important;
+  text-decoration: none !important;
+}
 /* Popup */
 
 #popup {
@@ -1143,14 +1163,14 @@ div.social a,div.social a:visited,div.social a:hover{
 
 div.social {
   display: grid;
-  width: 10rem;
+  width: 13rem;
   margin: 1rem auto;
   -webkit-font-smoothing: antialiased;
   font-size: 1em;
   line-height: 1em;
   text-align: center;
   gap: 1rem;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   place-items: center;
 }
 
@@ -1167,6 +1187,8 @@ a.icon {
 a.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e96c'}
 a.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea82'}
 a.icon_download:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e9c2'}
+a.icon_friends:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e972'}
+
 
 a.icon_com .count {
   font-size: 0.75rem;
@@ -1260,6 +1282,10 @@ div.edit{position:fixed; left:45%;top:0.5rem;z-index: 99;}
   }
   div.menu-page h1{
     top: 0;
+  }
+
+  .post ul li::before {
+    top: 0.2rem;
   }
 
   /* .splash{text-align: left;}
