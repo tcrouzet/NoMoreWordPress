@@ -18,3 +18,4 @@ GitPython
 md2gemini
 playwright
 numpy
+tinycss2

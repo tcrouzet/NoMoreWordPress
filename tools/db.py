@@ -96,34 +96,6 @@ class Db:
             else:
                 return 0, 0
 
-    def insert_post_old(self, post):
-
-        if 'tags' in post and isinstance(post['tags'], list):
-            post['tags'] = json.dumps(post['tags'])
-
-        #print(post)
-        #exit()
-
-        query = '''INSERT OR IGNORE INTO posts 
-                (title, path_md, pub_date, pub_update, thumb_path, thumb_legend, type, tags)
-                VALUES (:title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags)
-                ON CONFLICT(path_md) DO UPDATE SET
-                        title = excluded.title,
-                        pub_date = excluded.pub_date,
-                        pub_update = excluded.pub_update,
-                        thumb_path = excluded.thumb_path,
-                        thumb_legend = excluded.thumb_legend,
-                        type = excluded.type,
-                        tags = excluded.tags,
-                        updated = TRUE
-                    WHERE excluded.pub_update > pub_update;             
-                '''
-        c = self.conn.cursor()
-        c.execute(query, post)
-        if c.rowcount > 0:
-            return True
-        else:
-            return False
 
     def updated(self, post):
 

@@ -4,6 +4,10 @@ import os
 import subprocess
 import json
 import re
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo  # Python 3.9+
+
+PARIS_TZ = ZoneInfo("Europe/Paris")
 
 def site_yml(path):
     with open(path, 'r') as file:
@@ -91,3 +95,20 @@ def remove_markdown_images(markdown_text):
     text_without_images = re.sub(pattern, '', markdown_text)
     
     return text_without_images
+
+def format_timestamp_to_paris_time(timestamp: int) -> str:
+    dt_paris = timestamp_to_paris_datetime(timestamp)
+    return dt_paris.isoformat(timespec="seconds")
+
+def timestamp_to_paris_datetime(timestamp: int) -> datetime:
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).astimezone(PARIS_TZ)
+
+def output_dir():
+    output_dir = "_output"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(script_dir) + os.sep
+    
+    output_dir = os.path.join(parent_dir, "_output")
+    os.makedirs(output_dir, exist_ok=True)
+
+    return output_dir

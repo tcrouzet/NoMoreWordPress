@@ -1,11 +1,9 @@
 <div class="social">
-    <a class="icon_com icon" href="javascript:void(0);" onclick="showComments('com{{ post.id }}')" title="Commenter">
-        <span class="count">{{ post.comments }}</span>
-    </a>
-    <a class="icon_share icon" href="javascript:void(0);" onclick="copyText()" title="Partager"></a>
+    <button class="icon_com icon" onclick="showComments('com{{ post.id }}')" title="Commenter" aria-label="Afficher les commentaires"></button>
+    <button class="icon_share icon" onclick="copyText()" title="Partager" aria-label="Partager l'article"></button>
   {% if post.github != blank %}
-        <a class="icon_download icon" href="{{ post.github }}" download title="Télécharger"></a>
+        <a class="icon_download icon" href="{{ post.github }}" download title="Télécharger" aria-label="Télécharger en Markdown"></a>
   {% endif %}
-    <a class="icon_friends icon" href="page/lectures/" title="Sites amis"></a>
+    <a class="icon_friends icon" href="/page/lectures/" title="Sites amis" aria-label="Afficher les sites amis"></a>
 </div>
-<div class="comments" id="com{{ post.id }}" data-post-url="{{ post.url }}" data-post-title="{{ post.title }}" data-post-date="{{ post.pub_date_str }}"></div>
+<div class="comments" id="com{{ post.id }}" data-post-url="{{ post.url }}" data-post-title="{{ post.title }}" data-post-date="{{ post.pub_date_str }}" hidden></div>

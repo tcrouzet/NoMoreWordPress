@@ -1,6 +1,6 @@
 {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
 
-<div id="content" role="main">
+<main id="content">
 
     <div class="menu-page">
         {% for menu in post.menu %}
@@ -20,4 +20,4 @@
 
     {% include mail_path %}
 
-</div>
+</main>

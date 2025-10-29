@@ -9,7 +9,9 @@ import shutil
 from bs4 import BeautifulSoup
 import json
 import yaml
+from urllib.parse import urlparse
 import tools.frontmatter as ft
+import tools.tools as tools
 
 
 class Web:
@@ -19,12 +21,6 @@ class Web:
         self.db = db
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
-
-
-    def format_timestamp_to_paris_time(self, timestamp):
-        utc_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        paris_time = utc_time.astimezone(pytz.timezone('Europe/Paris'))
-        return  paris_time.isoformat()
 
 
     def url(self, post):
@@ -40,9 +36,9 @@ class Web:
         if post['type'] == 0:
 
             #POST
-            date = datetime.fromtimestamp(post['pub_date'])
-            path = date.strftime("/%Y/%m/%d")
-            url = '/'.join([path.strip('/'), file_name_without_extension]) + "/"
+            dt = tools.timestamp_to_paris_datetime(post["pub_date"])
+            path = dt.strftime("/%Y/%m/%d")
+            url = "/".join([path.strip("/"), file_name_without_extension]) + "/"
         
         elif post['type'] == 1:
 
@@ -86,7 +82,7 @@ class Web:
         if post['type'] == 0:
 
             #POST
-            date = datetime.fromtimestamp(post['pub_date'])
+            date = tools.timestamp_to_paris_datetime(post["pub_date"])
             path = date.strftime("/%Y/%-m/")
             url = '/'.join([path.strip('/'), file_name_without_extension]) + ".md"
         
@@ -108,7 +104,7 @@ class Web:
             source_dir = self.normalize_month(os.path.dirname(post['post_md']))
             url = os.path.join(self.config['images_dir'].strip("/"), source_dir,file_name)
         else:
-            date = datetime.fromtimestamp(post['pub_date'])
+            date = tools.timestamp_to_paris_datetime(post["pub_date"])
             path = date.strftime("%Y/%m/")
             url = self.config['images_dir'] + path + src.replace(self.config['vault_img'],"")
         return url
@@ -188,7 +184,8 @@ class Web:
                         "url_absolu": self.config['domain'] + url.strip("/"),
                         "url_1024": url,
                         "url_250": url,
-                        "jpeg": url
+                        "jpeg": url,
+                        "legend": getattr(post, 'thumb_legend', '') or ''
                     }
 
                 sizes = {'1024': None, '250': None}
@@ -217,7 +214,8 @@ class Web:
                         "url_absolu": self.config['domain'] + url.strip("/"),
                         "url_1024": sizes['1024'],
                         "url_250": sizes['250'],
-                        "jpeg": ""
+                        "jpeg": "",
+                        "legend": getattr(post, 'thumb_legend', '') or ''
                     }
 
         except Exception as e:
@@ -457,22 +455,42 @@ class Web:
                 # print("Unknown url", url, "dans:", post['path_md'])
                 # exit()
         return "/" + url
-
+    
 
     def link_manager(self, html, post):
 
         soup = BeautifulSoup(html, 'html.parser')
         links = soup.find_all('a')
-        
+
+        # Domaine du site (ex: https://tcrouzet.com → tcrouzet.com)
+        site_domain = self.config["domain"]
+        site_netloc = urlparse(site_domain if site_domain.startswith("http") else f"https://{site_domain}").netloc
+
         for link in links:
-            
-            href = link.get('href','')
-            if href and href.endswith(".md") and not href.startswith("http"):
+            href = link.get('href', '')
+            if not href:
+                continue
+
+            if href.endswith(".md") and not href.startswith("http"):
                 #internal
-                link['href'] = self.relative_to_absolute(post, href )
-            
+                link['href'] = self.relative_to_absolute(post, href)
+                continue
+
+            # Liens externes: ajouter rel="noopener noreferrer"
+            # on ignore ancres, mailto, tel, etc.
+            if href.startswith(("http://", "https://")):
+                netloc = urlparse(href).netloc
+                if netloc and netloc != site_netloc:
+                    existing_rel = link.get("rel", [])
+                    # BeautifulSoup normalise rel en liste si présent
+                    if isinstance(existing_rel, str):
+                        existing_rel = existing_rel.split()
+                    # fusion sans doublons
+                    rel_tokens = set(existing_rel) | {"noopener", "noreferrer"}
+                    link['rel'] = " ".join(sorted(rel_tokens))
+
         return str(soup)
-    
+
 
     def img_tag(self, img):
         return f'''<img width="{img['width']}" height="{img['height']}" src="{img['url']}" class="poster-img poster-img-full"
@@ -521,14 +539,15 @@ class Web:
 
     def date_html(self,post):
         locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-        current_time = datetime.fromtimestamp(post['pub_date'])
+        current_time  = tools.timestamp_to_paris_datetime(post["pub_date"])
         date_iso = current_time.strftime('%Y-%m-%dT%H:%M:00')
         time_published = current_time.strftime('%H:%M')
         # date_link = current_time.strftime('/%Y/%m/')
         year_link = current_time.strftime('/%Y/')
         day_month = current_time.strftime('%d %B')
         
-        msg = f'<a href="{year_link}" itemprop="datePublished" content="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</a>'
+        # msg = f'<a href="{year_link}" itemprop="datePublished" content="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</a>'
+        msg = f'<a href="{year_link}"><time datetime="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</time></a>'
 
         return msg
 
@@ -652,15 +671,11 @@ class Web:
             post['comments'] = self.post_comment_total(post)
         
         post['canonical'] = self.config['domain'] + post['url']
-        post['pub_date_str'] = self.format_timestamp_to_paris_time(post['pub_date'])
-        post['pub_update_str'] = self.format_timestamp_to_paris_time(post['pub_update'])
+        post['pub_date_str'] = tools.format_timestamp_to_paris_time(post['pub_date'])
+        post['pub_update_str'] = tools.format_timestamp_to_paris_time(post['pub_update'])
         post['thumb'] = self.source_image(post['thumb_path'], post)
         post['thumb'] = self.makeJPEGthumb(post['thumb'])
         post['github'] = self.get_github_url(post['url'])
-
-        # if post['thumb']:
-        #     post['thumb']["alt"] = post['thumb_legend']
-        #     post['thumb']['tag'] = self.img_tag(post['thumb'])
 
         post['tagslist'] = self.extract_tags(post)
         post['navigation'] = self.navigation(post)
@@ -689,8 +704,8 @@ class Web:
 
         tag['description'] = tag['title']
         tag['canonical'] = self.config['domain'] + tag['url']
-        tag['pub_date_str'] = self.format_timestamp_to_paris_time(tag['pub_date'])
-        tag['pub_update_str'] = self.format_timestamp_to_paris_time(tag['pub_update'])
+        tag['pub_date_str'] = tools.format_timestamp_to_paris_time(tag['pub_date'])
+        tag['pub_update_str'] = tools.format_timestamp_to_paris_time(tag['pub_update'])
         tag['thumb'] = self.source_image(tag['thumb_path'], tag)
         if tag['thumb']:
             tag['thumb']["alt"] = tag['thumb_legend']

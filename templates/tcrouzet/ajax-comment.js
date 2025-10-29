@@ -96,29 +96,44 @@ function initCommentSystem(commentId) {
     commentsDiv.setAttribute('data-initialized', 'true');
 }
 
-
 // Fonction pour charger les commentaires depuis GitHub
 async function loadComments(githubPostUrl) {
-    console.log('Chargement des commentaires pour:', githubPostUrl);
-    try {
-        const response = await fetch(`https://api.github.com/repos/tcrouzet/md/contents/comments/${githubPostUrl}?ref=main`);
-        if (!response.ok) {
-            if (response.status === 404) {
-                return "<p>Aucun commentaire pour l'instant. Soyez le premier à commenter!</p>";
-            }
-            throw new Error(`Erreur GitHub API: ${response.status}`);
-        }
-        const file = await response.json();
-        const rawContent = new TextDecoder('utf-8').decode(Uint8Array.from(atob(file.content), c => c.charCodeAt(0)));
-        return formatComments(rawContent);
-    } catch (error) {
-        console.error('Erreur dans loadComments:', error);
-        if (error.message.includes('404')) {
-            return "<p>Aucun commentaire pour l'instant. Soyez le premier à commenter!</p>";
-        }
-        throw error;
+  console.log('Chargement des commentaires pour:', githubPostUrl);
+  try {
+    const response = await fetch(`https://api.github.com/repos/tcrouzet/md/contents/comments/${githubPostUrl}?ref=main`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+
+    // 404 = aucun commentaire pour l'instant (cas nominal)
+    if (response.status === 404) {
+        console.error('Aucun commentaire trouvé (404)');
+        return "<p>Aucun commentaire pour l'instant. Soyez le premier à commenter!</p>";
     }
+
+    // Autres erreurs: message user-friendly, pas d'exception bloquante
+    if (!response.ok) {
+        console.error('Impossible charger');
+        return "<p>Impossible de charger les commentaires pour le moment.</p>";
+    }
+
+    // 200 OK: décoder le fichier et formater
+    const file = await response.json();
+    const rawContent = new TextDecoder('utf-8').decode(
+      Uint8Array.from(atob(file.content || ""), c => c.charCodeAt(0))
+    );
+    return formatComments(rawContent);
+
+  } catch (error) {
+    // Ne pas logguer d'erreur pour un 404 (déjà géré ci-dessus)
+    const msg = String(error || "");
+    if (msg.includes("404")) {
+      return "<p>Aucun commentaire pour l'instant. Soyez le premier à commenter!</p>";
+    }
+    console.error('Erreur dans loadComments:', error);
+    return "<p>Impossible de charger les commentaires pour le moment.</p>";
+  }
 }
+
 
 // Fonction pour convertir les liens markdown en HTML
 function convertLinks(text) {
@@ -247,9 +262,8 @@ function submitComment(form) {
     });
 }
 
-
 // Fonction pour soumettre le commentaire
-function submitCommentOls(form) {
+function submitCommentOlds(form) {
     const formData = new FormData(form);
     const messageDiv = form.querySelector('.message');
     const actionUrl = "https://formspree.io/f/mgebvkwn";

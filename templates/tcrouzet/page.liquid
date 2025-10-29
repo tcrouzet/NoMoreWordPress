@@ -1,7 +1,6 @@
-{% comment %} {% assign mail_path = blog.template  | append: '/mailchimp.liquid' %} {% endcomment %}
 {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
 
-<div id="content" role="main">
+<main id="content">
 
 <div class="poster maxContainerWidth">
     <div class="poster-big-spacer maxContainerWidth"></div>
@@ -14,4 +13,4 @@
     {{ post.content }}
 </div>
 {% include mail_path %}
-</div>
+</main>

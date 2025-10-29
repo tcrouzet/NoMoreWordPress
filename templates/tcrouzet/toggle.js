@@ -16,7 +16,7 @@ function toggleMenu(){
 
     if(accessLoaded) return;
     doAPIcall(
-        "GET","/ajax-menu.html?19", false,
+        "GET","/ajax-menu.html?20", false,
         function (data) {
             if(data){
                 access.innerHTML=data;
@@ -45,9 +45,9 @@ function searchMenu(){
 
 function toggleNewsletter() {
     // Si la newsletter est déjà visible, la cacher
-    if (newsletter.style.display === 'block') {
-        newsletter.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Réactiver le défilement
+    if (!newsletter.hidden) {
+        newsletter.hidden = true;
+        document.body.style.overflow = 'auto';
         return;
     }
     
@@ -58,15 +58,17 @@ function toggleNewsletter() {
             function (data) {
                 if (data) {
                     newsletter.innerHTML = data;
-                    newsletter.style.display = 'block';
+                    newsletter.hidden = false;
+                    document.body.style.overflow = 'hidden';
+                    // newsletter.style.display = 'block';
                     newsletterLoaded = true;
                 }
             }
         );
     } else {
         // Si déjà chargée, simplement l'afficher
-        newsletter.style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Empêcher le défilement
+        newsletter.hidden = false;
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -186,28 +188,6 @@ function doAPIcall(type, url, flag, callback) {
     xmlhttp.send();
 }
 
-// function copyText() {
-//     if (navigator.share) {
-//         navigator.share({
-//             title: document.title,
-//             url: window.location.href
-//         }).then(() => {
-//             console.log('Partage réussi');
-//         }).catch((error) => {
-//             console.error('Erreur lors du partage :', error);
-//         });
-//     } else {
-//         // Fallback : copier le lien dans le presse-papier
-//         navigator.clipboard.writeText(window.location.href)
-//             .then(() => {
-//                 copyMessage('Adresse de l\'article copiée !<br/>À coller dans votre réseau social préféré.');
-//             })
-//             .catch((error) => {
-//                 console.error('Erreur lors de la copie du lien :', error);
-//             });
-//     }
-// }
-
 function copyText(customTitle, customUrl) {
     // Utiliser les paramètres s'ils sont fournis, sinon utiliser les valeurs par défaut
     const title = customTitle || document.title;
@@ -240,12 +220,17 @@ function copyMessage(msg) {
 
     if (msg.toLowerCase().includes("erreur")) {
         messageElement.style.backgroundColor = "red"
+    }else {
+        messageElement.style.backgroundColor = "";
     }
 
-    messageElement.style.visibility = 'visible';
+    // Afficher
+    messageElement.hidden = false;
+
+    // Cacher après 5 secondes
     setTimeout(() => {
-        messageElement.style.visibility = 'hidden';
-    }, 5000); 
+        messageElement.hidden = true;
+    }, 5000);
 }
 
 // Fonction pour afficher les commentaires
@@ -261,13 +246,13 @@ function showComments(commentId) {
     }
 
     // Si la div est déjà visible, simplement faire défiler jusqu'à elle
-    if (commentsDiv.style.display === 'block') {
+    if (!commentsDiv.hidden) {
         commentsDiv.scrollIntoView({ behavior: 'smooth' });
         return;
     }
 
     // Afficher la div des commentaires
-    commentsDiv.style.display = 'block';
+    commentsDiv.hidden = false;
     commentsDiv.scrollIntoView({ behavior: 'smooth' });
 
     // Si le contenu est vide, charger les commentaires
@@ -275,7 +260,7 @@ function showComments(commentId) {
         // Charger le formulaire de commentaires via doAPIcall
         doAPIcall(
             "GET", 
-            "/ajax-comment.html?9", 
+            "/ajax-comment.html?10", 
             false,
             function (htmlData) {
                 if (htmlData) {

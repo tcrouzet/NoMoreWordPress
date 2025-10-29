@@ -12,7 +12,6 @@ import tools.logs
 import tools.sitemap
 import tools.feed
 
-
 #Force updating home screen
 new_home_template = True
 
