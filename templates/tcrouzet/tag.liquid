@@ -1,23 +1,17 @@
 {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
 
-<main id="content">
+<main itemscope itemType="https://schema.org/CollectionPage">
 
-    <div class="menu-page">
+    <nav>
         {% for menu in post.menu %}
             {% if forloop.index == 1 %}
-                <h1 itemprop="headline" id="title">{{ menu.title }}</h1>
+                <h1 itemprop="headline">{{ menu.title }}</h1>
             {% else %}
                 <a href="{{ menu.url }}">{{ menu.title }}</a>
             {% endif %}
         {% endfor %}
-    </div>
+    </nav>
 
-    <article>
-        <div class="front maxContainerWidth pageGutter infinite">
-        {{ list }}
-        </div>
-    </article>
-
-    {% include mail_path %}
+    {{ list }}
 
 </main>

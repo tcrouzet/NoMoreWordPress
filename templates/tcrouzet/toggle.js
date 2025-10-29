@@ -6,9 +6,6 @@ var toggleSearch = document.getElementById('toggle-search');
 var search = document.getElementById('access-search');
 var searchLoaded = false;
 
-var newsletter = document.getElementById('newsletter');
-var newsletterLoaded = false;
-
 
 function toggleMenu(){
     toggle.classList.toggle("close");
@@ -42,35 +39,6 @@ function searchMenu(){
     );
     searchLoaded=true;
 };
-
-function toggleNewsletter() {
-    // Si la newsletter est déjà visible, la cacher
-    if (!newsletter.hidden) {
-        newsletter.hidden = true;
-        document.body.style.overflow = 'auto';
-        return;
-    }
-    
-    // Si la newsletter n'est pas encore chargée
-    if (!newsletterLoaded) {
-        doAPIcall(
-            "GET", "/ajax-newsletter.html?15", false,
-            function (data) {
-                if (data) {
-                    newsletter.innerHTML = data;
-                    newsletter.hidden = false;
-                    document.body.style.overflow = 'hidden';
-                    // newsletter.style.display = 'block';
-                    newsletterLoaded = true;
-                }
-            }
-        );
-    } else {
-        // Si déjà chargée, simplement l'afficher
-        newsletter.hidden = false;
-        document.body.style.overflow = 'hidden';
-    }
-}
 
 toggle.addEventListener("click", toggleMenu, false);
 toggleSearch.addEventListener("click", searchMenu, false);
@@ -143,7 +111,7 @@ function fetchContent(url) {
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
             if (xmlhttp.status == 200) {
-                var infiniteContainer = document.querySelector('.infinite');
+                var infiniteContainer = document.querySelector('main');
                 if (infiniteContainer) {
                     infiniteContainer.insertAdjacentHTML('beforeend', xmlhttp.responseText);
                     oktoload = true;
@@ -205,12 +173,7 @@ function copyText(customTitle, customUrl) {
     } else {
         // Fallback : copier le lien dans le presse-papier
         navigator.clipboard.writeText(url)
-            .then(() => {
-                copyMessage('Adresse copiée !<br/>À coller dans votre réseau social préféré.');
-            })
-            .catch((error) => {
-                console.error('Erreur lors de la copie du lien :', error);
-            });
+        alert('Adresse de la page copiée dans le presse-papier…');
     }
 }
 

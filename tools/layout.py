@@ -30,7 +30,8 @@ class Layout:
         self.tag = self.load_template("tag")
         self.tags_list = self.load_template("tags_list")
         self.home = self.load_template("home")
-        self.page = self.load_template("page")
+        self.menu = self.load_template("menu")
+        self.search = self.load_template("search")
 
         self.new_assets = self.copy_assets()
 
@@ -208,20 +209,31 @@ class Layout:
         self.save(header_html + home_html + footer_html, "", "index.html")
 
 
-    def e404_gen(self):
-        post = {"thumb": None, "title": "Erreur 404", "content": '<p>Cette page n’existe plus… ou n’a jamais existé.</p>'}
+    def special_pages(self, post, path, file_name="index.html"):
         header_html = self.header.render(post=post, blog=self.config)
         footer_html = self.footer.render(post=post, blog=self.config)
-        page_html = self.page.render(post=post, blog=self.config)
-        self.save(header_html + page_html + footer_html, "", "404.html")
+        article_html = self.article.render(post=post, blog=self.config)
+        page_html = self.single.render(post=post, blog=self.config, article=article_html)
+        self.save(header_html + page_html + footer_html, path, file_name)
 
+    def e404_gen(self):
+        text = '<p>Cette page n’existe plus ou n’a jamais existé.</p>'
+        post = {"thumb": None, "title": "Erreur 404", "html": text, "frontmatter": None, "type":1}
+        self.special_pages(post, "", "404.html")
 
     def archives_gen(self, archives):
-        post = {"thumb": None, "title": "Archives", "content": archives}
-        header_html = self.header.render(post=post, blog=self.config)
-        footer_html = self.footer.render(post=post, blog=self.config)
-        page_html = self.page.render(post=post, blog=self.config)
-        self.save(header_html + page_html + footer_html, "archives/")
+        post = {"thumb": None, "title": "Archives", "html": archives, "frontmatter": None, "type":1}
+        self.special_pages(post, "archives/")
+
+    def menu_gen(self):
+        menu_html = self.menu.render()
+        post = {"thumb": None, "title": "", "html": menu_html, "frontmatter": None, "type":3}
+        self.special_pages(post, "menu/")
+
+    def search_gen(self):
+        search_html = self.search.render()
+        post = {"thumb": None, "title": "", "html": search_html, "frontmatter": None, "type":3}
+        self.special_pages(post, "search/")
 
 
     def save(self, html, path, file_name="index.html", context=None):

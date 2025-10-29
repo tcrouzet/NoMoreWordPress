@@ -1,39 +1,39 @@
 {% assign share_path = blog.template  | append: '/share.liquid' %}
 {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
 
-{% if post.type == 2 %}
+{% if post.type == 3 %}
+    <article itemscope itemType="https://schema.org/CollectionPage">
+{% elsif post.type == 2 %}
     <article itemscope itemType="https://schema.org/Book">
+{% elsif post.type == 1 %}
+    <article itemscope itemType="https://schema.org/WebPage">
 {% else %}
     <article itemscope itemType="https://schema.org/BlogPosting">
 {% endif %}
-    
-{% comment %} <meta itemprop="inLanguage" content="fr-FR"/>
-<meta itemprop="author" content="Thierry Crouzet"/>
-<meta itemprop="datePublished" content="{{ post.pub_date_str }}"/>
-<meta itemprop="dateModified" content="{{ post.pub_update_str }}"/> {% endcomment %}
 
 <header>
     {% if post.thumb %}
 
-        <figure class="poster">
+        <figure>
             <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
             class="poster-img {% if post.thumb.height > post.thumb.width %}poster-img-book{% else %}poster-img-full{% endif %}" 
             alt="{{ post.thumb_legend }}" loading="lazy" decoding="async"
             srcset="{% if post.thumb.url250 %}{{ post.thumb.url250 }} 250w,{% endif %}{% if post.thumb.url1024 %}{{ post.thumb.url1024 }} 1024w,{% endif %}{{ post.thumb.url }} 1600w" sizes="(max-width: 1600px) 100vw, 1600px" />
 
-            {% if post.thumb_legend != empty and not post.frontmatter.baseline %}<figcaption class="legend legend-poster {% if post.thumb.height > post.thumb.width %}legend-center{% else %}legend-right{% endif %}">{{ post.thumb_legend }}</figcaption>{% endif %}
+            {% if post.thumb_legend != empty and not post.frontmatter.baseline %}<figcaption {% if post.thumb.height > post.thumb.width %}class="legend-center"{% endif %}>{{ post.thumb_legend }}</figcaption>{% endif %}
         </figure>
         
     {% endif %}
-        
-    {% comment %} <h1 itemprop="headline" id="title{{ post.id }}"> {% endcomment %}
-    <h1 itemprop="headline">
-    {%- if post.frontmatter.baseline -%}
-    <span class="book_genre">{{ post.frontmatter.genre }}</span>{{ post.frontmatter.baseline }}
-    {%- else -%}
-    {{ post.title }}
-    {%- endif -%}
-    </h1>
+    
+    {% if post.type != 3 %}
+        <h1 itemprop="headline">
+        {%- if post.frontmatter.baseline -%}
+        <span class="book_genre">{{ post.frontmatter.genre }} </span>{{ post.frontmatter.baseline }}
+        {%- else -%}
+        {{ post.title }}
+        {%- endif -%}
+        </h1>
+    {% endif %}    
 
     {% if post.type == 0 and post.navigation %}    
         <nav>
@@ -50,27 +50,23 @@
 </header>
     
 
-{% comment %} <div class="post hentry" itemprop="articleBody" id="post-{{ post.id }}"> {% endcomment %}
-<div class="post" itemprop="articleBody">
+<section itemprop="articleBody">
 
     {% if post.frontmatter.exergue %}
-        <div class="book_exergue">{{ post.frontmatter.exergue }}</div>
+        <h2>{{ post.frontmatter.exergue }}</h2>
     {% endif %}
 
     {% if post.frontmatter.lire %}
-        <div class="book_sub"><a href="{{ post.frontmatter.lire }}">Extrait</a></div>
+        <h6><a href="{{ post.frontmatter.lire }}">Extrait</a></h6>
     {% endif %}
-
     {% if post.frontmatter.papier %}
-        <div class="book_sub">{{ post.frontmatter.papier }}</div>
+        <h6>{{ post.frontmatter.papier }}</h6>
     {% endif %}
     {% if post.frontmatter.ebook %}
-        <div class="book_sub">{{ post.frontmatter.ebook }}</h5></div>
+        <h6>{{ post.frontmatter.ebook }}</h6>
     {% endif %}
 
-
     {{ post.html }}
-
 
     {% if post.frontmatter.editor %}
     <h3>Fiche produit</h3>
@@ -83,11 +79,12 @@
     </ul>
     {% endif %}
     
-    <footer>
-        {% include share_path %}
-        {% include mail_path %}
-    </footer>
-</div>
+</section>
+
+<footer>
+    {% if post.type != 3 %}{% include share_path %}{% endif %}
+    {% include mail_path %}
+</footer>
 
 </article>
 

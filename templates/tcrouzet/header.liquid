@@ -53,16 +53,10 @@
 
 <body>
 
-<header id="top">
-
-  <div id="author">
-    <button id="toggle" class="open" aria-label="Menu"></button>
-    <a id="nomsmall"
-      href="{% if blog.domain == post.canonical %}/page/informations/{% else %}/{% endif %}"
-      title="{% if blog.domain == post.canonical %}Informations, Thierry Crouzet{% else %}Accueil, Thierry Crouzet{% endif %}">Thierry <b>CROUZET</b></a>
-  </div>
-  <button id="toggle-search" aria-label="Recherche"></button>
-  <div id="access" class="access pageGutter"></div>
-  <div id="access-search" class="access pageGutter"></div>
-
+<header>
+  <a aria-label="Menu" href="/menu/"></a>
+  <a aria-label="Accueil"
+    href="{% if blog.domain == post.canonical %}/page/informations/{% else %}/{% endif %}"
+    title="{% if blog.domain == post.canonical %}Informations{% else %}Accueil{% endif %}">Thierry <b>CROUZET</b></a>
+  <a aria-label="Recherche" href="/search/"></a>
 </header>

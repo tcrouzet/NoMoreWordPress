@@ -40,7 +40,7 @@ class Web:
             path = dt.strftime("/%Y/%m/%d")
             url = "/".join([path.strip("/"), file_name_without_extension]) + "/"
         
-        elif post['type'] == 1:
+        elif post['type'] == 1 or post['type'] == 2:
 
             #PAGES
             url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + "/"
@@ -86,7 +86,7 @@ class Web:
             path = date.strftime("/%Y/%-m/")
             url = '/'.join([path.strip('/'), file_name_without_extension]) + ".md"
         
-        elif post['type'] == 1:
+        elif post['type'] == 1 or post['type'] == 2:
 
             #PAGES
             url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + ".md"
@@ -378,8 +378,8 @@ class Web:
                             myclass = 'portrait'
                             myclasslegend = 'legend-center'
                         else:
-                            myclass = 'paysage'
-                            myclasslegend = 'legend-right'
+                            myclass = ''
+                            myclasslegend = ''
                         if img_data['width'] < 1500:
                             myclass += ' small'
                             myclasslegend = 'legend-center'
@@ -387,16 +387,30 @@ class Web:
                         if "png" in img_data["format"]:
                             myclasslegend = 'legend-center'
 
-                        new_div = soup.new_tag('figure', id=f"image-{post['id']}-{index}", **{'class': 'image'})
-                        new_img = soup.new_tag('img', src=f"{img_data['url']}",
-                            **{'class': myclass,
-                            'alt': alt_text, 'width': img_data['width'], 'height': img_data['height'],
-                            'loading': 'lazy', 'decoding': 'async',
-                            'srcset': f'{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w',
-                            'sizes': '(max-width: 1600px) 100vw, 1600px'})
+                        # new_div = soup.new_tag('figure', id=f"image-{post['id']}-{index}", **{'class': 'image'})
+                        new_div = soup.new_tag('figure')
+                        img_attrs = {
+                            'src': img_data['url'],
+                            'alt': alt_text,
+                            'width': img_data['width'],
+                            'height': img_data['height'],
+                            'loading': 'lazy',
+                            'decoding': 'async',
+                            'srcset': f"{img_data['url']} 1600w, {img_data['url_1024']} 1024w, {img_data['url_250']} 250w",
+                            'sizes': '(max-width: 1600px) 100vw, 1600px'
+                        }
+
+                        if myclass:
+                            img_attrs['class'] = myclass
+
+                        new_img = soup.new_tag('img', **img_attrs)
+
                         new_div.append(new_img)
 
-                        new_legend = soup.new_tag('figcaption', **{'class': f'legend {myclasslegend}'})
+                        if myclasslegend:
+                            new_legend = soup.new_tag('figcaption', **{'class': f'legend {myclasslegend}'})
+                        else:
+                            new_legend = soup.new_tag('figcaption')
                         new_legend.string = alt_text
                         new_div.append(new_legend)
                         p.replace_with(new_div)
@@ -546,7 +560,6 @@ class Web:
         year_link = current_time.strftime('/%Y/')
         day_month = current_time.strftime('%d %B')
         
-        # msg = f'<a href="{year_link}" itemprop="datePublished" content="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</a>'
         msg = f'<a href="{year_link}"><time datetime="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</time></a>'
 
         return msg

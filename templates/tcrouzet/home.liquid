@@ -1,23 +1,23 @@
-<div id="splashcenter">
-  <div id="content" role="main" class="splash pageGutter">
+<main itemscope itemType="https://schema.org/CollectionPage">
+  <section>
+    <h2><a href="/bibliographie/">Livres</a></h2>
+    <h3><a href="/books/rush/"><em>Rush</em></a></h3>
 
-          <h2><a href="/bibliographie/">Livres</a></h2>
-          <h3><a href="/books/rush/"><em>Rush</em></a></h3>
+    <h2><a href="/blog/">Digressions</a></h2>
+    <h3><a href="{{ post.digressions.url }}">{{ post.digressions.title }}</a></h3>
 
-          <h2><a href="/blog/">Digressions</a></h2>
-          <h3><a href="{{ post.digressions.url }}">{{ post.digressions.title }}</a></h3>
+    <h2><a href="/tag/carnet-de-route/">Carnets</a></h2>
+    <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
 
-          <h2><a href="/tag/carnet-de-route/">Carnets</a></h2>
-          <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
+    <h2><a href="/tag/digest/">Digest</a></h2>
+    <h3><a href="{{ post.digest.url }}">{{ post.digest.title }}</a></h3>
 
-          <h2><a href="/tag/digest/">Digest</a></h2>
-          <h3><a href="{{ post.digest.url }}">{{ post.digest.title }}</a></h3>
+    <h2><a href="/tag/borntobike/">Vélo</a></h2>
+    <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
 
-          <h2><a href="/tag/borntobike/">Vélo</a></h2>
-          <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
-
-          {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
-          {% include mail_path %}
-
-  </div>
-</div>
+    <footer>
+      {% assign mail_path = blog.template  | append: '/newsletter.liquid' %}
+      {% include mail_path %}
+    </footer>
+  </section>
+</main>

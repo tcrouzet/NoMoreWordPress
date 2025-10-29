@@ -40,7 +40,7 @@ class Db:
                     pub_update INTEGER,
                     thumb_path TEXT DEFAULT '',
                     thumb_legend TEXT DEFAULT '',
-                    type INTEGER CHECK(type IN (0, 1)),  -- 0 pour post, 1 pour page
+                    type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 pour books
                     tags TEXT DEFAULT '[]',
                     updated BOOLEAN DEFAULT TRUE
                 );''')
@@ -204,13 +204,12 @@ class Db:
 
                     post['path_md'] = os.path.join(root.replace(root_dir,"").strip("/"), file)
 
-                    if any(post['path_md'].startswith(prefix) for prefix in self.config['pages']):
+                    if post['path_md'].startswith('books'):
+                        post['type'] = 2
+                    elif any(post['path_md'].startswith(prefix) for prefix in self.config['pages']):
                         post['type'] = 1
                     else:
                         post['type'] = 0
-
-                    #test_insert_post(post)
-                    #print(post)
 
                     added, updated = self.insert_post(post)
                     self.new_posts += added

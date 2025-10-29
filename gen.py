@@ -41,6 +41,11 @@ elif config['build'] == 2:
 print(db.new_posts, "new posts")
 print(db.updated_posts, "updated posts")
 
+#Menu
+layout.menu_gen()
+
+#Search
+layout.search_gen()
 
 #POSTS
 posts = db.get_posts_updated()
