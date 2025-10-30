@@ -225,15 +225,21 @@ class Layout:
         post = {"thumb": None, "title": "Archives", "html": archives, "frontmatter": None, "type":1}
         self.special_pages(post, "archives/")
 
+
+    def normal_pages(self, post, path, file_name="index.html"):
+        header_html = self.header.render(post=post, blog=self.config)
+        footer_html = self.footer.render(post=post, blog=self.config)
+        self.save(header_html + post['html'] + footer_html, path, file_name)
+
     def menu_gen(self):
         menu_html = self.menu.render()
         post = {"thumb": None, "title": "", "html": menu_html, "frontmatter": None, "type":3}
-        self.special_pages(post, "menu/")
+        self.normal_pages(post, "menu/")
 
     def search_gen(self):
         search_html = self.search.render()
         post = {"thumb": None, "title": "", "html": search_html, "frontmatter": None, "type":3}
-        self.special_pages(post, "search/")
+        self.normal_pages(post, "search/")
 
 
     def save(self, html, path, file_name="index.html", context=None):

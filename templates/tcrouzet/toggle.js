@@ -1,47 +1,3 @@
-var toggle = document.getElementById('toggle');
-var access = document.getElementById('access');
-var accessLoaded = false;
-
-var toggleSearch = document.getElementById('toggle-search');
-var search = document.getElementById('access-search');
-var searchLoaded = false;
-
-
-function toggleMenu(){
-    toggle.classList.toggle("close");
-    access.classList.toggle("shown");
-
-    if(accessLoaded) return;
-    doAPIcall(
-        "GET","/ajax-menu.html?20", false,
-        function (data) {
-            if(data){
-                access.innerHTML=data;
-            }
-        }
-    );
-    accessLoaded=true;
-
-};
-
-function searchMenu(){
-    toggleSearch.classList.toggle("close");
-    search.classList.toggle("shown");
-
-    if(searchLoaded) return;
-    doAPIcall(
-        "GET","/ajax-search.html?3", 2,
-        function (data) {
-            if(data){
-                search.innerHTML=data;
-            }
-        }
-    );
-    searchLoaded=true;
-};
-
-toggle.addEventListener("click", toggleMenu, false);
-toggleSearch.addEventListener("click", searchMenu, false);
 
 //rendre visible les hash
 window.addEventListener('load', function() {
@@ -270,34 +226,4 @@ function loadCommentScript(commentId) {
     // Ajouter le script au document
     document.body.appendChild(script);
 }
-
-
-// Fonction pour fermer le popup
-function closePopup() {
-  const popup = document.getElementById('popup');
-  popup.style.display = 'none';
-  
-  // Optionnel : supprimer les écouteurs d'événements pour éviter les doublons
-  popup.replaceWith(popup.cloneNode(true));
-}
-
-function canShowPopup() {
-
-    // Vérifier si l'utilisateur est déjà sur la page du livre
-    const currentPath = window.location.pathname;
-    if (currentPath === '/books/epicenes/' || currentPath.startsWith('/books/epicenes')) {
-        return false;
-    }
-
-    // Pour le test
-    // return true; 
-
-    const now = new Date().getTime();
-    const lastShown = localStorage.getItem('popupLastShown');
-    const fifteenDays = 7 * 24 * 60 * 60 * 1000; // en millisecondes
-    
-    // Peut afficher si jamais affiché ou affiché il y a plus de 15 jours
-    return !lastShown || (now - parseInt(lastShown) > fifteenDays);
-}
-
   
