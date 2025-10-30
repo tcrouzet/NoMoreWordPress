@@ -20,6 +20,10 @@ class Layout:
         parent_dir = os.path.dirname(script_dir) + os.sep
         script_dir = parent_dir
 
+        for template in self.config['templates']:
+            print("Template:", template['name'], "->", template['export'])
+
+        exit()
         self.template_dir = os.path.join(parent_dir, "templates", self.config['template'])
         self.config['template'] = self.template_dir
 
