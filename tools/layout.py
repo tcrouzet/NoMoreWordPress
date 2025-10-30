@@ -1,4 +1,5 @@
 from liquid import Liquid
+
 import os
 import shutil
 import time
@@ -8,6 +9,16 @@ import hashlib
 import importlib.util
 import re
 
+def make_liquid_loader(base_dir):
+    def make(fname):
+        # garantir l’extension
+        if not fname.endswith(".liquid"):
+            fname += ".liquid"
+        path = os.path.join(base_dir, fname)
+        if not os.path.isfile(path):
+            return None
+        return Liquid(path)
+    return make
 
 class Layout:
 
@@ -20,38 +31,52 @@ class Layout:
         parent_dir = os.path.dirname(script_dir) + os.sep
         script_dir = parent_dir
 
+        self.templates = []
         for template in self.config['templates']:
-            print("Template:", template['name'], "->", template['export'])
+            base_dir = os.path.join(parent_dir, "templates", template['name'])
 
-        exit()
-        self.template_dir = os.path.join(parent_dir, "templates", self.config['template'])
-        self.config['template'] = self.template_dir
+            if not os.path.isdir(base_dir):
+                raise FileNotFoundError(f"Template dir not found: {base_dir}")
+            
+            make = make_liquid_loader(base_dir)
 
-        self.header = self.load_template("header")
-        self.footer = self.load_template("footer")
-        self.single = self.load_template("single")
-        self.article = self.load_template("article")
-        self.tag = self.load_template("tag")
-        self.tags_list = self.load_template("tags_list")
-        self.home = self.load_template("home")
-        self.menu = self.load_template("menu")
-        self.search = self.load_template("search")
+            self.templates.append({
+                "name": template['name'],
+                "dir": base_dir,
+                "export": template['export'],
+                "infinite_scroll": template.get('infinite_scroll', False),
+                "micro": self._load_micro_executor(base_dir),
+                "header": lambda m=make: m("header"),
+                "footer": lambda m=make: m("footer"),
+                "single": lambda m=make: m("single"),
+                "article": lambda m=make: m("article"),
+                "tag": lambda m=make: m("tag"),
+                "home": lambda m=make: m("home"),
+                "menu": lambda m=make: m("menu"),
+                "search": lambda m=make: m("search"),
+                "share": lambda m=make: m("share"),
+                "newsletter": lambda m=make: m("newsletter"),
+            })
 
-        self.new_assets = self.copy_assets()
+        self.templates_count = 0
+        for template in self.templates:
+            self.new_assets = self.copy_assets(template)
+            self.templates_count += 1
 
-        self.micro = self._load_micro_executor()
+        print(f"{self.templates_count} template(s) loaded.")
 
 
-    def load_template(self, name):
-        return Liquid( os.path.join(self.template_dir,f"{name}.liquid"))
+    # def load_template(self, template_dir, name):
+    #     path = os.path.join(template_dir, f"{name}.liquid")
+    #     return Liquid( path)
 
 
-    def _load_micro_executor(self):
+    def _load_micro_executor(self, template_dir):
         """
         Charge templates/<template>/micro_codes.py s'il existe.
         Attendu: une classe 'MicroCodes'.
         """
-        path = os.path.join(self.template_dir, "micro_codes.py")
+        path = os.path.join(template_dir, "micro_codes.py")
         if not os.path.isfile(path):
             return None
         try:
@@ -62,13 +87,16 @@ class Layout:
         except Exception as e:
             exit(f"Micro code error: {e}")
 
-    def _apply_microcodes(self, html, context=None):
+    def _apply_microcodes(self, template, html, context=None):
         """
         Remplace [code:func|p1|p2…] par l'appel à MicroCodes.func.
         - Paramètres passés tels quels (strings).
         - Si pas de microcodes, retourne html tel quel.
         """
-        if not self.micro or not html or "[code:" not in html:
+        if not template or 'micro' not in template:
+            return html
+        
+        if not template['micro'] or not html or "[code:" not in html:
             return html
 
         pattern = re.compile(r"\[code:([a-zA-Z_]\w*)(?:\|([^\]]+))?\]")
@@ -76,7 +104,7 @@ class Layout:
         def repl(m):
             func_name = m.group(1)
             params = m.group(2).split("|") if m.group(2) else []
-            func = getattr(self.micro, func_name, None)
+            func = getattr(template['micro'], func_name, None)
             if not callable(func):
                 return f"Microcode function {func_name} inexistant"
             try:
@@ -90,17 +118,17 @@ class Layout:
         return pattern.sub(repl, html)
 
 
-    def copy_assets(self):
+    def copy_assets(self, template):
 
-            os.makedirs(self.config['export'], exist_ok=True)
+            os.makedirs(template['export'], exist_ok=True)
             copied_files = []
 
-            for item in os.listdir(self.template_dir):
-                if item.endswith('.liquid'):
+            for item in os.listdir(template['dir']):
+                if item.endswith('.liquid') or item.endswith('.py'):
                     continue
 
-                source_item = os.path.join(self.template_dir, item)
-                destination_item = os.path.join(self.config['export'], item)
+                source_item = os.path.join(template['dir'], item)
+                destination_item = os.path.join(template['export'], item)
                 
                 if os.path.isdir(source_item):
                     # Directory
@@ -176,49 +204,57 @@ class Layout:
         return hasher.hexdigest()
 
     def single_gen(self, post):
-        header_html = self.header.render(post=post, blog=self.config)
-        footer_html = self.footer.render(post=post, blog=self.config)
-        article_html = self.article.render(post=post, blog=self.config)
-        single_html = self.single.render(post=post, blog=self.config, article=article_html)
-        self.save(header_html + single_html + footer_html, post['url'], "index.html")
-        self.save(article_html, post['url'], "content.html")
+        for template in self.templates:
+            header_html = self.get_html(template["header"], post=post, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=post, blog=self.config)
+            share_html = self.get_html(template["share"], post=post, blog=self.config)
+            newsletter_html = self.get_html(template["newsletter"], post=post, blog=self.config)
+            article_html = self.get_html(template['article'], post=post, blog=self.config, share=share_html, newsletter=newsletter_html)
+            single_html = self.get_html(template['single'], post=post, blog=self.config, article=article_html)
+            self.save(template, header_html + single_html + footer_html, post['url'], "index.html")
+            if template['infinite_scroll']:
+                self.save(template, article_html, post['url'], "content.html")
 
 
     def tag_gen(self, tag):
-        header_html = self.header.render(post=tag, blog=self.config)
-        footer_html = self.footer.render(post=tag, blog=self.config)
+        for template in self.templates:
+            header_html = self.get_html(template["header"], post=tag, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=tag, blog=self.config)
 
-        posts = tag['posts']
-        page = 1
-        while posts:
-            file_name = f"contener{page}.html"
-            tag['posts'] = posts[:40]
-            if len(tag['posts'])<40:
-                tag['next_url'] = ""
-            else:
-                tag['next_url'] = "/" + tag['url'].strip("/") + "/" + f"contener{page+1}.html"
-            list_html = self.tags_list.render(post=tag, blog=self.config)
-            if page == 1:
-                tag_html = self.tag.render(post=tag, list=list_html, blog=self.config)
-                self.save(header_html + tag_html + footer_html, tag['url'], "index.html")
-            else:
-                self.save(list_html, tag['url'], file_name)
-            del posts[:40]
-            page += 1
+            posts = tag['posts']
+            page = 1
+            while posts:
+                file_name = f"contener{page}.html"
+                tag['posts'] = posts[:40]
+                if len(tag['posts'])<40:
+                    tag['next_url'] = ""
+                else:
+                    tag['next_url'] = "/" + tag['url'].strip("/") + "/" + f"contener{page+1}.html"
+                list_html = self.tags_list.render(post=tag, blog=self.config)
+                if page == 1:
+                    tag_html = self.tag.render(post=tag, list=list_html, blog=self.config)
+                    self.save(template, header_html + tag_html + footer_html, tag['url'], "index.html")
+                else:
+                    self.save(template, list_html, tag['url'], file_name)
+                del posts[:40]
+                page += 1
 
     def home_gen(self, post):
-        header_html = self.header.render(post=post, blog=self.config)
-        footer_html = self.footer.render(post=post, blog=self.config)
-        home_html = self.home.render(post=post, blog=self.config)
-        self.save(header_html + home_html + footer_html, "", "index.html")
+        for template in self.templates:
+            header_html = self.get_html(template["header"], post=post, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=post, blog=self.config)
+            newsletter_html = self.get_html(template["newsletter"], post=post, blog=self.config)
+            home_html = self.get_html(template["home"], post=post, blog=self.config, newsletter=newsletter_html)
+            self.save(template, header_html + home_html + footer_html, "", "index.html")
 
 
     def special_pages(self, post, path, file_name="index.html"):
-        header_html = self.header.render(post=post, blog=self.config)
-        footer_html = self.footer.render(post=post, blog=self.config)
-        article_html = self.article.render(post=post, blog=self.config)
-        page_html = self.single.render(post=post, blog=self.config, article=article_html)
-        self.save(header_html + page_html + footer_html, path, file_name)
+        for template in self.templates:
+            header_html = self.get_html(template["header"], post=post, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=post, blog=self.config)
+            article_html = self.get_html(template["article"], post=post, blog=self.config)
+            page_html = self.single.render(post=post, blog=self.config, article=article_html)
+            self.save(template, header_html + page_html + footer_html, path, file_name)
 
     def e404_gen(self):
         text = '<p>Cette page n’existe plus ou n’a jamais existé.</p>'
@@ -229,32 +265,48 @@ class Layout:
         post = {"thumb": None, "title": "Archives", "html": archives, "frontmatter": None, "type":1}
         self.special_pages(post, "archives/")
 
+    def get_html(self, template_obj, post=None, blog=None, **extra_ctx):
+        tpl = template_obj if hasattr(template_obj, "render") else template_obj()
+        if not tpl:
+            return ""
+        # Construit un contexte minimal cohérent
+        ctx = {}
+        if post is not None:
+            ctx["post"] = post
+        if blog is not None:
+            # Compat: certains de tes templates semblent attendre "blog"
+            ctx["blog"] = blog
+        if extra_ctx:
+            ctx.update(extra_ctx)
+        return tpl.render(**ctx)
 
-    def normal_pages(self, post, path, file_name="index.html"):
-        header_html = self.header.render(post=post, blog=self.config)
-        footer_html = self.footer.render(post=post, blog=self.config)
-        self.save(header_html + post['html'] + footer_html, path, file_name)
+    def normal_pages(self, post, template, path, file_name="index.html"):
+        header_html = self.get_html(template["header"], post=post, blog=self.config)
+        footer_html = self.get_html(template["footer"], post=post, blog=self.config)
+        self.save(template, header_html + post['html'] + footer_html, path, file_name)
 
     def menu_gen(self):
-        menu_html = self.menu.render()
-        post = {"thumb": None, "title": "", "html": menu_html, "frontmatter": None, "type":3}
-        self.normal_pages(post, "menu/")
+        for template in self.templates:
+            menu_html = self.get_html(template["menu"])
+            post = {"thumb": None, "title": "", "html": menu_html, "frontmatter": None, "type":3}
+            self.normal_pages(post, template, "menu/")
 
     def search_gen(self):
-        search_html = self.search.render()
-        post = {"thumb": None, "title": "", "html": search_html, "frontmatter": None, "type":3}
-        self.normal_pages(post, "search/")
+        for template in self.templates:
+            search_html = self.get_html(template["search"])
+            post = {"thumb": None, "title": "", "html": search_html, "frontmatter": None, "type":3}
+            self.normal_pages(post, template, "search/")
 
 
-    def save(self, html, path, file_name="index.html", context=None):
+    def save(self, template, html, path, file_name="index.html", context=None):
 
         # Microcodes avant minification
-        html = self._apply_microcodes(html, context)
+        html = self._apply_microcodes(template, html, context)
 
         if self.config["version"]>0:
             html = htmlmin.minify(html, remove_empty_space=True)
 
-        dir = os.path.join( self.config['export'], path)
+        dir = os.path.join( template['export'], path)
         os.makedirs(dir, exist_ok=True)
 
         file_path = os.path.join( dir, file_name)

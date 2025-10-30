@@ -61,6 +61,7 @@ if total >0:
         pbar.update(1)
     pbar.close()
     db.db_commit()
+exit()
 
 
 #SITEMAP POSTS

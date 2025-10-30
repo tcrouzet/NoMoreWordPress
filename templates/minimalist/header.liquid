@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }} - {{ blog.title }}</title>
+    {% comment %} <base href="/"> {% endcomment %}
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="alternate" type="application/rss+xml" title="Thierry Crouzet" href="/feeds/feed.xml" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Bitter:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link rel=preload href='/style.css?ver={{ blog.version }}' as=style>
+    <link rel=stylesheet href='/style.css?ver={{ blog.version }}'>
+
+    <meta name='robots' content='index, follow' />
+    <meta name="google-site-verification" content="EmtKKbIk2-Tz3Nyp7hJRPjcMbgf68Vwq6yJYs1hvsqA" />
+    <meta name="msvalidate.01" content="805E5BFBA891A41968028F5C97A228D3" />
+    <meta name="description" content="{% if post.description %}{{ post.description }}{% else %}{{ blog.description }}{% endif %}" />
+    <meta name="author" content="{{ blog.title }}" />
+    <link rel="canonical" href="{{ post.canonical }}" />
+
+    <meta name="fediverse:creator" content="@tcrouzet@mamot.fr">
+    <meta property="og:title" content="{{ post.title }}" />
+    <meta property="og:description" content="{% if post.description %}{{ post.description }}{% else %}{{ blog.description }}{% endif %}" />
+    <meta property="og:url" content="{{ post.canonical }}" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="{{ blog.title }}" />
+    <meta property="article:published_time" content="{{ post.pub_date_str }}" />
+    <meta property="article:modified_time" content="{{ post.pub_update_str }}" />
+    <meta property="og:image" content={{ blog.domain }}{{ post.thumb.jpeg }} />
+    <meta property="og:image:width" content="{{ post.thumb.width }}" />
+    <meta property="og:image:height" content="{{ post.thumb.height }}" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property=og:image:alt content="{{ post.thumb_legend }}">
+    <meta name=twitter:card content=summary_large_image>
+    <meta name=twitter:image content={{ blog.domain }}{{ post.thumb.jpeg }}>
+
+</head>
+
+{% if blog.analytics %}
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-47YLN2LHVB"></script>
+<script data-cfasync=”false”>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-47YLN2LHVB');
+</script>
+{% endif %}
+
+<body>
+
+<header>
+  <a aria-label="Menu" href="/menu/"></a>
+  <a aria-label="Accueil"
+    href="{% if blog.domain == post.canonical %}/page/informations/{% else %}/{% endif %}"
+    title="{% if blog.domain == post.canonical %}Informations{% else %}Accueil{% endif %}">Thierry <b>CROUZET</b></a>
+  <a aria-label="Recherche" href="/search/"></a>
+</header>
