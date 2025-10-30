@@ -137,8 +137,9 @@ class Web:
             if not os.path.exists(media_target_path):
                 destination_dir = os.path.dirname(media_target_path)
                 os.makedirs(destination_dir, exist_ok=True)
-                #print(path, url_aboslute)
+                print(destination_dir, media_target_path)
                 shutil.copy2(media_source_path, media_target_path)
+
 
     def copy_if_needded(self, media_source_path, media_target_path):
 
@@ -151,9 +152,9 @@ class Web:
             os.makedirs(destination_dir, exist_ok=True)
             shutil.copy2(media_source_path, media_target_path)
 
+
     def relativise_path(self, template, path):
         return path.replace(template['export'],"").strip("/")
-
 
 
     def normalize_month(self, path):
@@ -165,6 +166,7 @@ class Web:
         month_padded = month.zfill(2)
         normalized_parts = [year, month_padded] + parts[2:]
         return '/'.join(normalized_parts)
+
 
     def source_image(self, media_src_file, post):
         """Media manager
@@ -224,6 +226,7 @@ class Web:
 
                     # Création des versions redimensionnées de l'image
                     media_target_path = self.media_target_path(template, url_media_relatif)
+                    print(media_source_path, "→", media_target_path)
                     for size, value in sizes.items():
 
                         if value is None:
