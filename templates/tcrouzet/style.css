@@ -627,7 +627,7 @@ h6{
 
 /* home */
 
-main[itemtype$="CollectionPage"]{
+main[itemtype$="AboutPage"]{
   display: flex;
   justify-content: center;
   align-items: center;
@@ -635,7 +635,7 @@ main[itemtype$="CollectionPage"]{
   text-align: center;
 }
 
-main[itemtype$="CollectionPage"] section h2{
+main[itemtype$="AboutPage"] section h2{
   display: block;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
@@ -646,7 +646,7 @@ main[itemtype$="CollectionPage"] section h2{
   font-weight: bold;
 }
 
-main[itemtype$="CollectionPage"] section h3{
+main[itemtype$="AboutPage"] section h3{
   display: block;
   font-weight: normal;
   font-size: inherit;

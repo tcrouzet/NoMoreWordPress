@@ -90,22 +90,6 @@ function doAPIcall(type, url, flag, callback) {
             more.style.display = "none";
             oktoload=false;
         }
-        if(flag==2){
-            //Loag google search
-            var cx = "d5dc254fba5984394";
-            var gcse = document.createElement('script');
-            gcse.type = 'text/javascript';
-            gcse.async = true;
-            gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(gcse, s);
-            
-            // render the search bar
-            var searchBar = document.querySelector('.gcse-search');
-            if(searchBar){
-                google.search.cse.element.render({gname:'search', div: searchBar, tag:'searchresults-only'});
-            }
-        }
       }
     };
     xmlhttp.open(type, url, true);
@@ -131,25 +115,6 @@ function copyText(customTitle, customUrl) {
         navigator.clipboard.writeText(url)
         alert('Adresse de la page copiée dans le presse-papier…');
     }
-}
-
-function copyMessage(msg) {
-    var messageElement = document.getElementById('copyMessage');
-    messageElement.innerHTML = msg;
-
-    if (msg.toLowerCase().includes("erreur")) {
-        messageElement.style.backgroundColor = "red"
-    }else {
-        messageElement.style.backgroundColor = "";
-    }
-
-    // Afficher
-    messageElement.hidden = false;
-
-    // Cacher après 5 secondes
-    setTimeout(() => {
-        messageElement.hidden = true;
-    }, 5000);
 }
 
 // Fonction pour afficher les commentaires
