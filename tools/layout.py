@@ -55,8 +55,8 @@ class Layout:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             return module.MicroCodes(self)  # On suppose un constructeur acceptant Layout
-        except Exception:
-            return None
+        except Exception as e:
+            exit(f"Micro code error: {e}")
 
     def _apply_microcodes(self, html, context=None):
         """
@@ -74,7 +74,7 @@ class Layout:
             params = m.group(2).split("|") if m.group(2) else []
             func = getattr(self.micro, func_name, None)
             if not callable(func):
-                return m.group(0)  # laisse le token tel quel
+                return f"Microcode function {func_name} inexistant"
             try:
                 try:
                     return str(func(context, *params))  # avec contexte si possible

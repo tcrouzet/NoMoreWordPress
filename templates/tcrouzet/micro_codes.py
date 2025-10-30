@@ -27,7 +27,7 @@ class MicroCodes:
         pages = []
         for row in rows:
             post = web.supercharge_post(row, True)
-            if post and post.get("type")==1:
+            if post and post.get("type")==2:
                 pages.append(post)
 
         if not pages:

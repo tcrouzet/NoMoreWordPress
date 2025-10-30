@@ -100,13 +100,15 @@ class Web:
 
     def url_image(self, src, post):
         if post['type'] == 5:
-            file_name = os.path.basename(post['thumb_path'])
-            source_dir = self.normalize_month(os.path.dirname(post['post_md']))
-            url = os.path.join(self.config['images_dir'].strip("/"), source_dir,file_name)
+            filename = os.path.basename(post['thumb_path'])
+            path = self.normalize_month(os.path.dirname(post['post_md']))
         else:
             date = tools.timestamp_to_paris_datetime(post["pub_date"])
             path = date.strftime("%Y/%m/")
-            url = self.config['images_dir'] + path + src.replace(self.config['vault_img'],"")
+            filename = src.replace(self.config['vault_img'], "")
+        
+        url = os.path.join("/", self.config['images_dir'].strip("/"), path, filename)
+    
         return url
 
 

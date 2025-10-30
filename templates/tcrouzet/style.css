@@ -163,9 +163,6 @@ main{
 
 article header{
   color:var(--color--text);
-  /* z-index:0;
-  position: relative;
-  height: var(--topheight); */
   display: contents;
 }
 
@@ -196,7 +193,7 @@ article header figure {
 .poster-img-book{
   object-fit: contain;
 }
-.poster-img-book-small{
+main[itemtype$="CollectionPage"] article img.poster-img-book-small{
   object-fit: fill;
   width: 100%;
   height: auto;
@@ -425,6 +422,7 @@ code{
 }
 
 /* Comments */
+/* Conteur des comments */
 div.comments{
   max-width: var(--justif-text);
   text-align: var(--alignement-text);
@@ -436,11 +434,12 @@ div.comments{
   padding-right: var(--page-guter);
 }
 
-.commentForm{
+form.commentForm{
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color--plus);
 }
 
+/* Utilisé dans le JS */
 .comment {
     margin-bottom: 1.5em;
     padding: 0 0 1rem 0;
@@ -570,6 +569,10 @@ main[itemtype$="CollectionPage"] article img{
   background-color:var(--color--light)
 }
 
+main[itemtype$="CollectionPage"] article img.resume-img{
+  height:12rem;
+}
+
 main[itemtype$="CollectionPage"] data{
   font-family: var(--font--global);
   font-weight: bold;
@@ -682,6 +685,10 @@ button.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!imp
 button.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea82'}
 a.icon_download:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e9c2'}
 a.icon_friends:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e972'}
+
+article footer a, article footer a:visited, article footer a:hover, article footer a:active {
+  background: none;
+}
 
 /* Newsletter */
 
@@ -902,7 +909,7 @@ footer > div:last-of-type svg {
   .poster-img{
     height:40vh;
   }
-  .post iframe{
+  iframe{
     width: 100%
   }
 
@@ -945,21 +952,12 @@ footer > div:last-of-type svg {
     display: flex;
     justify-content: space-between;
   }
-   
-  div.plus-contenair{
-    display:inline-block;
-    line-height: 1rem;
-  }
-    
+       
   .resume-contenair{
     width:var(--resume--container-width);
     height: var(--resume--container-height);
     min-width: 10rem;
   }
-
-  /*.resume-img{
-    height:calc(15vw);
-  }*/
  
 }
 
@@ -981,7 +979,7 @@ footer > div:last-of-type svg {
     --resume--container-width: 24%;
   }
 
-  .resume-img{
+  main[itemtype$="CollectionPage"] article img.resume-img{
     height:12rem;
   }
 
