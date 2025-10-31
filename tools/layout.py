@@ -22,7 +22,7 @@ def make_liquid_loader(base_dir):
 
 class Layout:
 
-    def __init__(self, config):
+    def __init__(self, config, web_instance):
         self.config = config
         if self.config['version'] == 0:
             self.config['version'] = time.time()
@@ -30,6 +30,8 @@ class Layout:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(script_dir) + os.sep
         script_dir = parent_dir
+
+        self.web = web_instance
 
         self.templates = []
         for template in self.config['templates']:
@@ -42,15 +44,19 @@ class Layout:
 
             self.templates.append({
                 "name": template['name'],
+                "domain": template['domain'],
                 "dir": base_dir,
                 "export": template['export'],
                 "infinite_scroll": template.get('infinite_scroll', False),
+                "post_per_page": template.get('post_per_page', 40),
+                "image_max_size": template.get('image_max_size', 1024),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),
                 "single": lambda m=make: m("single"),
                 "article": lambda m=make: m("article"),
                 "tag": lambda m=make: m("tag"),
+                "tags_list": lambda m=make: m("tags_list"),
                 "home": lambda m=make: m("home"),
                 "menu": lambda m=make: m("menu"),
                 "search": lambda m=make: m("search"),
@@ -205,6 +211,11 @@ class Layout:
 
     def single_gen(self, post):
         for template in self.templates:
+
+            post = self.web.supercharge_post(template, post)
+            if not post:
+                raise("Error supercharge in layout")
+            
             header_html = self.get_html(template["header"], post=post, blog=self.config)
             footer_html = self.get_html(template["footer"], post=post, blog=self.config)
             share_html = self.get_html(template["share"], post=post, blog=self.config)
@@ -216,10 +227,16 @@ class Layout:
                 self.save(template, article_html, post['url'], "content.html")
 
 
-    def tag_gen(self, tag):
+    def tag_gen(self, tag, posts=None):
         for template in self.templates:
+
+            tag = self.web.supercharge_tag(template, tag, posts)
+
             header_html = self.get_html(template["header"], post=tag, blog=self.config)
             footer_html = self.get_html(template["footer"], post=tag, blog=self.config)
+
+            if template["infinite_scroll"]:
+                post_per_page=int(template["post_per_page"])
 
             posts = tag['posts']
             page = 1
@@ -230,21 +247,41 @@ class Layout:
                     tag['next_url'] = ""
                 else:
                     tag['next_url'] = "/" + tag['url'].strip("/") + "/" + f"contener{page+1}.html"
-                list_html = self.tags_list.render(post=tag, blog=self.config)
+                list_html = self.get_html(template["tags_list"], post=tag, blog=self.config)
                 if page == 1:
-                    tag_html = self.tag.render(post=tag, list=list_html, blog=self.config)
+                    tag_html = self.get_html(template["tag"], post=tag, list=list_html, blog=self.config)
                     self.save(template, header_html + tag_html + footer_html, tag['url'], "index.html")
                 else:
                     self.save(template, list_html, tag['url'], file_name)
-                del posts[:40]
-                page += 1
+                if template["infinite_scroll"]:
+                    del posts[:post_per_page]
+                    page += 1
+                else:
+                    break
 
-    def home_gen(self, post):
+    def home_gen(self, last_post, last_carnet, last_bike, last_digest):
         for template in self.templates:
-            header_html = self.get_html(template["header"], post=post, blog=self.config)
-            footer_html = self.get_html(template["footer"], post=post, blog=self.config)
-            newsletter_html = self.get_html(template["newsletter"], post=post, blog=self.config)
-            home_html = self.get_html(template["home"], post=post, blog=self.config, newsletter=newsletter_html)
+
+            home = {}
+            home['digressions'] = self.web.supercharge_post(template, last_post, False)
+            home['carnet'] = self.web.supercharge_post(template, last_carnet, False)
+            home['bike'] = self.web.supercharge_post(template, last_bike, False)
+            home['digest'] = self.web.supercharge_post(template, last_digest, False)
+            
+            home['canonical'] = template['domain']
+            home['description'] = self.config['description']
+            home['title'] = self.config['home_title']
+            home['pub_update_str'] = home['digressions']['pub_update_str']
+            home['pub_update'] = home['digressions']['pub_update']
+            home['thumb'] = home['digressions']['thumb']
+            home['thumb_path'] = home['digressions']['thumb_path']
+            home['thumb_legend'] = home['digressions']['thumb_legend']
+            home['is_home'] = True
+
+            header_html = self.get_html(template["header"], post=home, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=home, blog=self.config)
+            newsletter_html = self.get_html(template["newsletter"], post=home, blog=self.config)
+            home_html = self.get_html(template["home"], post=home, blog=self.config, newsletter=newsletter_html)
             self.save(template, header_html + home_html + footer_html, "", "index.html")
 
 
@@ -253,7 +290,7 @@ class Layout:
             header_html = self.get_html(template["header"], post=post, blog=self.config)
             footer_html = self.get_html(template["footer"], post=post, blog=self.config)
             article_html = self.get_html(template["article"], post=post, blog=self.config)
-            page_html = self.single.render(post=post, blog=self.config, article=article_html)
+            page_html = self.get_html(template["single"], post=post, blog=self.config, article=article_html)
             self.save(template, header_html + page_html + footer_html, path, file_name)
 
     def e404_gen(self):

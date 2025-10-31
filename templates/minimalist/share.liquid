@@ -1,9 +1,6 @@
 <section>
-  <button class="icon_com" onclick="showComments('com{{ post.id }}')" title="Commenter" aria-label="Afficher les commentaires"></button>
-  <button class="icon_share" onclick="copyText()" title="Partager" aria-label="Partager l'article"></button>
   {% if post.github != blank %}
         <a class="icon_download" href="{{ post.github }}" download title="Télécharger" aria-label="Télécharger en Markdown"></a>
   {% endif %}
   <a class="icon_friends" href="/page/lectures/" title="Sites amis" aria-label="Afficher les sites amis"></a>
 </section>
-<div class="comments" id="com{{ post.id }}" data-post-url="{{ post.url }}" data-post-title="{{ post.title }}" data-post-date="{{ post.pub_date_str }}" hidden></div>

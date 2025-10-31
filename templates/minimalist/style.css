@@ -1,30 +1,18 @@
 ::before,::after{box-sizing:border-box}html{font-family:system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji';line-height:1.15;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4}body{margin:0}hr{height:0;color:inherit}abbr[title]{text-decoration:underline dotted}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit}button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}button,select{text-transform:none}button,[type='button'],[type='reset'],[type='submit']{-webkit-appearance:button;appearance: button;}::-moz-focus-inner{border-style:none;padding:0}:-moz-focusring{outline:1px dotted ButtonText}:-moz-ui-invalid{box-shadow:none}legend{padding:0}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type='search']{-webkit-appearance:textfield;appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}
 
- @font-face {
-  font-family: 'icomoon';
-  src:  url('/fonts/icomoon.eot?4');
-  src:  url('/fonts/icomoon.eot?4x#iefix') format('embedded-opentype'),
-    url('/fonts/icomoon.ttf?4') format('truetype'),
-    url('/fonts/icomoon.woff?4') format('woff'),
-    url('/fonts/icomoon.svg?4#icomoon') format('svg');
-  font-weight: normal;
-  font-style: normal;
-  font-display: block;
-}
-
 :root {
 
   /* Font Family */
-  --global--font-headings: Inter, Helvetica, Arial, BlinkMacSystemFont, 'Segoe UI', Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
-	--font--global: 'Bitter','Merriweather', Georgia,'Times New Roman', Times, serif;
+  --global--font-headings: Helvetica, BlinkMacSystemFont, 'Segoe UI', Oxygen-Sans, Ubuntu, Cantarell, Roboto, Arial, sans-serif;
+	--font--global: "Courier New", Courier, monospace;
   
   /* Colors */
-  --color--bg: #fff; /* Less white f2f4f8*/
+  --color--bg: #1A1C18; /* Less white f2f4f8*/
 	--color--header: var(--color--bg);
 	--color--light: #ddd;
   --color--medium: #aaa;
   --color--form: #31312F;
-  --color--contrast: #1A1C18;
+  --color--contrast: #eee;
   --color--text: var(--color--contrast);
   --color--titre: var(--color--bg);
   --color--titre-medium: var(--color--medium);
@@ -123,13 +111,14 @@ header {
 }
 
 header > a[aria-label="Menu"] {
-  margin-top: 0.4rem;
+  margin-top: -0.2rem;
   border: none;
   cursor: pointer;
 }
 header > a[aria-label="Menu"]::after {
-  content: "\e9bd";
-  font: 800 1.2em/1 icomoon !important;
+  content: "\2630";
+  font-family: sans-serif;
+  font-size: 1.4em;
   color: var(--color--medium);
   vertical-align: text-top;
 }
@@ -144,13 +133,13 @@ header > a[aria-label="Accueil"]{
 
 header > a[aria-label="Recherche"]{
   margin-left: auto;
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
   cursor: pointer;
 }
-
 header > a[aria-label="Recherche"]::after {
-  content: "\e986";
-  font: 800 1.2em/1 icomoon !important;
+  content: "\1F50D";
+  font-family: sans-serif;
+  font-size: 1.2em;
   color: var(--color--medium);
   vertical-align: text-top;
 }
@@ -214,7 +203,7 @@ h1{
 }
 
 nav{
-  margin-top: 1rem;
+  margin-top: 2rem;
   font-size: 1rem;
   font-weight: normal;
   display: block;
@@ -324,8 +313,8 @@ article section a,article section a:visited,article section a:hover,article sect
   background-position: 0 calc(100% - 3px);  
 }
 
-blockquote{margin:auto;max-width:34em;font-style:italic;color:#666}
-blockquote p{margin-left:2em;margin-right:2em;font-style:italic;color:#666}
+blockquote{margin:auto;max-width:34em;font-style:italic;color:var(--color--text)}
+blockquote p{margin-left:2em;margin-right:2em;font-style:italic;color:var(--color--text)}
 blockquote cite{margin: 5px 0 0;display:block}
 
 article section figure{
@@ -437,28 +426,6 @@ div.comments{
 form.commentForm{
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color--plus);
-}
-
-/* Utilisé dans le JS */
-.comment {
-    margin-bottom: 1.5em;
-    padding: 0 0 1rem 0;
-    border-bottom: 1px solid var(--color--plus);
-}
-.comment-header {
-    margin-bottom: 0.5em;
-}
-.comment-author {
-    font-weight: bold;
-}
-.comment-date {
-    color: var(--color--medium);
-    margin-left: 1em;
-    font-size: 0.9em;
-}
-.comment-content {
-    line-height: 1.4;
-    font-size: smaller;
 }
 
 /* form */
@@ -661,14 +628,14 @@ main[itemtype$="AboutPage"] section h3{
 
 footer section {
   display: grid;
-  width: 13rem;
+  width: 8rem;
   margin: 1rem auto;
   -webkit-font-smoothing: antialiased;
   font-size: 1em;
   line-height: 1em;
   text-align: center;
   gap: 1rem;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   place-items: center;
 }
 
@@ -681,10 +648,20 @@ footer section button,footer section a{
     background: transparent;
     border: none
 }
-button.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e96c'}
-button.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea82'}
-a.icon_download:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e9c2'}
-a.icon_friends:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e972'}
+a.icon_download:before{
+  content: "\2913";
+  font-family: sans-serif;
+  font-size: 1.4em;
+  color: var(--color--medium);
+  vertical-align: text-top;
+}
+a.icon_friends:before{
+  content: "\26AF";
+  font-family: sans-serif;
+  font-size: 1.4em;
+  color: var(--color--medium);
+  vertical-align: text-top;
+}
 
 article footer a, article footer a:visited, article footer a:hover, article footer a:active {
   background: none;

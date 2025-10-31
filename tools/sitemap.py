@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 
 class Sitemap:
 
-    def __init__(self, config):
+    def __init__(self, config, web_instance):
         self.config = config
+        self.web = web_instance
         self.sitemap_index = []
         self.urlset = None
         self.output = None
@@ -13,7 +14,7 @@ class Sitemap:
         self.count = 0
 
 
-    def open(self, sitemap_name):
+    def open(self, template, sitemap_name):
         #self.urlset = ET.Element('urlset', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
 
         ET.register_namespace('image', "http://www.google.com/schemas/sitemap-image/1.1")
@@ -27,7 +28,7 @@ class Sitemap:
                 "xmlns:image": "http://www.google.com/schemas/sitemap-image/1.1"
             })
         
-        self.output = os.path.join(self.config['export'], f"sitemap/{sitemap_name}.xml")
+        self.output = os.path.join(template['export'], f"sitemap/{sitemap_name}.xml")
         self.count = 0
  
 
@@ -42,12 +43,12 @@ class Sitemap:
         self.sitemap_index.append(self.output)
 
 
-    def add(self, url_loc, lastmod=None, image_url=None):
+    def add(self, template, url_loc, lastmod=None, image_url=None):
         if ".html" not in url_loc:
             url_loc = url_loc.rstrip("/")+ "/index.html"
-        url_loc = self.config['domain'] + url_loc
+        url_loc = template['domain'] + url_loc
         if image_url:
-            image_url = self.config['domain'] + image_url.strip("/")
+            image_url = template['domain'] + image_url.strip("/")
         url = ET.SubElement(self.urlset, 'url')
         loc = ET.SubElement(url, 'loc')
         loc.text = url_loc
@@ -63,19 +64,27 @@ class Sitemap:
 
 
     def add_post(self, post):
-        if not post:
-            return None
-        if 'pub_update_str' in post:
-            pub_date = post['pub_update_str']
-        else:
-            pub_date = None
-        thumb = None
-        if 'thumb' in post and post['thumb']:
-            if 'url' in post['thumb']:
-                thumb = post['thumb']['url']
 
-        self.lastmod = max(self.lastmod, pub_date)
-        self.add(post['url'], pub_date, thumb)
+        for template in self.config['templates']:
+
+            post = self.web.supercharge_post(post)
+            if not post:
+                print("need to delete", self.web.url(post))
+
+
+            if not post:
+                return None
+            if 'pub_update_str' in post:
+                pub_date = post['pub_update_str']
+            else:
+                pub_date = None
+            thumb = None
+            if 'thumb' in post and post['thumb']:
+                if 'url' in post['thumb']:
+                    thumb = post['thumb']['url']
+
+            self.lastmod = max(self.lastmod, pub_date)
+            self.add(post['url'], pub_date, thumb)
 
 
     def add_page(self, url, date=None):
