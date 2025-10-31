@@ -3,12 +3,14 @@
     <article><a href="/{{ tag_post.url }}">
     
         {% if tag_post.thumb %}
-            <img width="250" height="188" src="{{ tag_post.thumb.url_250 }}" class="{% if post.tag == 'book' %}poster-img-book-small{% else %}resume-img{% endif %}"
+            <img width="250" height="188"
+            src="{% if tag_post.thumb.url_250%}{{ tag_post.thumb.url_250 }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
+            class="{% if post.tag == 'book' %}poster-img-book-small{% else %}resume-img{% endif %}"
             alt="{{ tag_post.thumb_legend }}" loading="lazy" decoding="async"
-            srcset="{{ tag_post.thumb.url_250 }} 250w, {{tag_post.thumb.url_1024 }} 1024w, {{ tag_post.thumb.url }} 1600w"
-            sizes="(max-width: 250px) 100vw, 250px" />
+            srcset="{% if tag_post.thumb.url_250%}{{ tag_post.thumb.url_250 }} 250w,{% endif %}{{ tag_post.thumb.url }} 1024w"
+            />
         {% else %}
-            <img width="250" height="188" src="/v.png" style="background-color:cadetblue" />
+            <img width="250" height="188" class="resume-img"/>
         {% endif %}
         
         </a>
@@ -30,3 +32,5 @@
     </article>
     
 {% endfor %}
+
+<div id="loadMore" next-url="{{ post.next_url }}" hidden></div>

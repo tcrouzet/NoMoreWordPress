@@ -92,6 +92,7 @@ if len(db.used_tags) > 0:
     print("Series done")
 
 #BLOG
+# layout.setDebug()
 if  db.new_posts >0 or db.updated_posts > 0:
     exclude = tuple(config['home_exclude'])
     posts = db.get_blog_posts(exclude)
@@ -107,7 +108,8 @@ if  db.new_posts >0 or db.updated_posts > 0:
     layout.tag_gen( series, posts )
     # sitemap.add_post( blog )
     # feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
-    print("Blog done")
+    print(f"Blog done {len(posts)}")
+# layout.setDebug()
 
 #HOME
 if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
@@ -165,7 +167,7 @@ if len(db.used_tags) > 0:
 #YEARS
 if len(db.used_years) > 0:
 
-    sitemap.open("sitemap-years")
+    # sitemap.open("sitemap-years")
     years_archive = ""
     exclude = ("invisible","book","page")
     years = db.get_years()

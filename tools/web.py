@@ -209,7 +209,6 @@ class Web:
                         "height": height,
                         "format": "image/"+img.format.lower(),
                         "url": url_media_relatif,
-                        "url_absolu": url_media_relatif,
                         "url_1024": '',
                         "url_250": '',
                         "jpeg": '',
@@ -283,7 +282,6 @@ class Web:
                     "height": final_max_height,
                     "format": "image/"+img.format.lower(),
                     "url": sizes.get('max',''),
-                    "url_absolu": sizes.get('max',''),
                     "url_1024": sizes.get('1024', '' ),
                     "url_250": sizes.get('250', ''),
                     "jpeg": "",
@@ -295,7 +293,6 @@ class Web:
 
         except Exception as e:
             print(f"bug traitement image {media_source_path} media_file {media_src_file} post_type {post['type']} base_dir_name {base_dir_name}",e)
-            exit()
             return None
     
 
@@ -590,13 +587,6 @@ class Web:
 
         return str(soup)
 
-
-    def img_tag(self, img):
-        return f'''<img width="{img['width']}" height="{img['height']}" src="{img['url']}" class="poster-img poster-img-full"
-            alt="{img['alt']}" loading="lazy" decoding="async"
-            srcset="{img['url_250']} 250w, {img['url_1024']} 1024w, {img['url']} {img['width']}w"
-            sizes="(max-width: 768px) 100vw, 768px" />'''
-
     
     def extract_tags(self, post):
         
@@ -789,7 +779,6 @@ class Web:
     def supercharge_tag(self, template, tag, posts=None):
         """Get all tag datas"""
 
-
         if isinstance(tag, self.db.get_row_factory()):
             tag = dict(tag)
         elif isinstance(tag, list):
@@ -814,7 +803,7 @@ class Web:
         # print("after")
         if tag['thumb']:
             tag['thumb']["alt"] = tag['thumb_legend']
-            tag['thumb']['tag'] = self.img_tag(tag['thumb'])
+            # tag['thumb']['tag'] = self.img_tag(tag['thumb'])
 
         menu = []
         if "title_date" in tag:
@@ -863,5 +852,6 @@ class Web:
             numbered_posts.append(post_with_order)
 
         tag['posts'] = numbered_posts
+        # print(f"Len posts {len(numbered_posts)}")
       
         return tag

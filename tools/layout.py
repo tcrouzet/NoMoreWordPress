@@ -8,6 +8,7 @@ import csscompressor
 import hashlib
 import importlib.util
 import re
+import tools.tools as tools
 
 def make_liquid_loader(base_dir):
     def make(fname):
@@ -33,6 +34,8 @@ class Layout:
 
         self.web = web_instance
 
+        self.debug = False
+
         self.templates = []
         for template in self.config['templates']:
             base_dir = os.path.join(parent_dir, "templates", template['name'])
@@ -47,9 +50,9 @@ class Layout:
                 "domain": template['domain'],
                 "dir": base_dir,
                 "export": template['export'],
-                "infinite_scroll": template.get('infinite_scroll', False),
-                "post_per_page": template.get('post_per_page', 40),
-                "image_max_size": template.get('image_max_size', 1024),
+                "infinite_scroll": bool(template.get('infinite_scroll', False)),
+                "post_per_page": int(template.get('post_per_page', 40)),
+                "image_max_size": int(template.get('image_max_size', 1024)),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),
@@ -76,7 +79,18 @@ class Layout:
     #     path = os.path.join(template_dir, f"{name}.liquid")
     #     return Liquid( path)
 
+    def setDebug(self):
+        self.debug = not self.debug
 
+    def dp(self, *args, **kwargs):
+        if self.debug:
+            print(*args, **kwargs)
+
+    def de(self):
+        if self.debug:
+            exit("Force exit")
+
+            
     def _load_micro_executor(self, template_dir):
         """
         Charge templates/<template>/micro_codes.py s'il existe.
@@ -230,34 +244,45 @@ class Layout:
     def tag_gen(self, tag, posts=None):
         for template in self.templates:
 
-            tag = self.web.supercharge_tag(template, tag, posts)
+            new_tag = self.web.supercharge_tag(template, tag, posts)
 
-            header_html = self.get_html(template["header"], post=tag, blog=self.config)
-            footer_html = self.get_html(template["footer"], post=tag, blog=self.config)
+            header_html = self.get_html(template["header"], post=new_tag, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=new_tag, blog=self.config)
 
-            if template["infinite_scroll"]:
-                post_per_page=int(template["post_per_page"])
+            post_per_page = template["post_per_page"]
 
-            posts = tag['posts']
+            new_posts = new_tag['posts']
+            self.dp(len(new_posts), template["infinite_scroll"])
+
             page = 1
-            while posts:
+            while new_posts:
                 file_name = f"contener{page}.html"
-                tag['posts'] = posts[:40]
-                if len(tag['posts'])<40:
-                    tag['next_url'] = ""
+
+                if post_per_page>0:
+                    new_tag['posts'] = new_posts[:post_per_page]
                 else:
-                    tag['next_url'] = "/" + tag['url'].strip("/") + "/" + f"contener{page+1}.html"
-                list_html = self.get_html(template["tags_list"], post=tag, blog=self.config)
+                    self.dp("Tous les posts…")
+                    new_tag['posts'] = new_posts
+
+                if len(new_tag['posts'])<post_per_page or post_per_page==0:
+                    new_tag['next_url'] = ""
+                else:
+                    new_tag['next_url'] = "/" + new_tag['url'].strip("/") + "/" + f"contener{page+1}.html"
+
+                list_html = self.get_html(template["tags_list"], post=new_tag, blog=self.config)
+
                 if page == 1:
-                    tag_html = self.get_html(template["tag"], post=tag, list=list_html, blog=self.config)
-                    self.save(template, header_html + tag_html + footer_html, tag['url'], "index.html")
+                    tag_html = self.get_html(template["tag"], post=new_tag, list=list_html, blog=self.config)
+                    self.save(template, header_html + tag_html + footer_html, new_tag['url'], "index.html")
                 else:
-                    self.save(template, list_html, tag['url'], file_name)
-                if template["infinite_scroll"]:
-                    del posts[:post_per_page]
+                    self.save(template, list_html, new_tag['url'], file_name)
+                if post_per_page>0:
+                    del new_posts[:post_per_page]
                     page += 1
                 else:
                     break
+        self.de()
+
 
     def home_gen(self, last_post, last_carnet, last_bike, last_digest):
         for template in self.templates:
