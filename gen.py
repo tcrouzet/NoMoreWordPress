@@ -95,7 +95,7 @@ if len(db.used_tags) > 0:
         "url": "series/"
     }
     layout.tag_gen( series, tags )
-    sitemap.add_post( series )
+    sitemap.add_post( series, False )
     print("Series done")
 
 #BLOG
@@ -113,7 +113,7 @@ if  db.new_posts >0 or db.updated_posts > 0:
         "url": "blog/",
     }
     layout.tag_gen( series, blog_posts )
-    sitemap.add_post( series )
+    sitemap.add_post( series, False )
     feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
     print(f"Blog done {len(blog_posts)}")
 # layout.setDebug()
@@ -156,7 +156,7 @@ if len(db.used_tags) > 0:
     total = len(tags)
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
-        sitemap.add_post(tag)
+        sitemap.add_post(tag, False)
         if tag['tag'] in db.used_tags:
 
             if tag['tag']=="carnets":

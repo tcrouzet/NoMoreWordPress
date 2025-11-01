@@ -214,16 +214,11 @@ article header{
 
 article header figure {
   display: block;
-  margin-block-start: 0;
-  margin-block-end: 0;
-  margin-inline-start: 0;
-  margin-inline-end: 0;
+  margin: 0 auto;
   unicode-bidi: isolate;
   width: 100%;
   max-width: var(--h1-justif);
   text-align: center;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .poster-img {

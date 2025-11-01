@@ -52,13 +52,15 @@ class Web:
         elif post['type'] == 5:
 
             #TAGS
-            main_url = post['main'].get('url',None)
-            if main_url:
-                if main_url.startswith("/"):
-                    url = main_url.strip("/")
-                else:
-                    url = "tag/"+main_url
-            else:
+            url = None
+            if "main" in post:
+                main_url = post['main'].get('url',None)
+                if main_url:
+                    if main_url.startswith("/"):
+                        url = main_url.strip("/")
+                    else:
+                        url = "tag/"+main_url
+            if not url:
                 url = "tag/" + post['path_md']
 
 
@@ -834,8 +836,13 @@ class Web:
             menu.insert(index-1, {"title": "Vélo", "url": "/tag/borntobike/"})
         tag['menu'] = menu
 
+        # print(tag['tag'])
+        # print(list(posts))
         if not posts:
             posts = self.db.get_posts_by_tag(tag['tag'])
+            if not posts:
+                exit("BUG tag")
+
         
         total_posts = len(posts)
         numbered_posts = []
