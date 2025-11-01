@@ -21,6 +21,14 @@ sys.stderr = sys.stdout
 os.system('clear')
 
 config = tools.tools.site_yml('site.yml')
+
+# Parcourir et filtrer les templates
+filtered_templates = []
+for template in config['templates']:
+    if not template.get('skip', False):  # Garde si skip est False ou absent
+        filtered_templates.append(template)
+config['templates'] = filtered_templates
+
 # print(config)
 # exit()
 
@@ -138,8 +146,13 @@ if  db.new_posts >0 or db.updated_posts > 0:
 #TAGS
 if len(db.used_tags) > 0:
 
-    sitemap.open("sitemap-tags")
-    tags = db.get_tags()
+    if config['build'] == 2:
+        # Tous les tags
+        sitemap.open("sitemap-tags")
+        tags = db.get_tags()
+    else:
+        # Ceux utilisés
+        tags = db.get_used_tags()
     total = len(tags)
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
@@ -166,7 +179,9 @@ if len(db.used_tags) > 0:
 
         pbar.update(1)
     pbar.close()
-    sitemap.save()
+    if config['build'] == 2:
+        # Tous les tags
+        sitemap.save()
     print(total, "tags updated")
 
 

@@ -72,6 +72,7 @@ class Web:
     def comment_url(self, post):
 
         if not post:
+            print("No post")
             return None
 
         if "comment_url" in post:
@@ -86,7 +87,7 @@ class Web:
             path = date.strftime("/%Y/%-m/")
             url = '/'.join([path.strip('/'), file_name_without_extension]) + ".md"
         
-        elif post['type'] == 1 or post['type'] == 2:
+        elif post['type'] == 1 or post['type'] == 2 or post['type'] == 5:
 
             #PAGES
             url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + ".md"
@@ -723,7 +724,7 @@ class Web:
         return self.config['github_raw'] + '/'.join(parts)
 
 
-    def supercharge_post(self, template, post, maximal=True):
+    def supercharge_post(self, template, post, level=10):
         """Get all post datas (text,tags, medias…)"""
 
         if isinstance(post, self.db.get_row_factory()):
@@ -737,11 +738,17 @@ class Web:
 
         post['url'] = self.url(post)
         #print(post)
- 
-        if maximal:
-            content = self.get_post_content(path)
-            post['content'] = content['content']
-            # html = markdown.markdown(content['content'])
+
+        content = self.get_post_content(path)
+        post['content'] = content['content']
+
+        if post['type']==2:
+            frontmatter = ft.Frontmatter(content['frontmatter'])
+            post['frontmatter'] = frontmatter.supercharge()
+        else:
+            post['frontmatter'] = None
+
+        if level>=2:
 
             html = markdown.markdown(
                 content['content'], 
@@ -756,27 +763,28 @@ class Web:
             post['html'] = self.image_manager(template, html, post)
             post['html'] = self.link_manager(post['html'], post)
             post['description'] = content['description']
-            frontmatter = ft.Frontmatter(content['frontmatter'])
-            post['frontmatter'] = frontmatter.supercharge()
-            #print(post['frontmatter'])
-            post['comments'] = self.post_comment_total(post)
+            if template['comments_total']:
+                post['comments'] = self.post_comment_total(post)
+            else:
+                post['comments'] = 0
         
-        post['canonical'] = self.config['domain'] + post['url']
-        post['pub_date_str'] = tools.format_timestamp_to_paris_time(post['pub_date'])
-        post['pub_update_str'] = tools.format_timestamp_to_paris_time(post['pub_update'])
-        post['thumb'] = self.source_image(template, post['thumb_path'], post)
-        post['thumb'] = self.makeJPEGthumb(template, post['thumb'])
+        if level>=1:
+            post['canonical'] = template['domain'] + post['url']
+            post['pub_date_str'] = tools.format_timestamp_to_paris_time(post['pub_date'])
+            post['pub_update_str'] = tools.format_timestamp_to_paris_time(post['pub_update'])
+            post['thumb'] = self.source_image(template, post['thumb_path'], post)
+            post['thumb'] = self.makeJPEGthumb(template, post['thumb'])
 
-        post['github'] = self.get_github_url(post['url'])
-        post['is_home'] = False
+            post['github'] = self.get_github_url(post['url'])
+            post['is_home'] = False
 
-        post['tagslist'] = self.extract_tags(post)
-        post['navigation'] = self.navigation(post)
-        if post['navigation']:
-            post['navigation']['datelink'] = self.date_html(post)
-        # print(post['navigation'])
-        # print(post['navigation']['maintag'])
-        # exit()
+            post['tagslist'] = self.extract_tags(post)
+            post['navigation'] = self.navigation(post)
+            if post['navigation']:
+                post['navigation']['datelink'] = self.date_html(post)
+            # print(post['navigation'])
+            # print(post['navigation']['maintag'])
+            # exit()
 
         return post
 
@@ -840,13 +848,13 @@ class Web:
                 post = self.tag_2_post(post)
                 post['path_md'] = tag['post_md']
 
-                post_with_order = self.supercharge_post(template, post, False)
+                post_with_order = self.supercharge_post(template, post, 1)
                 post_with_order['order']=post['count']
 
             else:
                 # print("Autre type")
                 # print(post)
-                post_with_order = self.supercharge_post(template, post, False)
+                post_with_order = self.supercharge_post(template, post, 1)
                 if not post_with_order:
                     total_posts -=1
                     continue

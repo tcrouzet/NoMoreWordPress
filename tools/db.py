@@ -358,6 +358,55 @@ class Db:
         post = c.fetchone()
         return post
 
+    def get_used_tags(self, order="t.count DESC"):
+        """
+        Récupère les tags de la base de données en filtrant sur un set de tags spécifiques.
+        
+        Args:
+            include_tags: Set ou liste de tags à inclure (None = tous les tags)
+            order: Ordre de tri (par défaut: "t.count DESC")
+        
+        Returns:
+            Liste des tags avec leurs informations
+        """
+        c = self.conn.cursor()
+
+        where_clause = ""
+        if self.used_tags:
+            tags_list = ','.join('?' for _ in self.used_tags)
+            where_clause = f"AND t.tag IN ({tags_list})"
+        
+        query = f'''
+        SELECT t.tag,
+            t.count,
+            '/tag/' || t.tag as path_md,
+            5 as type,
+            p.id,
+            p.path_md as post_md,
+            p.thumb_path,
+            p.thumb_legend, 
+            p.pub_update
+            FROM (
+                SELECT json_each.value AS tag, 
+                    COUNT(*) AS count, 
+                    MAX(posts.pub_date) AS most_recent_date
+                FROM posts
+                JOIN json_each(posts.tags)
+                GROUP BY json_each.value
+            ) AS t
+            JOIN posts AS p ON p.pub_date = t.most_recent_date
+            WHERE EXISTS (
+                SELECT 1 FROM json_each(p.tags)
+                WHERE json_each.value = t.tag
+            ) {where_clause}
+            ORDER BY {order}
+        '''
+
+        c.execute(query, tuple(self.used_tags))
+        tags = c.fetchall()
+        return tags
+
+
     def timestamp_to_date(self, timestamp):
         date_time = datetime.datetime.fromtimestamp(timestamp)
         readable_date = date_time.strftime("%Y-%m-%d")
@@ -413,7 +462,7 @@ class Db:
                 'path_md': 'test/path.md', 
                 'pub_date': 1379706780, 
                 'pub_update': 1416085181, 
-                'thumb_path': '_i/test.jpg', 
+                'thumb_path': '/_i/test.jpg', 
                 'thumb_legend': 'Test Image', 
                 'type': 1, 
                 'tags': json.dumps(["test"])

@@ -15,31 +15,35 @@ class MicroCodes:
         Liste toutes les PAGES du tag 'book'.
         Utilisation dans le contenu : [code:book_list]
         """
+
         web = getattr(self.layout, "web", None)
         if web is None:
             return "<!-- book_list: layout.web non défini -->"
 
         try:
             rows = web.db.get_posts_by_tag("book")
+ 
         except Exception as e:
             return f"<!-- book_list: erreur DB: {html.escape(str(e))} -->"
 
         pages = []
         for row in rows:
-            post = web.supercharge_post(row, True)
-            if post and post.get("type")==2:
+            # print(dict(row))
+            if row and row["type"]==2:
+                post = web.supercharge_post(None, row, 0)
                 pages.append(post)
 
         if not pages:
             return "<!-- book_list: aucune page pour 'book' -->"
 
-
+        # return post['title']
         romman = ""
         imaginaire =""
         essais = ""
         recit = ""
         autre =""
         for p in pages:
+            # return "Pages"
             frontmatter = p.get("frontmatter", None)
             if frontmatter:
                 genre = frontmatter.get("genre","autre").lower()

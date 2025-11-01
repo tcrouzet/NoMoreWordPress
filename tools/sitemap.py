@@ -85,9 +85,9 @@ class Sitemap:
 
             if superchare:
                 if post['type'] == 5:
-                    post = self.web.supercharge_tag(template, post, False)
+                    post = self.web.supercharge_tag(template, post, 1)
                 else:
-                    post = self.web.supercharge_post(template, post, False)
+                    post = self.web.supercharge_post(template, post, 1)
 
             if not post:
                 return None

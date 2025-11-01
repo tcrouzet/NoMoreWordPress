@@ -3,7 +3,7 @@ from datetime import date
 import shutil
 import tools.tools
 import tools.logs
-import tools.github
+import tools.sync_github
 import tools.sync_files
 from md2gemini import md2gemini
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw
@@ -389,7 +389,7 @@ sync = tools.sync_files.SyncFiles(config['gemini_export'],'/Volumes/docker/gemin
 # command = 'rsync -av --update --exclude=".DS_Store" --exclude=".*/" --delete --checksum=false ~/Documents/gemini/ /Volumes/docker/gemini/content'
 # subprocess.run(command, shell=True, check=True)
 
-gh = tools.github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
+gh = tools.sync_github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
 gh.push()
 
 

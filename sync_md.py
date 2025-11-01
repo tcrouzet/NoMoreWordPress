@@ -3,7 +3,7 @@ import os, sys, re
 import shutil
 import tools.tools
 import tools.logs
-import tools.github
+import tools.sync_github
 from PIL import Image
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
@@ -114,7 +114,7 @@ def index():
         shutil.copy2(src_path, dst_path)
 
 
-gh = tools.github.MyGitHub(config, "md", config['export_github_md'])
+gh = tools.sync_github.MyGitHub(config, "md", config['export_github_md'])
 
 # Quand des fichiers montent pas
 #gh.sync_local_with_github()

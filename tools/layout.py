@@ -53,6 +53,8 @@ class Layout:
                 "post_per_page": int(template.get('post_per_page', 40)),
                 "image_max_size": int(template.get('image_max_size', 1024)),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
+                "comments": bool(template.get('comments', False)),
+                "comments_total": bool(template.get('comments_total', False)),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),
@@ -126,6 +128,7 @@ class Layout:
             params = m.group(2).split("|") if m.group(2) else []
             func = getattr(template['micro'], func_name, None)
             if not callable(func):
+                print(f"Microcode function {func_name} inexistant")
                 return f"Microcode function {func_name} inexistant"
             try:
                 try:
@@ -288,10 +291,10 @@ class Layout:
         for template in self.templates:
 
             home = {}
-            home['digressions'] = self.web.supercharge_post(template, last_post, False)
-            home['carnet'] = self.web.supercharge_post(template, last_carnet, False)
-            home['bike'] = self.web.supercharge_post(template, last_bike, False)
-            home['digest'] = self.web.supercharge_post(template, last_digest, False)
+            home['digressions'] = self.web.supercharge_post(template, last_post, 1)
+            home['carnet'] = self.web.supercharge_post(template, last_carnet, 1)
+            home['bike'] = self.web.supercharge_post(template, last_bike, 1)
+            home['digest'] = self.web.supercharge_post(template, last_digest, 1)
             
             home['canonical'] = template['domain']
             home['description'] = self.config['description']
