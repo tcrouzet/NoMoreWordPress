@@ -52,6 +52,7 @@ class Layout:
                 "infinite_scroll": bool(template.get('infinite_scroll', False)),
                 "post_per_page": int(template.get('post_per_page', 40)),
                 "image_max_size": int(template.get('image_max_size', 1024)),
+                "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),

@@ -19,7 +19,7 @@ class SyncAWS:
 
         if not test:
             # Exécution de la synchronisation S3
-            command = f'aws s3 sync {self.config['export']} s3://{self.config['sync']['bucket_name']} --delete --output json'
+            command = f'aws s3 sync {self.config['export']} s3://{self.config['bucket_name']} --delete --output json'
             print(command)
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
             output = result.stdout
@@ -57,7 +57,7 @@ class SyncAWS:
 
         # Filtrer les fichiers
         uploaded_files = [
-            file_path.replace("s3://" + self.config['sync']['bucket_name'], "") for file_path in uploaded_files
+            file_path.replace("s3://" + self.config['bucket_name'], "") for file_path in uploaded_files
             if os.path.basename(file_path) not in excluded_files
             and not file_path.endswith(tuple(excluded_extensions))
         ]
@@ -125,7 +125,7 @@ class SyncAWS:
             with open(invalidation_file, 'r') as file:
                 invalidation_data = json.load(file)
                 response = client.create_invalidation(
-                    DistributionId=self.config['sync']['distribution_id'],
+                    DistributionId=self.config['distribution_id'],
                     InvalidationBatch=invalidation_data
                 )
                 #print("Invalidation créée:", response)

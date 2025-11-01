@@ -234,20 +234,22 @@ print("Gen ended")
 
 #EXPORT
 if version>0:
-    for template in config['tempaltes']:
+    for template in config['templates']:
 
-        if template['sync']['name'] == "aws":
+        sync = template['sync'][0]
+        sync['export'] = template['export']
+
+        if sync['name'] == "aws":
             import tools.sync_aws as aws
-            run_aws = aws.SyncAWS(template)
+            run_aws = aws.SyncAWS(sync)
             run_aws.sync()
 
-        elif template['sync']['name'] == "github":
+        elif sync['name'] == "github":
             import tools.sync_github as sync_github
-            gh = sync_github.MyGitHub(template)
+            gh = sync_github.MyGitHub(sync)
             gh.sync()
 
-        else:
-            tools.tools.run_script('sync_md.py')
-            tools.tools.run_script('sync_gmi.py')
+    tools.tools.run_script('sync_md.py')
+    tools.tools.run_script('sync_gmi.py')
 else:
     print("No export")

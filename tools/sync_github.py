@@ -9,9 +9,9 @@ class MyGitHub:
 
     def __init__(self, config, mode="sourcehut"):
         self.config = config
-        self.token = config['sync']['GITHUB_TOKEN']
-        self.owner = config['sync']['REPO_OWNER']
-        self.repo_name = config['sync']['repo_name']
+        self.token = config['GITHUB_TOKEN']
+        self.owner = config['REPO_OWNER']
+        self.repo_name = config['repo_name']
         self.mode = mode
 
         # self.test_connection()

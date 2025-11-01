@@ -302,6 +302,9 @@ class Web:
         if not thumb:
             return thumb
 
+        # By default
+        thumb['jpeg'] = thumb['url']
+
         # print(thumb)
         jpeg_file =  f"{os.path.splitext(thumb['url'])[0]}.jpeg".strip("/")
         jpeg_path = os.path.join(template['export'], jpeg_file)
@@ -309,7 +312,7 @@ class Web:
         # print(thumb['jpeg'])
         # print(jpeg_path)
 
-        if thumb['format'] == "image/webp" and not os.path.exists(jpeg_path) :
+        if template['jpeg_thumb'] and thumb['format'] == "image/webp" and not os.path.exists(jpeg_path) :
             # Make jpeg file
             try:
 
@@ -320,7 +323,7 @@ class Web:
 
                 img = Image.open(path)
                      
-                img.convert("RGB").save(jpeg_path, 'JPEG', quality=85, optimize=True, progressive=True)
+                img.convert("RGB").save(jpeg_path, 'JPEG', quality=60, optimize=True, progressive=True)
                 
                 # Fermer l'image
                 img.close()
@@ -478,8 +481,8 @@ class Web:
                             'height': img_data['height'],
                             'loading': 'lazy',
                             'decoding': 'async',
-                            'srcset': ', '.join(srcset_parts),
-                            'sizes': f'(max-width: {img_data['width']}px) 100vw, {img_data['width']}px'
+                            'srcset': ', '.join(srcset_parts)
+                            # 'sizes': f'(max-width: {img_data['width']}px) 100vw, {img_data['width']}px'
                         }
 
                         if myclass:
@@ -763,6 +766,7 @@ class Web:
         post['pub_update_str'] = tools.format_timestamp_to_paris_time(post['pub_update'])
         post['thumb'] = self.source_image(template, post['thumb_path'], post)
         post['thumb'] = self.makeJPEGthumb(template, post['thumb'])
+
         post['github'] = self.get_github_url(post['url'])
         post['is_home'] = False
 
