@@ -245,9 +245,15 @@ if version>0:
             run_aws.sync()
 
         elif sync['name'] == "github":
-            import tools.sync_github as sync_github
-            gh = sync_github.MyGitHub(sync)
-            gh.sync()
+
+            import subprocess
+
+            dossier = template['export']
+            current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            subprocess.run(["git", "add", "."], cwd=dossier)
+            subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
+            subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
 
     # tools.tools.run_script('sync_md.py')
     # tools.tools.run_script('sync_gmi.py')
