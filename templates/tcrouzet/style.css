@@ -221,7 +221,7 @@ article header figure {
   text-align: center;
 }
 
-.poster-img {
+ header figure img {
   position: relative;
   width:100%;
   height:70vh;

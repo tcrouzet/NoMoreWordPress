@@ -14,7 +14,7 @@
 
         <figure>
             <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
-            class="poster-img {% if post.thumb.height > post.thumb.width %}poster-img-book{% else %}poster-img-full{% endif %}" 
+            class="{% if post.thumb.height > post.thumb.width %}poster-img-book{% else %}poster-img-full{% endif %}" 
             alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async"
             srcset="{% if post.thumb.url_250 %}{{ post.thumb.url_250 }} 250w,{% endif %}{% if post.thumb.url_1024 %}{{ post.thumb.url_1024 }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w" />
 
