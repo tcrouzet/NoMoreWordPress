@@ -60,19 +60,18 @@ if total >0:
     db.db_commit()
 
 #SITEMAP POSTS
-# if db.new_posts > 0:
-#     sitemap.open("sitemap-posts")
-#     posts = db.get_all_posts()
-#     pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
-#     for post in posts:
-#         sitemap.add_post( post )
-#         pbar.update(1)
-#     sitemap.save()
-#     pbar.close()
-#     print("Sitemap posts done")
+if db.new_posts > 0:
+    sitemap.open("sitemap-posts")
+    posts = db.get_all_posts()
+    pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
+    for post in posts:
+        sitemap.add_post( post )
+        pbar.update(1)
+    sitemap.save()
+    pbar.close()
+    print("Sitemap posts done")
 
-
-# sitemap.open("sitemap-main")
+sitemap.open("sitemap-main")
 
 #SERIES
 if len(db.used_tags) > 0:
@@ -88,15 +87,15 @@ if len(db.used_tags) > 0:
         "url": "series/"
     }
     layout.tag_gen( series, tags )
-    # sitemap.add_post( series )
+    sitemap.add_post( series )
     print("Series done")
 
 #BLOG
 # layout.setDebug()
 if  db.new_posts >0 or db.updated_posts > 0:
     exclude = tuple(config['home_exclude'])
-    posts = db.get_blog_posts(exclude)
-    first_post = dict(posts[0])
+    blog_posts = db.get_blog_posts(exclude)
+    first_post = dict(blog_posts[0])
     series = {
         "tag": "blog",
         "pub_update": first_post['pub_update'],
@@ -105,69 +104,76 @@ if  db.new_posts >0 or db.updated_posts > 0:
         "post_md": first_post['path_md'],
         "url": "blog/",
     }
-    layout.tag_gen( series, posts )
-    # sitemap.add_post( blog )
-    # feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
-    print(f"Blog done {len(posts)}")
+    layout.tag_gen( series, blog_posts )
+    sitemap.add_post( series )
+    feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
+    print(f"Blog done {len(blog_posts)}")
 # layout.setDebug()
 
 #HOME
 if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
     if posts:
         print("Starting home")
-        last_post=posts[0]
+        last_post=blog_posts[0]
         last_carnet = db.get_posts_by_tag("carnets", 1)
         last_bike = db.get_posts_by_tag("velo", 1)
         last_digest = db.get_posts_by_tag("digest", 1)
         layout.home_gen( last_post, last_carnet, last_bike, last_digest )
-        # sitemap.add_post({"url": "index.html", "pub_update_str": home['pub_update_str'], "thumb": home["thumb"]["url"] })
+
+        sitemap.add_post({"url": "index.html", "pub_update_str": tools.tools.now_datetime_str(), "thumb": None }, False)
+
         print("Home done")
 
-# sitemap.add_page("archives/index.html")
-# sitemap.save(4)
+sitemap.add_page("archives/index.html", supercharge=False)
+sitemap.save()
 
 
 #MAIN FEED
 if  db.new_posts >0 or db.updated_posts > 0:
     posts = db.get_all_posts()
-    # feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
-    # print("Main feed done")
+    feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
+    print("Main feed done")
 
 
 #TAGS
 if len(db.used_tags) > 0:
 
-    # sitemap.open("sitemap-tags")
+    sitemap.open("sitemap-tags")
     tags = db.get_tags()
     total = len(tags)
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
-        # sitemap.add_post(tag)
-        # if tag['tag'] in db.used_tags:
+        sitemap.add_post(tag)
+        if tag['tag'] in db.used_tags:
 
-        #     if tag['tag']=="carnets":
-        #         feed.builder(tag['posts'],"carnet-de-route", "Derniers carnets de Thierry Crouzet")
-        #     if tag['tag']=="velo":
-        #         feed.builder(tag['posts'],"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
-        #     if tag['tag']=="ecriture":
-        #         feed.builder(tag['posts'],"ecriture", "Derniers textes en construction de Thierry Crouzet")
-        #     if tag['tag']=="mailing":
-        #         feed.builder(tag['posts'],"mailing", "Autopromotion de Thierry Crouzet")
-        #     if tag['tag']=="digest":
-        #         feed.builder(tag['posts'],"digest", "De ma terrasse de Thierry Crouzet")
+            if tag['tag']=="carnets":
+                tag_posts = db.get_posts_by_tag(tag['tag'])
+                feed.builder(tag_posts,"carnet-de-route", "Derniers carnets de Thierry Crouzet")
+            if tag['tag']=="velo":
+                tag_posts = db.get_posts_by_tag(tag['tag'])
+                feed.builder(tag_posts,"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
+            if tag['tag']=="ecriture":
+                tag_posts = db.get_posts_by_tag(tag['tag'])
+                feed.builder(tag_posts,"ecriture", "Derniers textes en construction de Thierry Crouzet")
+            if tag['tag']=="mailing":
+                tag_posts = db.get_posts_by_tag(tag['tag'])
+                feed.builder(tag_posts,"mailing", "Autopromotion de Thierry Crouzet")
+            if tag['tag']=="digest":
+                tag_posts = db.get_posts_by_tag(tag['tag'])
+                feed.builder(tag_posts,"digest", "De ma terrasse de Thierry Crouzet")
 
         layout.tag_gen(tag)
 
         pbar.update(1)
     pbar.close()
-    # sitemap.save()
+    sitemap.save()
     print(total, "tags updated")
 
 
 #YEARS
 if len(db.used_years) > 0:
 
-    # sitemap.open("sitemap-years")
+    sitemap.open("sitemap-years")
     years_archive = ""
     exclude = ("invisible","book","page")
     years = db.get_years()
@@ -188,6 +194,7 @@ if len(db.used_years) > 0:
 
             series = {
                 "tag": str(year),
+                "type": 5,
                 "title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
                 "pub_update": posts[0]['pub_update'],
                 "thumb_path": posts[0]['thumb_path'],
@@ -195,11 +202,11 @@ if len(db.used_years) > 0:
                 "post_md": posts[0]['path_md'],
                 "url": f"{str(year)}/",
             }
-            # sitemap.add_post(superyear)
+            sitemap.add_post(series)
             layout.tag_gen( series, posts )
             years_archive += f'<p><a href="{str(year)}/">{year}</a></p>'
 
-    # sitemap.save()
+    sitemap.save()
     print("Years done")
 
 
@@ -221,15 +228,26 @@ layout.e404_gen()
 
 
 #END SITEMAP
-# sitemap.save_index('sitemap',4)
+sitemap.save_index('sitemap')
 
 print("Gen ended")
 
 #EXPORT
 if version>0:
-    tools.tools.run_script('sync_aws.py')
-    tools.tools.run_script('sync_github.py')
-    tools.tools.run_script('sync_md.py')
-    tools.tools.run_script('sync_gmi.py')
+    for template in config['tempaltes']:
+
+        if template['sync']['name'] == "aws":
+            import tools.sync_aws as aws
+            run_aws = aws.SyncAWS(template)
+            run_aws.sync()
+
+        elif template['sync']['name'] == "github":
+            import tools.sync_github as sync_github
+            gh = sync_github.MyGitHub(template)
+            gh.sync()
+
+        else:
+            tools.tools.run_script('sync_md.py')
+            tools.tools.run_script('sync_gmi.py')
 else:
     print("No export")

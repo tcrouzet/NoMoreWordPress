@@ -7,11 +7,11 @@ from datetime import datetime
 
 class MyGitHub:
 
-    def __init__(self, config, repo_name, repo_dir, mode="sourcehut"):
+    def __init__(self, config, mode="sourcehut"):
         self.config = config
-        self.token = config['GITHUB_TOKEN']
-        self.owner = config['REPO_OWNER']
-        self.repo_name = repo_name
+        self.token = config['sync']['GITHUB_TOKEN']
+        self.owner = config['sync']['REPO_OWNER']
+        self.repo_name = config['sync']['repo_name']
         self.mode = mode
 
         # self.test_connection()
@@ -21,7 +21,7 @@ class MyGitHub:
             print("GitHub actions running. No commit.")
             sys.exit()
 
-        self.repo = Repo(repo_dir)
+        self.repo = Repo(config['export'])
 
         self.clean()
 
@@ -326,3 +326,10 @@ class MyGitHub:
                 print(f"Erreur lors du commit ou du push : {e}")
         else:
             print("Aucun fichier HTML trouvé pour synchronisation.")
+
+
+    def sync(self):
+        self.pull()
+        self.push()
+        print("GitHub sync done")
+        # gh.resend_html()

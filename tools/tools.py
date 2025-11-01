@@ -103,6 +103,14 @@ def format_timestamp_to_paris_time(timestamp: int) -> str:
 def timestamp_to_paris_datetime(timestamp: int) -> datetime:
     return datetime.fromtimestamp(timestamp, tz=timezone.utc).astimezone(PARIS_TZ)
 
+def now_datetime() -> datetime:
+    dt = datetime.now()
+    return timestamp_to_paris_datetime( datetime.timestamp(dt) )
+
+def now_datetime_str() -> str:
+    dt_paris = now_datetime()
+    return dt_paris.isoformat(timespec="seconds")
+
 def output_dir():
     output_dir = "_output"
     script_dir = os.path.dirname(os.path.abspath(__file__))

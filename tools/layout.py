@@ -8,7 +8,6 @@ import csscompressor
 import hashlib
 import importlib.util
 import re
-import tools.tools as tools
 
 def make_liquid_loader(base_dir):
     def make(fname):
