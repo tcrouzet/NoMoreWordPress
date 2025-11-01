@@ -249,7 +249,7 @@ if version>0:
             gh = sync_github.MyGitHub(sync)
             gh.sync()
 
-    tools.tools.run_script('sync_md.py')
-    tools.tools.run_script('sync_gmi.py')
+    # tools.tools.run_script('sync_md.py')
+    # tools.tools.run_script('sync_gmi.py')
 else:
     print("No export")

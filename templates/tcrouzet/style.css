@@ -2,14 +2,60 @@
 
  @font-face {
   font-family: 'icomoon';
-  src:  url('/fonts/icomoon.eot?4');
-  src:  url('/fonts/icomoon.eot?4x#iefix') format('embedded-opentype'),
-    url('/fonts/icomoon.ttf?4') format('truetype'),
-    url('/fonts/icomoon.woff?4') format('woff'),
-    url('/fonts/icomoon.svg?4#icomoon') format('svg');
+  src: url('/fonts/icomoon.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
-  font-display: block;
+  font-display: swap;
+}
+
+/* inter-regular - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/inter-v20-latin-regular.woff2') format('woff2');
+}
+/* inter-italic - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 400;
+  src: url('/fonts/inter-v20-latin-italic.woff2') format('woff2');
+}
+/* inter-700 - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/inter-v20-latin-700.woff2') format('woff2');
+}
+/* inter-700italic - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 700;
+  src: url('/fonts/inter-v20-latin-700italic.woff2') format('woff2');
+}
+
+/* bitter-regular - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Bitter';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/bitter-v40-latin-regular.woff2') format('woff2');
+}
+/* bitter-italic - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Bitter';
+  font-style: italic;
+  font-weight: 400;
+  src: url('/fonts/bitter-v40-latin-italic.woff2') format('woff2');
 }
 
 :root {
