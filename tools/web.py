@@ -463,7 +463,7 @@ class Web:
                         else:
                             myclass = ''
                             myclasslegend = ''
-                        if img_data['width'] < 1500:
+                        if img_data['width'] < 1024:
                             myclass += ' small'
                             myclasslegend = 'legend-center'
 

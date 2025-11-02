@@ -185,8 +185,6 @@ class Db:
     def db_builder(self, root_dir,reset=False):
 
         self.create_table_posts(reset)
-        count_added = 0
-        count_updated = 0
 
         for root, dirs, files in os.walk(root_dir):
             # Exlude images dirs

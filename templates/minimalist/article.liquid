@@ -14,7 +14,7 @@
 
         <figure>
             <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
-            class="{% if post.thumb.height > post.thumb.width %}poster-img-book{% else %}poster-img-full{% endif %}" 
+            {% if post.thumb.height > post.thumb.width %}class="poster-book"{% endif %}
             alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async"
             srcset="{% if post.thumb.url_250 %}{{ post.thumb.url_250 }} 250w,{% endif %}{% if post.thumb.url_1024 %}{{ post.thumb.url_1024 }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w" />
 
@@ -73,9 +73,9 @@
         <nav>
             <a href="{{ post.navigation.prev_url }}" class="prev" rel="prev">&lt; </a>
             {% if post.navigation.maintag.url %}
-                <a href="/tag/{{ post.navigation.maintag.url }}" itemprop="articleSection">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> ● 
+                <a href="/tag/{{ post.navigation.maintag.url }}" itemprop="articleSection">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> - 
             {% elif post.navigation.maintag.slug != blank %}
-                <a href="/tag/{{ post.navigation.maintag.slug }}" itemprop="articleSection">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> ● 
+                <a href="/tag/{{ post.navigation.maintag.slug }}" itemprop="articleSection">{{ post.navigation.maintag.title }} {{ post.navigation.order }}</a> - 
             {% endif %}
             {{ post.navigation.datelink }}
             <a href="{{ post.navigation.next_url }}" class="next" rel="next"> &gt;</a>

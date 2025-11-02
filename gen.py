@@ -40,6 +40,7 @@ layout.web = web
 sitemap = tools.sitemap.Sitemap(config, web)
 feed = tools.feed.Feed(config, web)
 
+print("Updating data base")
 if config['build'] == 1:
     #Load new posts only
     db.db_builder(config['vault'],False)
@@ -217,7 +218,7 @@ if len(db.used_years) > 0:
                 "post_md": posts[0]['path_md'],
                 "url": f"{str(year)}/",
             }
-            sitemap.add_post(series)
+            sitemap.add_post(series, False)
             layout.tag_gen( series, posts )
             years_archive += f'<p><a href="{str(year)}/">{year}</a></p>'
 
