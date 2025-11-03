@@ -34,7 +34,6 @@
     {% endif %}    
 
 </header>
-    
 
 <section itemprop="articleBody">
 
@@ -75,7 +74,7 @@
             {% if post.navigation.prev_url %}
                 <a href="/tag/{{ post.navigation.slug }}" itemprop="articleSection">{{ post.navigation.title }} {{ post.navigation.order }}</a> - 
             {% endif %}
-            {{ post.navigation.datelink }}
+            {{ post.datelink }}
             <a href="{{ post.navigation.next_url }}" class="next" rel="next"> &gt;</a>
         </nav>
     {% endif %}
