@@ -1,6 +1,6 @@
 from liquid import Liquid
 
-import os
+import os, json
 import shutil
 import time
 import htmlmin
@@ -231,6 +231,7 @@ class Layout:
         for template in self.templates:
             
             supercharged = self.web.supercharge_post(template, post)
+            supercharged['navigation'] = json.loads(supercharged['navigation'])
 
             header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config)

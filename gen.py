@@ -3,6 +3,7 @@
 
 import os, sys
 from datetime import datetime
+from sqlite3 import Row
 
 import tools.tools
 import tools.db
@@ -40,13 +41,15 @@ layout.web = web
 sitemap = tools.sitemap.Sitemap(config, web)
 feed = tools.feed.Feed(config, web)
 
-print("Updating data")
+print(f"Updating data status: {config['build']}")
 if config['build'] == 1 or config['build'] == 2:
     #Load new posts only
-    db.db_builder(config['vault'],False)
+    print("Just new/updated posts")
+    db.db_builder(config['vault'],reset=False)
 elif config['build'] == 3:
      #Rebuild all
-    db.db_builder(config['vault'],True)
+    print("Reset base")
+    db.db_builder(config['vault'],reset=True)
 print(db.new_posts, "new posts")
 print(db.updated_posts, "updated posts")
 
@@ -56,10 +59,13 @@ total = len(posts)
 if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
+        post = dict(post)
         non_template_dependant = web.supercharge_post_non_template(post)
-        db.update_fields(post['id'], non_template_dependant)
+        db.update_fields( post['id'], non_template_dependant)
         pbar.update(1)
     pbar.close()
+else:
+    print("No new/updated posts")
 
 print("Media management")
 posts = db.get_posts_updated()
@@ -70,6 +76,8 @@ if total >0:
         web.media_production(config['templates'], post['content'], post)
         pbar.update(1)
     pbar.close()
+else:
+    print("No new media")
 
 #Menu
 layout.menu_gen()
@@ -78,19 +86,18 @@ layout.menu_gen()
 layout.search_gen()
 
 #POSTS
+print("Post generation")
 if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
         layout.single_gen( post )
-        db.updated(post)
+        if db.updated(post)==0:
+            exit("ça merde")
         pbar.update(1)
     pbar.close()
-    db.db_commit()
-
-exit()
 
 #SITEMAP POSTS
-if db.new_posts > 0:
+if total > 0:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts()
     pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
@@ -102,6 +109,7 @@ if db.new_posts > 0:
     print("Sitemap posts done")
 
 sitemap.open("sitemap-main")
+exit()
 
 #SERIES
 if len(db.used_tags) > 0:

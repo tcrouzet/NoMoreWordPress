@@ -26,9 +26,10 @@ class Web:
 
         if not post:
             return None
-
-        if "url" in post:
-            return post['url']
+        post=dict(post)
+        if 'path_md' not in post:
+            print(post)
+            exit("Bad post")
                 
         base = os.path.basename(post['path_md'])        
         file_name_without_extension = os.path.splitext(base)[0]
@@ -123,7 +124,10 @@ class Web:
 
     def media_source_path(self, post, media_src_file):
         try:
+            post=dict(post)
             if not media_src_file:
+                print(post)
+                exit("No media_src")
                 return None
             base_dir_name =  post['path_md']
             dirname = os.path.dirname(base_dir_name)
@@ -470,10 +474,12 @@ class Web:
             
             img = p.find('img')
             if img:
-                data = self.source_images(templates, img.get('src'), post, legend=img.get('alt', ''))
-                if data:
-                    if self.db.insert_image_cache(data):
-                        index +=1
+                src = img.get('src', None)
+                if src:
+                    data = self.source_images(templates, img.get('src'), post, legend=img.get('alt', ''))
+                    if data:
+                        if self.db.insert_image_cache(data):
+                            index +=1
 
         #thumb
         if post['thumb_path']:
@@ -496,12 +502,16 @@ class Web:
             
             img = p.find('img')
             if img:
-                index +=1
-                if img['src']:
+                src = img.get('src', None)
+                if src:
                     source_path = self.media_source_path( post, img['src'] )
                 else:
                     continue
-                img_data = self.db.get_image_cache(template['name'], source_path)
+                index +=1
+                if source_path:
+                    img_data = self.db.get_image_cache(template['name'], source_path)
+                else:
+                    continue
                 if img_data:
 
                     alt_text = img.get('alt','')
@@ -647,13 +657,10 @@ class Web:
     
     def extract_tags(self, post) ->list:
         
-        #Cleaning
-        if isinstance(post, str):
-            tags = [post]
-        elif "tags" in post:
+        if 'tags' in post:
             tags = json.loads(post['tags'])
         else:
-            tags = ["None"]
+            return None
         if len(tags)>1 and "dialogue" in tags:
             tags.remove("dialogue")
         
@@ -697,35 +704,44 @@ class Web:
 
     def navigation(self, post, tagslist):
 
-        main_tag = tagslist[0]
-        
-        tag_posts = self.db.get_posts_by_tag(main_tag['slug'])
-        url_prev_post = ""
-        url_next_post = ""
-        total_posts = len(tag_posts)
-        i = 0
-        #print(total_posts, main_tag['slug'], post['tagslist'])
+        try:
 
-        for i, tag_post in enumerate(tag_posts):
-            #post_dict = dict(post)
-            if post['id'] == tag_post['id']:
-                if i-1>=0:
-                    url_next_post =  tag_posts[i-1]['url']
-                else:
-                    url_next_post =  tag_posts[-1]['url']
-                if i==total_posts-1:
-                    url_prev_post =  tag_posts[0]['url']
-                else:
-                    url_prev_post =  tag_posts[i+1]['url']
-                break
+            post=dict(post)
+            main_tag = tagslist[0]
+            
+            tag_posts = self.db.get_posts_by_tag(main_tag['slug'])
+            url_prev_post = ""
+            url_next_post = ""
+            total_posts = len(tag_posts)
+            i = 0
+            # print(total_posts, main_tag['slug'], tagslist)
 
-        return {"total_posts": total_posts,
-                "prev_url": url_prev_post,
-                "next_url": url_next_post,
-                "order": total_posts-i,
-                "slug": main_tag['slug'],
-                "title": main_tag['title']
-            }
+            for i, tag_post in enumerate(tag_posts):
+                if post['id'] == tag_post['id']:
+                    print(i, post['id'], tag_post['id'], total_posts)
+                    if i-1>=0:
+                        # print("next1")
+                        url_next_post =  "/" + tag_posts[i-1]['url']
+                    else:
+                        # print("next2")
+                        url_next_post =  "/" + tag_posts[-1]['url']
+                    if i==total_posts-1:
+                        # print("prev1")
+                        url_prev_post =  "/" + tag_posts[0]['url']
+                    else:
+                        # print("prev2")
+                        url_prev_post =  "/" + tag_posts[i+1]['url']
+                    break
+
+            return {"total_posts": total_posts,
+                    "prev_url": url_prev_post,
+                    "next_url": url_next_post,
+                    "order": total_posts-i,
+                    "slug": main_tag['slug'],
+                    "title": main_tag['title']
+                }
+        except Exception as e:
+            print(f"Navigation {e}")
 
 
     def tag_2_post(self, post):
@@ -759,6 +775,8 @@ class Web:
     
 
     def get_github_url(self, url):
+        if not url:
+            return ""
         if not url.endswith('/'):
             return ""
         parts = url.strip('/').split('/')
@@ -774,22 +792,28 @@ class Web:
     def supercharge_post(self, template, post):
         """Get all post datas (text,tags, medias…)"""
 
-        if isinstance(post, self.db.get_row_factory()):
-            post = dict(post)
-        else:
-            exit("Bug supercharge")
-        # elif isinstance(post, list):
-        #     post = dict(post[0])
+        try:
+            if isinstance(post, self.db.get_row_factory()):
+                post = dict(post)
+            else:
+                exit("Bug supercharge")
+            # elif isinstance(post, list):
+            #     post = dict(post[0])
 
-        post['canonical'] = template['domain'] + post['url']
-        post['content'] = self.image_manager(template, post)
-        self.media_source_path( post, post['thumb_path'] )
-        if post['thumb_path']:
-            post['thumb'] = self.db.get_image_cache(template['name'], self.media_source_path( post, post['thumb_path'] ) )
-        else:
-            post['thumb'] =  None
+            post['canonical'] = template['domain'] + post['url']
+            post['content'] = self.image_manager(template, post)
+            if post['thumb_path']:
+                post['thumb'] = self.db.get_image_cache(template['name'], self.media_source_path( post, post['thumb_path'] ) )
+            else:
+                post['thumb'] =  None
 
-        return post
+            return post
+        
+        except Exception as e:
+            print(template)
+            print(post["url"])
+            print(f"supercharge {e}")
+
 
     def supercharge_post_non_template(self, post):
 
@@ -847,6 +871,7 @@ class Web:
             tag = dict(tag)
         elif isinstance(tag, list):
             print("Tag list")
+            exit()
 
         # print(tag)
 

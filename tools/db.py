@@ -44,9 +44,6 @@ class Db:
             print("Reset table posts")
             c.execute('DROP TABLE IF EXISTS posts')
 
-        c.execute('DROP TABLE IF EXISTS post_templates')
-
-
         c.execute(f'''CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY,
             title TEXT,
@@ -56,7 +53,7 @@ class Db:
             thumb_path TEXT DEFAULT '',
             thumb_legend TEXT DEFAULT '',
             type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 pour books
-            tags TEXT DEFAULT '[]',
+            tags TEXT DEFAULT '',
             url TEXT,
             content TEXT,
             frontmatter TEXT, -- dict json
@@ -139,14 +136,14 @@ class Db:
 
 
     def updated(self, post):
+        try:
+            query = '''UPDATE posts SET updated = False WHERE id = ?;'''
+            c = self.conn.cursor()
 
-        query = '''UPDATE posts SET updated = False WHERE id = ?;'''
-        c = self.conn.cursor()
-
-        c.execute(query, (post['id'],))
-        if c.rowcount > 0:
+            c.execute(query, (post['id'],))
+            self.conn.commit()
             return True
-        else:
+        except Exception as e:
             return False
 
     def delete_post(self, post):
@@ -217,13 +214,16 @@ class Db:
 
             if thumb_path and not thumb_legend:
                 thumb_legend = title
+            # print(tags)
+            # print(type(tags))
+            # exit()
             answer = {"pub_date":creation_time, "pub_update":modification_time, "title":title, "tags":tags, "thumb_legend":thumb_legend, "thumb_path":thumb_path}
             return answer
             
         return None
 
 
-    def db_builder(self, root_dir,reset=False):
+    def db_builder(self, root_dir, reset=False):
 
         self.create_tables(reset)
 
@@ -269,7 +269,7 @@ class Db:
         return c.fetchall()
 
     def get_posts_updated(self):
-        return self.get_posts("updated=1")
+        return self.get_posts("updated")
 
     def get_all_posts(self):
         return self.get_posts("type=0")
@@ -593,6 +593,11 @@ class Db:
     def get_image_cache(self, template_name, source_path):
         # print("get_image_cache")
         try:
+
+            if source_path.endswith("None"):
+                # print(f"Warning {source_path}")
+                return None
+
             c = self.conn.cursor()
             
             c.execute('SELECT data FROM images_cache WHERE source_path = ?', (source_path,))
@@ -606,5 +611,5 @@ class Db:
                 print(f"{source_path} not in cache")
             return None
         except Exception as e:
-            print(f"get_image_cache {source_path} {template_name}:", e)
+            print(f"Get image cache bug {source_path} {template_name}:", e)
             exit()
