@@ -99,7 +99,6 @@ if total >0:
 #SITEMAP POSTS
 if total > 0:
     sitemap.open("sitemap-posts")
-    posts = db.get_all_posts()
     pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
         sitemap.add_post( post )
@@ -107,9 +106,9 @@ if total > 0:
     sitemap.save()
     pbar.close()
     print("Sitemap posts done")
+exit()
 
 sitemap.open("sitemap-main")
-exit()
 
 #SERIES
 if len(db.used_tags) > 0:

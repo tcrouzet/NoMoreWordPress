@@ -79,24 +79,15 @@ class Sitemap:
         self.count[template['name']] += 1
 
 
-    def add_post(self, post, superchare=True):
+    def add_post(self, post):
 
         if not post:
             return False
 
         for template in self.config['templates']:
 
-            if superchare:
-                if post['type'] == 5:
-                    new_post = self.web.supercharge_tag(template, post, 1)
-                else:
-                    new_post = self.web.supercharge_post(template, post, 1)
-            else:
-                new_post = dict(post)
-                new_post['url'] = self.web.url(new_post)
+            new_post = dict(post)
 
-            if not new_post:
-                return None
             if 'pub_update_str' in new_post:
                 pub_date = new_post['pub_update_str']
             else:
@@ -104,7 +95,7 @@ class Sitemap:
             thumb = None
             if 'thumb' in new_post and new_post['thumb']:
                 if 'url' in new_post['thumb']:
-                    thumb = new_post['thumb']['url']
+                    thumb = new_post['thumb']['jpeg']
 
             if pub_date is not None:
                 self.lastmod[template['name']] = max(self.lastmod[template['name']], pub_date)
