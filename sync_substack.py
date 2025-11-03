@@ -115,6 +115,10 @@ class Webot:
 
     def load_markdown(self, url):
 
+        if not os.path.exists(url):
+            print(f"Can't find {url}")
+            raise(f"Error load_markdown")
+        
         md = tools.tools.read_file(url)
         match = re.search(r'/(\d{4})/(\d{1,2})/', url)
 
@@ -242,6 +246,7 @@ class Webot:
 
 
 config = tools.tools.site_yml('site.yml')
+template = next((item for item in config['templates'] if item['name'] == 'tcrouzet'), None)
 db = tools.db.Db(config)
 mode = "FR"
 # mode = "BIKE"
@@ -251,7 +256,7 @@ if mode == "FR":
     last = db.get_last_published_post()
     # last = db.get_post_by_title("Se soustraire au monde")
     print(last['path_md'])
-    path = os.path.join( config['export_github_md'], last['path_md'])
+    path = os.path.join( template['export'], last['path_md'])
 
     bot = Webot(config, config['substack_fr'])
     bot.substack(path)

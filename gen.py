@@ -40,15 +40,39 @@ layout.web = web
 sitemap = tools.sitemap.Sitemap(config, web)
 feed = tools.feed.Feed(config, web)
 
-print("Updating data base")
-if config['build'] == 1:
+print("Updating data")
+if config['build'] == 1 or config['build'] == 2:
     #Load new posts only
     db.db_builder(config['vault'],False)
-elif config['build'] == 2:
+elif config['build'] == 3:
      #Rebuild all
     db.db_builder(config['vault'],True)
 print(db.new_posts, "new posts")
 print(db.updated_posts, "updated posts")
+
+print("Supercharge posts")
+posts = db.get_posts_updated()
+total = len(posts)
+if total >0:
+    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
+    for post in posts:
+        non_template_dependant = web.supercharge_post_non_template(post)
+        db.update_fields(post['id'], non_template_dependant)
+        pbar.update(1)
+    pbar.close()
+
+print("Media management")
+posts = db.get_posts_updated()
+total = len(posts)
+if total >0:
+    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
+    for post in posts:
+        web.media_production(config['templates'], post['content'], post)
+        exit()
+        pbar.update(1)
+    pbar.close()
+
+    # db.db_commit()
 
 #Menu
 layout.menu_gen()
@@ -57,7 +81,7 @@ layout.menu_gen()
 layout.search_gen()
 
 #POSTS
-posts = db.get_posts_updated()
+posts = db.get_all_posts_with_templates()
 total = len(posts)
 if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
@@ -67,6 +91,8 @@ if total >0:
         pbar.update(1)
     pbar.close()
     db.db_commit()
+
+exit()
 
 #SITEMAP POSTS
 if db.new_posts > 0:
@@ -101,7 +127,7 @@ if len(db.used_tags) > 0:
 
 #BLOG
 # layout.setDebug()
-if  db.new_posts >0 or db.updated_posts > 0:
+if  db.new_posts >0 or db.updated_posts > 0  or new_home_template:
     exclude = tuple(config['home_exclude'])
     blog_posts = db.get_blog_posts(exclude)
     first_post = dict(blog_posts[0])

@@ -147,7 +147,7 @@ class Layout:
             copied_files = []
 
             for item in os.listdir(template['dir']):
-                if item.endswith('.liquid') or item.endswith('.py'):
+                if item.endswith('.liquid') or item.endswith('.py') or item.startswith("_"):
                     continue
 
                 source_item = os.path.join(template['dir'], item)
@@ -228,10 +228,6 @@ class Layout:
 
     def single_gen(self, post):
         for template in self.templates:
-
-            post = self.web.supercharge_post(template, post)
-            if not post:
-                raise("Error supercharge in layout")
             
             header_html = self.get_html(template["header"], post=post, blog=self.config)
             footer_html = self.get_html(template["footer"], post=post, blog=self.config)

@@ -3,7 +3,7 @@ class Frontmatter:
     def __init__(self, yalm):
         self.yalm = yalm
 
-    def shop(self, url):
+    def shop(self, url) ->str:
         if "amazon" in url:
             return "Amazon"
         if "7switch.com" in url:
@@ -69,7 +69,7 @@ class Frontmatter:
         
         return url
 
-    def supercharge(self):
+    def supercharge(self) ->dict:
         if not self.yalm:
             return None
         if "baseline" in self.yalm:

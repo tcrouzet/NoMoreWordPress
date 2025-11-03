@@ -3,6 +3,14 @@ import os
 import re
 import json
 import datetime
+from datetime import  date
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        return super().default(obj)
+
 
 class Db:
 
@@ -25,6 +33,10 @@ class Db:
         self.used_tags = set()
         self.used_years = set()
 
+    def create_tables(self, reset=False):
+        self.create_table_posts(reset)
+        self.create_images_cache(reset)
+
     def create_table_posts(self, reset=False):
         c = self.conn.cursor()
 
@@ -32,19 +44,48 @@ class Db:
             print("Reset table posts")
             c.execute('DROP TABLE IF EXISTS posts')
 
+        c.execute('DROP TABLE IF EXISTS post_templates')
+
+
         c.execute(f'''CREATE TABLE IF NOT EXISTS posts (
-                    id INTEGER PRIMARY KEY,
-                    title TEXT,
-                    path_md TEXT UNIQUE,
-                    pub_date INTEGER,
-                    pub_update INTEGER,
-                    thumb_path TEXT DEFAULT '',
-                    thumb_legend TEXT DEFAULT '',
-                    type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 pour books
-                    tags TEXT DEFAULT '[]',
-                    updated BOOLEAN DEFAULT TRUE
-                );''')
+            id INTEGER PRIMARY KEY,
+            title TEXT,
+            path_md TEXT UNIQUE,
+            pub_date INTEGER,
+            pub_update INTEGER,
+            thumb_path TEXT DEFAULT '',
+            thumb_legend TEXT DEFAULT '',
+            type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 pour books
+            tags TEXT DEFAULT '[]',
+            url TEXT,
+            content TEXT,
+            frontmatter TEXT, -- dict json
+            description TEXT,
+            pub_date_str TEXT,
+            pub_update_str TEXT,
+            github TEXT,
+            tagslist TEXT, -- list json,
+            datelink TEXT,
+            navigation TEXT,  -- dict json
+            updated BOOLEAN DEFAULT TRUE
+        );''')
         self.conn.commit()
+
+    def create_images_cache(self, reset=False):
+        """Table pour stocker descriptions images"""
+        c = self.conn.cursor()
+
+        if reset:
+            print("Reset table images_cache")
+            c.execute('DROP TABLE IF EXISTS images_cache')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS images_cache (
+            source_path TEXT PRIMARY KEY,
+            data TEXT
+        )''')
+        
+        self.conn.commit()
+
 
     def insert_post(self, post):
 
@@ -184,7 +225,7 @@ class Db:
 
     def db_builder(self, root_dir,reset=False):
 
-        self.create_table_posts(reset)
+        self.create_tables(reset)
 
         for root, dirs, files in os.walk(root_dir):
             # Exlude images dirs
@@ -469,3 +510,158 @@ class Db:
         self.conn.commit()
         print("Insert/Update result:", result)
         self.list_posts()
+
+
+    def row_to_dict(self, obj):
+        if isinstance(obj, sqlite3.Row):
+            return {key: self.row_to_dict(obj[key]) for key in obj.keys()}
+        elif isinstance(obj, (list, tuple)):
+            return [self.row_to_dict(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {k: self.row_to_dict(v) for k, v in obj.items()}
+        else:
+            return obj
+   
+    def update_fields(self, post_id, fields_dict):
+        """
+        Met à jour plusieurs champs d'un post.
+        Sérialise automatiquement les dict/list en JSON.
+        
+        Args:
+            post_id: ID du post à mettre à jour
+            fields_dict: Dictionnaire {nom_colonne: valeur}
+        """
+        try:
+            c = self.conn.cursor()
+            
+            # Préparer les valeurs en sérialisant les dict/list
+            processed_values = []
+            set_clauses = []
+            
+            for field_name, value in fields_dict.items():
+                # Sérialiser en JSON si dict ou list
+                if isinstance(value, (dict, list)):
+                    processed_value = json.dumps(value, cls=DateTimeEncoder)
+                else:
+                    processed_value = value
+                
+                set_clauses.append(f"{field_name} = ?")
+                processed_values.append(processed_value)
+            
+            # Ajouter l'ID à la fin pour le WHERE
+            processed_values.append(post_id)
+
+            query = f"UPDATE posts SET {', '.join(set_clauses)} WHERE id = ?"
+            
+            c.execute(query, tuple(processed_values))
+            self.conn.commit()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Erreur update post {post_id}: {e}")
+            return False
+
+
+    def insert_image_cache(self, data_dict):
+        """Insère ou met à jour les données d'une image dans le cache
+        
+        Args:
+            source_path: Chemin absolu du fichier source
+            data_dict: Dictionnaire contenant les métadonnées de l'image
+        """
+        c = self.conn.cursor()
+
+        source_path = data_dict['media_source_path']
+        
+        data_json = json.dumps(data_dict)
+        
+        c.execute('''INSERT OR REPLACE INTO images_cache (source_path, data) 
+                    VALUES (?, ?)''', (source_path, data_json))
+        
+        self.conn.commit()
+
+
+    def get_image_cache(self, source_path):
+        """Récupère les données d'une image depuis le cache
+        
+        Args:
+            source_path: Chemin absolu du fichier source
+            
+        Returns:
+            dict ou None si non trouvé
+        """
+        c = self.conn.cursor()
+        
+        c.execute('SELECT data FROM images_cache WHERE source_path = ?', (source_path,))
+        result = c.fetchone()
+        
+        if result:
+            return json.loads(result[0])
+        return None
+
+
+
+
+
+
+    # Plus utile
+
+    def update_post_template(self, post_id, template_data, template_name):
+        """
+        Insert ou update les données template pour un post.
+        Utilise UPSERT (INSERT OR REPLACE).
+        
+        Args:
+            post_id: ID du post
+            template_name: Nom du template
+            template_data: Dictionnaire avec les données (html, canonical, thumb, etc.)
+        """
+        try:
+            c = self.conn.cursor()
+            
+            # Préparer les valeurs en sérialisant les dict/list
+            processed_data = {}
+            for field_name, value in template_data.items():
+                if isinstance(value, (dict, list)):
+                    processed_data[field_name] = json.dumps(value, cls=DateTimeEncoder)
+                else:
+                    processed_data[field_name] = value
+            
+            # Construction de la requête UPSERT
+            fields = list(processed_data.keys())
+            placeholders = ', '.join(['?'] * len(fields))
+            field_names = ', '.join(fields)
+            update_clause = ', '.join([f"{f} = excluded.{f}" for f in fields])
+            
+            query = f'''
+                INSERT INTO post_templates (post_id, template_name, {field_names})
+                VALUES (?, ?, {placeholders})
+                ON CONFLICT(post_id, template_name) 
+                DO UPDATE SET {update_clause}
+            '''
+            
+            values = [post_id, template_name] + list(processed_data.values())
+            c.execute(query, values)
+            self.conn.commit()
+            
+            return True
+        
+        except Exception as e:
+            print(f"Erreur update post_template {post_id}/{template_name}: {e}")
+            return False
+
+
+    def get_all_posts_with_templates(self):
+        """Récupère tous les posts avec leurs données template"""
+        c = self.conn.cursor()
+        
+        query = '''
+            SELECT p.*, pt.*
+            FROM posts p
+            LEFT JOIN post_templates pt ON p.id = pt.post_id
+            ORDER BY p.pub_date DESC, pt.template_name
+        '''
+        
+        c.execute(query)
+        return c.fetchall()

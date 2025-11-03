@@ -2,7 +2,6 @@ import os, re
 from datetime import datetime, timezone
 import time
 import locale
-import pytz
 from PIL import Image
 import markdown
 import shutil
@@ -104,12 +103,9 @@ class Web:
     def url_image_relatif(self, src, post):
         """retourne url relatif d'un media"""
         if post['type'] == 5:
-            # print("-- Type 5 --")
-            # print(post['thumb_path'])
-            filename = os.path.basename(post['thumb_path'])
-            # print(filename)
-            path = self.normalize_month(os.path.dirname(post['post_md']))
-            # print(path)
+            exit("Must not occur")
+            # filename = os.path.basename(post['thumb_path'])
+            # path = self.normalize_month(os.path.dirname(post['post_md']))
         else:
             # print("-- Type Autre --")
             date = tools.timestamp_to_paris_datetime(post["pub_date"])
@@ -122,8 +118,8 @@ class Web:
         return url
 
     
-    def media_target_path(self, template, url_media_relatif):
-        return os.path.join( template['export'], url_media_relatif.strip("/"))
+    def media_target_path(self, export_path, url_media_relatif):
+        return os.path.join( export_path, url_media_relatif.strip("/"))
 
 
     def add_before_extension(self, url, text):
@@ -144,8 +140,8 @@ class Web:
             shutil.copy2(media_source_path, media_target_path)
 
 
-    def relativise_path(self, template, path):
-        return path.replace(template['export'],"").rstrip("/")
+    def relativise_path(self, export_path, path):
+        return path.replace(export_path,"").rstrip("/")
 
 
     def normalize_month(self, path):
@@ -159,7 +155,7 @@ class Web:
         return '/'.join(normalized_parts)
 
 
-    def source_image(self, template, media_src_file, post):
+    def source_images(self, templates, media_src_file, post, thumb=False) ->dict:
         """Media manager
         media_src_file _i/image.webp"""
         
@@ -169,160 +165,174 @@ class Web:
         if not media_src_file or media_src_file=="None":
             return None
 
-        if post['type']==5:
-            base_dir_name =  post['post_md']
-        else:
-            base_dir_name =  post['path_md']
-
+        base_dir_name =  post['path_md']
         dirname = os.path.dirname(base_dir_name)
         media_source_path = os.path.join( self.config['vault'], dirname, media_src_file )
         url_media_relatif = self.url_image_relatif( media_src_file, post)
-        media_target_path = self.media_target_path(template, url_media_relatif)
         # print("path-md", base_dir_name, dirname)
-        # print("media source path", media_source_path, )
+        print("media source path", media_source_path, )
         # print("B:", base_dir_name, "R:", url_media_relatif)
-        # print("target:", media_target_path)
 
+        images = {'media_source_path': media_source_path}
         try:
+            for template in templates:
 
-            if media_src_file.endswith('.mp3'):
-                self.copy_if_needded(media_source_path, media_target_path)
-                return {"path": media_source_path,
-                    "format": "audio/mpeg",
-                    "url": url_media_relatif,
-                }
+                media_target_path = self.media_target_path(template['export'], url_media_relatif)
+                # print("target:", media_target_path)
 
-            if media_src_file.endswith('.pdf'):
-                self.copy_if_needded(media_source_path, media_target_path)
-                return {"path": media_source_path,
-                    "format": "application/pdf",
-                    "url": url_media_relatif,
-                }
-
-            with Image.open(media_source_path) as img:
-
-                (width, height) = img.size
-                final_max_width = final_max_height = None
-
-                if img.format in ["GIF","PNG"]:
-                    # print("Format:",img.format)
+                if media_src_file.endswith('.mp3'):
                     self.copy_if_needded(media_source_path, media_target_path)
-                    return {"path": media_source_path,
-                        "width": width,
-                        "height": height,
-                        "format": "image/"+img.format.lower(),
+                    template_image = {
+                        "path": media_source_path,
+                        "target_path": media_target_path,
+                        "format": "audio/mpeg",
                         "url": url_media_relatif,
-                        "url_1024": '',
-                        "url_250": '',
-                        "jpeg": '',
-                        "legend": getattr(post, 'thumb_legend', '') or ''
                     }
 
-                # Webp et JPEG
-                max_size = int(template['image_max_size'])
-                sizes = {}
-                # print(max_size, width)
-                if width > max_size and max_size > 1024:
-                    # print("cas 1")
-                    sizes = {'max': 'resize', '1024': 'resize', '250': 'resize'}
-                elif width > 1024 and max_size > 1024:
-                    # print("cas 2")
-                    sizes = {'max': None, '1024': 'resize', '250': 'resize'}
-                elif width > 1024 and max_size <= 1024:
-                    # print("cas 3")
-                    sizes = {'max': 'resize', '250': 'resize'}
+                elif media_src_file.endswith('.pdf'):
+                    self.copy_if_needded(media_source_path, media_target_path)
+                    template_image = {
+                        "path": media_source_path,
+                        "target_path": media_target_path,
+                        "format": "application/pdf",
+                        "url": url_media_relatif,
+                    }
+
                 else:
-                    # print("case 1")
-                    sizes = {'max': None, '250': 'resize'}
 
-                # print(sizes) 
+                    with Image.open(media_source_path) as img:
 
-                # Création des versions redimensionnées de l'image
-                # media_target_path = self.media_target_path(template, url_media_relatif)
-                # print(media_source_path, "→", media_target_path)
-                for size, value in sizes.items():
+                        (width, height) = img.size
+                        final_max_width = final_max_height = None
 
-                    # print("Size:", size, "Value:", value)
-                    if value is None:
-                        self.copy_if_needded(media_source_path, media_target_path)
-                        sizes[size] = self.relativise_path(template, media_target_path)
-                        if size == 'max':
-                            final_max_width = width
-                            final_max_height = height
-                        continue
+                        if img.format in ["GIF","PNG"]:
+                            # print("Format:",img.format)
+                            self.copy_if_needded(media_source_path, media_target_path)
+                            template_image = {
+                                "path": media_source_path,
+                                "width": width,
+                                "height": height,
+                                "format": "image/"+img.format.lower(),
+                                "url": url_media_relatif,
+                                "url_medium": '',
+                                "url_small": '',
+                                "jpeg": url_media_relatif,
+                                "legend": getattr(post, 'thumb_legend', '') or ''
+                            }
+
+                        # Webp et JPEG
+                        max_size = int(template['image_max_size'])
+                        min_size = int(template['image_min_size'])
+                        
+                        sizes = {}
+                        # print(max_size, width)
+                        if width > max_size and max_size > 1024:
+                            # print("cas 1")
+                            sizes = {'max': 'resize', 'medium': 'resize', 'small': 'resize'}
+                        elif width > 1024 and max_size > 1024:
+                            # print("cas 2")
+                            sizes = {'max': None, 'medium': 'resize', 'small': 'resize'}
+                        elif width > 1024 and max_size <= 1024:
+                            # print("cas 3")
+                            sizes = {'max': 'resize', 'small': 'resize'}
+                        else:
+                            # print("case 1")
+                            sizes = {'max': None, min_size: 'resize'}
+
+                        # print(sizes) 
+
+                        # Création des versions redimensionnées de l'image
+                        for size, value in sizes.items():
+
+                            # print("Size:", size, "Value:", value)
+                            if value is None:
+                                self.copy_if_needded(media_source_path, media_target_path)
+                                sizes[size] = self.relativise_path(template['export'], media_target_path)
+                                if size == 'max':
+                                    final_max_width = width
+                                    final_max_height = height
+                                continue
+                            
+                            # resize needed
+
+                            if size == 'max':
+                                new_path = media_target_path
+                                new_width = max_size
+                                ratio = (new_width / float(width))
+                                new_height = int((float(height) * float(ratio)))
+                                final_max_width = max_size
+                                final_max_height = new_height
+                            else:
+                                new_path = self.add_before_extension(media_target_path,size)
+                                if size=="small":
+                                    new_width = int(min_size)
+                                else:
+                                    new_width = 1024
+                                ratio = (new_width / float(width))
+                                new_height = int((float(height) * float(ratio)))
+
+                            if os.path.exists(new_path):
+                                sizes[size] = self.relativise_path(template['export'], new_path)
+                                # print(f"size {size} exist")
+                                continue
+
+                            destination_dir = os.path.dirname(new_path)
+                            os.makedirs(destination_dir, exist_ok=True)
+
+                            img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                            img_resized.save(new_path)
+                            sizes[size] = self.relativise_path(template['export'], new_path)
+
+                            # print("Fin for")
+                        
+                        template_image = {
+                            "path": media_source_path,
+                            "width": final_max_width,
+                            "height": final_max_height,
+                            "format": "image/"+img.format.lower(),
+                            "url": sizes.get('max',''),
+                            "url_medium": sizes.get('medium', '' ),
+                            "url_small": sizes.get('small', ''),
+                            "jpeg": "",
+                            "legend": post['thumb_legend'],
+                            "template": template['name']
+                        }
+
+                        if thumb:
+                            template_image['jpeg'] = self.makeJPEGthumb(template, template_image)
+                        else:
+                            template_image['jpeg'] =  template_image['url']
                     
-                    # resize needed
-
-                    if size == 'max':
-                        new_path = media_target_path
-                        new_width = max_size
-                        ratio = (new_width / float(width))
-                        new_height = int((float(height) * float(ratio)))
-                        final_max_width = max_size
-                        final_max_height = new_height
-                    else:
-                        new_path = self.add_before_extension(media_target_path,size)
-                        new_width = int(size)
-                        ratio = (new_width / float(width))
-                        new_height = int((float(height) * float(ratio)))
-
-                    if os.path.exists(new_path):
-                        sizes[size] = self.relativise_path(template, new_path)
-                        # print(f"size {size} exist")
-                        continue
-
-                    destination_dir = os.path.dirname(new_path)
-                    os.makedirs(destination_dir, exist_ok=True)
-
-                    img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                    img_resized.save(new_path)
-                    sizes[size] = self.relativise_path(template, new_path)
-
-                    # print("Fin for")
-                
-                r = {"path": media_source_path,
-                    "width": final_max_width,
-                    "height": final_max_height,
-                    "format": "image/"+img.format.lower(),
-                    "url": sizes.get('max',''),
-                    "url_1024": sizes.get('1024', '' ),
-                    "url_250": sizes.get('250', ''),
-                    "jpeg": "",
-                    "legend": post['thumb_legend'],
-                    "template": template['name']
-                }
-                # print(r)
-                return r
+                images[template['name']] = template_image
+        
+            return images
 
         except Exception as e:
             print(f"bug traitement image {media_source_path} media_file {media_src_file} post_type {post['type']} base_dir_name {base_dir_name}",e)
-            return None
+            exit()
     
 
-    def makeJPEGthumb(self, template, thumb):
+    def makeJPEGthumb(self, template, image) ->dict:
         """Make jpeg for facebook share"""
 
-        if not thumb:
-            return thumb
-
-        # By default
-        thumb['jpeg'] = thumb['url']
+        if not image:
+            return ""
 
         # print(thumb)
-        jpeg_file =  f"{os.path.splitext(thumb['url'])[0]}.jpeg".strip("/")
+        jpeg_file =  f"{os.path.splitext(image['url'])[0]}.jpeg".strip("/")
         jpeg_path = os.path.join(template['export'], jpeg_file)
-        thumb['jpeg'] = f"/{jpeg_file}"
+        thumb = f"/{jpeg_file}"
         # print(thumb['jpeg'])
         # print(jpeg_path)
 
-        if template['jpeg_thumb'] and thumb['format'] == "image/webp" and not os.path.exists(jpeg_path) :
+        if template['jpeg_thumb'] and image['format'] == "image/webp" and not os.path.exists(jpeg_path) :
             # Make jpeg file
             try:
 
-                if thumb['url_1024']:
-                    path = os.path.join(template['export'], thumb['url_1024'].strip("/"))
+                if image['url_medium']:
+                    path = os.path.join(template['export'], image['url_medium'].strip("/"))
                 else:
-                    path = thumb['path']
+                    path = image['path']
 
                 img = Image.open(path)
                      
@@ -371,15 +381,17 @@ class Web:
         return c_paragraph[:159] + "…"
 
 
-    def is_post_otherwise_delete(self, post):
+    def source_post_path(self, post):
         if not post:
             return None
         path = os.path.join(self.config['vault'], post['path_md'])
-        if post["type"]==0:
+        if post["type"]<3:
             if not os.path.exists(path):
-                self.db.delete_post(post)
+                exit("Non existing post!!!!")
+                # self.db.delete_post(post)
                 return None
         return path
+    
 
     def get_post_content(self, path):
         try:
@@ -438,7 +450,34 @@ class Web:
             return {"content": "", "description":"", "frontmatter": None}
 
 
-    def image_manager(self, template, html, post):
+    def media_production(self, templates, html, post) ->int:
+        "Genère toutes les images par template"
+
+        soup = BeautifulSoup(html, 'html.parser')
+        images = soup.find_all('p')
+        
+        index = 0
+        for p in images:
+            
+            img = p.find('img')
+            if img:
+                data = self.source_images(templates, img['src'], post)
+                if data:
+                    print(data)
+                    exit()
+                    if self.db.insert_image_cache(data):
+                        index +=1
+
+        #thumb
+        data = self.source_images(templates, post['thumb_path'], post, thumb=True)
+        if data:
+            if self.db.insert_image_cache(data):
+                index +=1
+
+        return index
+
+
+    def image_manager(self, template, html, post) ->str:
         """Optimize HTML for images"""
 
         soup = BeautifulSoup(html, 'html.parser')
@@ -471,10 +510,10 @@ class Web:
                             myclasslegend = 'legend-center'
 
                         srcset_parts = [f"{img_data['url']} {img_data['width']}w"]
-                        if img_data['url_1024']:
-                            srcset_parts.append(f"{img_data['url_1024']} 1024w")
-                        if img_data['url_250']:
-                            srcset_parts.append(f"{img_data['url_250']} 250w")
+                        if img_data['url_medium']:
+                            srcset_parts.append(f"{img_data['url_medium']} 1024w")
+                        if img_data['url_small']:
+                            srcset_parts.append(f"{img_data['url_small']} 250w")
 
                         new_div = soup.new_tag('figure')
                         img_attrs = {
@@ -559,13 +598,13 @@ class Web:
         return "/" + url
     
 
-    def link_manager(self, html, post):
+    def link_manager(self, html, post) ->str:
 
         soup = BeautifulSoup(html, 'html.parser')
         links = soup.find_all('a')
 
-        # Domaine du site (ex: https://tcrouzet.com → tcrouzet.com)
-        site_domain = self.config["domain"]
+        # Canonical domaine (ex: https://tcrouzet.com → tcrouzet.com)
+        site_domain = self.config["canonical_domain"]
         site_netloc = urlparse(site_domain if site_domain.startswith("http") else f"https://{site_domain}").netloc
 
         for link in links:
@@ -594,7 +633,7 @@ class Web:
         return str(soup)
 
     
-    def extract_tags(self, post):
+    def extract_tags(self, post) ->list:
         
         #Cleaning
         if isinstance(post, str):
@@ -632,12 +671,10 @@ class Web:
     def title_formater(self, title):
         return title.capitalize().replace("-"," ").replace("_"," ")
 
-    def date_html(self,post):
-        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-        current_time  = tools.timestamp_to_paris_datetime(post["pub_date"])
+    def date_html(self,post) ->str:
+        current_time = tools.timestamp_to_paris_datetime(post["pub_date"])
         date_iso = current_time.strftime('%Y-%m-%dT%H:%M:00')
         time_published = current_time.strftime('%H:%M')
-        # date_link = current_time.strftime('/%Y/%m/')
         year_link = current_time.strftime('/%Y/')
         day_month = current_time.strftime('%d %B')
         
@@ -645,40 +682,38 @@ class Web:
 
         return msg
 
-    def navigation(self, post):
 
-        main_tag =  post['tagslist'][0]
-        if not main_tag:
-            return None
+    def navigation(self, post, tagslist):
+
+        main_tag = tagslist[0]
 
         if post["type"]==5:
             return {"maintag": main_tag}
         
         tag_posts = self.db.get_posts_by_tag(main_tag['slug'])
-        prev_post = None
-        next_post = None
+        url_prev_post = ""
+        url_next_post = ""
         total_posts = len(tag_posts)
+        i = 0
         #print(total_posts, main_tag['slug'], post['tagslist'])
 
         for i, tag_post in enumerate(tag_posts):
             #post_dict = dict(post)
             if post['id'] == tag_post['id']:
                 if i-1>=0:
-                    next_post = tag_posts[i-1]
+                    url_next_post =  tag_posts[i-1]['url']
                 else:
-                    next_post = tag_posts[-1]
+                    url_next_post =  tag_posts[-1]['url']
                 if i==total_posts-1:
-                    prev_post = tag_posts[0]
+                    url_prev_post =  tag_posts[0]['url']
                 else:
-                    prev_post = tag_posts[i+1]
+                    url_prev_post =  tag_posts[i+1]['url']
                 break
 
         return {"maintag": main_tag,
                 "total_posts": total_posts,
-                "prev_post": prev_post,
-                "prev_url": "/"+self.url(prev_post),
-                "next_post": next_post,
-                "next_url": "/"+self.url(next_post),
+                "prev_url": url_prev_post,
+                "next_url": url_next_post,
                 "order": total_posts-i
                 }
 
@@ -734,7 +769,7 @@ class Web:
         elif isinstance(post, list):
             post = dict(post[0])
 
-        path = self.is_post_otherwise_delete(post)
+        path = self.source_post_path(post)
         if not path:
             return None
 
@@ -763,7 +798,7 @@ class Web:
             )
 
             post['html'] = self.image_manager(template, html, post)
-            post['html'] = self.link_manager(post['html'], post)
+            post['html'] = self.link_manager(post['html'], post) #!!!! revoir, il a besoin du template… et faut lui apprtendre à relativiser lien vers le domaine
             post['description'] = content['description']
             if template['comments_total']:
                 post['comments'] = self.post_comment_total(post)
@@ -789,6 +824,74 @@ class Web:
             # exit()
 
         return post
+
+    def supercharge_post_non_template(self, post):
+
+        if not post:
+            raise("Impossible to supercharge - empty post")
+
+        r_post = {}
+        source_path = self.source_post_path(post)
+
+        r_post['url'] = self.url(post)
+
+        content = self.get_post_content(source_path)
+
+        if post['type']==2 and 'frontmatter' in content:
+            frontmatter = ft.Frontmatter(content['frontmatter'])
+            r_post['frontmatter'] = frontmatter.supercharge()
+        else:
+            r_post['frontmatter'] = None
+
+        if 'description' in content:
+            r_post['description'] = content['description']
+        else:
+            r_post['description'] = ""
+
+        r_post['pub_date_str'] = tools.format_timestamp_to_paris_time(post['pub_date'])
+        r_post['pub_update_str'] = tools.format_timestamp_to_paris_time(post['pub_update'])
+
+        r_post['github'] = self.get_github_url(r_post['url'])
+
+        r_post['tagslist'] = self.extract_tags(post)
+
+        r_post['datelink'] = self.date_html(post)
+
+        r_post['navigation'] = self.navigation(post, r_post['tagslist'])
+
+        r_post['content'] = markdown.markdown(
+            content['content'], 
+            extensions=['fenced_code'],
+            extension_configs={
+                'fenced_code': {
+                    'lang_prefix': ''  # Supprime le préfixe de langage
+                }
+            }
+        )
+
+        r_post['content'] = self.link_manager(r_post['content'], post)
+
+        return r_post
+
+    def supercharge_post_template(self, template, post):
+
+        if not post:
+            raise("Impossible to supercharge - empty post")
+
+        r_post = {}
+
+        r_post['html'] = self.image_manager(template, post['content'], post)
+        # if template['comments_total']:
+        #     post['comments'] = self.post_comment_total(post)
+        # else:
+        #     post['comments'] = 0
+        
+        r_post['canonical'] = template['domain'] + post['url']
+        r_post['thumb'] = self.source_image(template, post['thumb_path'], post)
+        r_post['thumb'] = self.makeJPEGthumb(template, r_post['thumb'])
+
+        return r_post     
+
 
     def supercharge_tag(self, template, tag, posts=None):
         """Get all tag datas"""
