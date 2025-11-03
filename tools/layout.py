@@ -244,11 +244,54 @@ class Layout:
                 self.save(template, article_html, supercharged['url'], "content.html")
 
 
-    def tag_gen(self, tag, posts=None):
+    def tag_gen_serie(self, series, tags):
+        """Génère une page listant tous les tags avec leur dernier post"""
+        
+        # Filtrer les tags indésirables
+        exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
+        filtered_tags = [tag for tag in tags if tag['slug'] not in exclude_slugs]
+        
+        # Pour chaque tag, récupérer seulement le dernier post (le plus récent)
+        tags_data = []
+        for tag in filtered_tags:
+
+            # Le premier post_id est le plus récent (antichrono)
+            if tag['post_ids']:
+                latest_post_id = tag['post_ids'][0]
+            else:
+                continue
+            
+            if latest_post_id:
+                # Charger le post complet
+                post = self.db.get_post_by_id(latest_post_id)
+
+                if post:
+                    post['tag'] = tag
+                    tags_data.append(post)
+
+        datas = {}
+        # Générer la page pour chaque template
         for template in self.templates:
 
-            new_tag = self.web.supercharge_tag(template, tag, posts)
+            datas[template['name']] = []
+            for post in tags_data:
+                supercharged = self.web.supercharge_post(template, post)
+                datas[template['name']].append(supercharged)
 
+            
+            # Générer le HTML
+            header_html = self.get_html(template["header"], post=datas, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=datas, blog=self.config)
+            serie_html = self.get_html(template["serie_list"], post=datas, blog=self.config)
+            
+            # Sauvegarder
+            self.save(template, header_html + serie_html + footer_html, "series", "index.html")
+
+
+    def tag_gen(self, tags):
+        for template in self.templates:
+
+            new_tag = None
             header_html = self.get_html(template["header"], post=new_tag, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=new_tag, blog=self.config)
 

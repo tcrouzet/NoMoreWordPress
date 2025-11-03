@@ -86,7 +86,7 @@ class Sitemap:
 
         for template in self.config['templates']:
 
-            new_post = dict(post)
+            new_post = self.web.supercharge_post(template, post)
 
             if 'pub_update_str' in new_post:
                 pub_date = new_post['pub_update_str']
@@ -94,7 +94,7 @@ class Sitemap:
                 pub_date = None
             thumb = None
             if 'thumb' in new_post and new_post['thumb']:
-                if 'url' in new_post['thumb']:
+                if 'jpeg' in new_post['thumb']:
                     thumb = new_post['thumb']['jpeg']
 
             if pub_date is not None:

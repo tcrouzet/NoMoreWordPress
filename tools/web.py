@@ -864,6 +864,30 @@ class Web:
         return r_post 
 
 
+    def get_enriched_tags(self, tags_data, exclude_tags=None):
+        """Retourne les tags enrichis avec slug, title, url depuis config"""
+        
+        enriched_tags = []
+        for row in tags_data:
+            tag_slug = row['tag']
+            
+            # Enrichir depuis config['tags']
+            tag_info = self.config['tags'].get(tag_slug, {})
+            
+            enriched_tag = {
+                'slug': tag_slug,
+                'title': tag_info.get('title', tag_slug.replace('-', ' ').capitalize()),
+                'post_count': row['post_count'],
+                'post_ids': [int(id) for id in row['post_ids'].split(',')],  # Convertir en liste d'int
+                'pub_update': row['most_recent_date']
+            }
+
+            enriched_tags.append(enriched_tag)
+        
+        return enriched_tags
+    
+    
+
     def supercharge_tag(self, template, tag, posts=None):
         """Get all tag datas"""
 
@@ -884,11 +908,10 @@ class Web:
         tag['pub_date'] = tag['pub_update']
 
         tag['description'] = tag['title']
-        tag['canonical'] = template['domain'] + tag['url']
+        tag['canonical'] = tag['url']
         tag['pub_date_str'] = tools.format_timestamp_to_paris_time(tag['pub_date'])
         tag['pub_update_str'] = tools.format_timestamp_to_paris_time(tag['pub_update'])
         # print("--TAG--", tag['post_md'], tag['thumb_path'])
-        tag['thumb'] = self.source_image(template, tag['thumb_path'], tag)
         # print("after")
         if tag['thumb']:
             tag['thumb']["alt"] = tag['thumb_legend']

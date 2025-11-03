@@ -268,11 +268,18 @@ class Db:
         c.execute(query)
         return c.fetchall()
 
+    def get_post_by_id(self, id):
+        return self.get_posts(f"id = {id}")
+
+
     def get_posts_updated(self):
         return self.get_posts("updated")
 
     def get_all_posts(self):
         return self.get_posts("type=0")
+
+    def get_all_posts_and_pages(self):
+        return self.get_posts("type<5")
 
     def get_blog_posts(self, tags_tuple):
         if isinstance(tags_tuple,tuple):
@@ -613,3 +620,32 @@ class Db:
         except Exception as e:
             print(f"Get image cache bug {source_path} {template_name}:", e)
             exit()
+
+
+    def get_tags_with_post_ids(self, exclude_tags=None):
+        """Retourne chaque tag avec la liste de ses post IDs triés antichrono"""
+        c = self.conn.cursor()
+        
+        where_clause = ""
+        params = ()
+        
+        if exclude_tags:
+            placeholders = ','.join('?' for _ in exclude_tags)
+            where_clause = f"WHERE json_each.value NOT IN ({placeholders})"
+            params = tuple(exclude_tags)
+        
+        query = f'''
+            SELECT 
+                json_each.value AS tag,
+                COUNT(*) AS post_count,
+                GROUP_CONCAT(posts.id ORDER BY posts.pub_date DESC) AS post_ids,
+                MAX(posts.pub_date) AS most_recent_date
+            FROM posts
+            JOIN json_each(posts.tags)
+            {where_clause}
+            GROUP BY json_each.value
+            ORDER BY most_recent_date DESC
+        '''
+        
+        c.execute(query, params)
+        return c.fetchall()

@@ -98,6 +98,7 @@ if total >0:
 
 #SITEMAP POSTS
 if total > 0:
+    posts = db.get_all_posts_and_pages()
     sitemap.open("sitemap-posts")
     pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
@@ -106,26 +107,29 @@ if total > 0:
     sitemap.save()
     pbar.close()
     print("Sitemap posts done")
-exit()
+
 
 sitemap.open("sitemap-main")
 
 #SERIES
 if len(db.used_tags) > 0:
-    exclude = ("invisible","iacontent","book","page","le_jardin_de_leternite")
-    tags = db.get_tags("p.pub_date DESC",exclude)
+    tags = db.get_tags_with_post_ids()
+    tags = web.get_enriched_tags(tags)
+    tags = web.get_enriched_tags_series(tags) # Parrtie avant du coce da-ans tag_gen_serie
     # print(dict(tags[0]))
     series = {
         "tag": "series",
         "pub_update": tags[0]['pub_update'],
-        "thumb_path": tags[0]['thumb_path'],
-        "thumb_legend": tags[0]['thumb_legend'],
-        "post_md": tags[0]['post_md'],
+        # "thumb_path": tags[0]['thumb_path'],
+        # "thumb_legend": tags[0]['thumb_legend'],
+        # "post_md": tags[0]['post_md'],
         "url": "series/"
     }
-    layout.tag_gen( series, tags )
-    sitemap.add_post( series, False )
+    layout.tag_gen_serie( series, tags )
+    sitemap.add_post( series )
     print("Series done")
+
+exit()
 
 #BLOG
 # layout.setDebug()
