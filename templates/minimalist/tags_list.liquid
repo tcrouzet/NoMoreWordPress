@@ -4,10 +4,10 @@
     
         {% if tag_post.thumb %}
             <img width="250" height="188"
-            src="{% if tag_post.thumb.url_250%}{{ tag_post.thumb.url_250 }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
+            src="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
             class="{% if post.tag == 'book' %}poster-img-book-small{% else %}resume-img{% endif %}"
             alt="{{ tag_post.thumb_legend }}" loading="lazy" decoding="async"
-            srcset="{% if tag_post.thumb.url_250%}{{ tag_post.thumb.url_250 }} 250w,{% endif %}{{ tag_post.thumb.url }} 1024w"
+            srcset="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }} 250w,{% endif %}{{ tag_post.thumb.url }} 1024w"
             />
         {% else %}
             <img width="250" height="188" class="resume-img"/>
@@ -17,8 +17,8 @@
 
         {% if post.url != "bibliographie" %}
             <data value="{{ tag_post.order }}"><a href="/{{ tag_post.url }}">{{ tag_post.order }}</a></data>
-            {% if tag_post.navigation.maintag.title != 'None' and post.tag != tag_post.navigation.maintag.slug %}
-                <h3><a href="tag/{{ tag_post.navigation.maintag.url }}">{{ tag_post.navigation.maintag.title }}</a></h3>
+            {% if tag_post.navigation.title != 'None' and post.tag != tag_post.navigation.slug %}
+                <h3><a href="tag/{{ tag_post.navigation.url }}">{{ tag_post.navigation.title }}</a></h3>
             {% endif %}
             <h2><a href="/{{ tag_post.url }}">
                 {% if tag_post.type ==5 %}

@@ -68,11 +68,8 @@ if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
         web.media_production(config['templates'], post['content'], post)
-        exit()
         pbar.update(1)
     pbar.close()
-
-    # db.db_commit()
 
 #Menu
 layout.menu_gen()
@@ -81,8 +78,6 @@ layout.menu_gen()
 layout.search_gen()
 
 #POSTS
-posts = db.get_all_posts_with_templates()
-total = len(posts)
 if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:

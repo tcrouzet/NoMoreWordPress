@@ -17,8 +17,8 @@
 
         {% if post.url != "bibliographie" %}
             <data value="{{ tag_post.order }}"><a href="/{{ tag_post.url }}">{{ tag_post.order }}</a></data>
-            {% if tag_post.navigation.maintag.title != 'None' and post.tag != tag_post.navigation.maintag.slug %}
-                <h3><a href="tag/{{ tag_post.navigation.maintag.url }}">{{ tag_post.navigation.maintag.title }}</a></h3>
+            {% if tag_post.navigation.title != 'None' and post.tag != tag_post.navigation.slug %}
+                <h3><a href="tag/{{ tag_post.navigation.url }}">{{ tag_post.navigation.title }}</a></h3>
             {% endif %}
             <h2><a href="/{{ tag_post.url }}">
                 {% if tag_post.type ==5 %}

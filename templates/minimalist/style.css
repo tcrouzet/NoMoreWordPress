@@ -131,7 +131,7 @@ p, li{
   overflow-wrap: break-word;
 }
 
-section[itemprop="articleBody"] p:first-child::first-letter {
+section[itemprop="articleBody"]>p:first-child::first-letter {
   font-family: var(--font-headings);
   font-weight: 700;
   font-size: large;
@@ -178,7 +178,7 @@ article section a{
   background-position: 0 calc(100% - 0.1ex);  
 }
 
-blockquote{margin:auto;max-width:34em;font-style:italic}
+blockquote{margin: 1rem auto 0;max-width:34em;font-style:italic}
 blockquote p{margin:0 2em;font-style:italic}
 
 article section figure{

@@ -52,6 +52,7 @@ class Layout:
                 "infinite_scroll": bool(template.get('infinite_scroll', False)),
                 "post_per_page": int(template.get('post_per_page', 40)),
                 "image_max_size": int(template.get('image_max_size', 1024)),
+                "image_min_size": int(template.get('image_min_size', 250)),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 "comments": bool(template.get('comments', False)),
                 "comments_total": bool(template.get('comments_total', False)),
@@ -229,15 +230,17 @@ class Layout:
     def single_gen(self, post):
         for template in self.templates:
             
-            header_html = self.get_html(template["header"], post=post, blog=self.config)
-            footer_html = self.get_html(template["footer"], post=post, blog=self.config)
-            share_html = self.get_html(template["share"], post=post, blog=self.config)
-            newsletter_html = self.get_html(template["newsletter"], post=post, blog=self.config)
-            article_html = self.get_html(template['article'], post=post, blog=self.config, share=share_html, newsletter=newsletter_html)
-            single_html = self.get_html(template['single'], post=post, blog=self.config, article=article_html)
-            self.save(template, header_html + single_html + footer_html, post['url'], "index.html")
+            supercharged = self.web.supercharge_post(template, post)
+
+            header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config)
+            share_html = self.get_html(template["share"], post=supercharged, blog=self.config)
+            newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
+            article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html)
+            single_html = self.get_html(template['single'], post=supercharged, blog=self.config, article=article_html)
+            self.save(template, header_html + single_html + footer_html, supercharged['url'], "index.html")
             if template['infinite_scroll']:
-                self.save(template, article_html, post['url'], "content.html")
+                self.save(template, article_html, supercharged['url'], "content.html")
 
 
     def tag_gen(self, tag, posts=None):
@@ -245,7 +248,7 @@ class Layout:
 
             new_tag = self.web.supercharge_tag(template, tag, posts)
 
-            header_html = self.get_html(template["header"], post=new_tag, blog=self.config)
+            header_html = self.get_html(template["header"], post=new_tag, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=new_tag, blog=self.config)
 
             post_per_page = template["post_per_page"]
@@ -302,7 +305,7 @@ class Layout:
             home['thumb_legend'] = home['digressions']['thumb_legend']
             home['is_home'] = True
 
-            header_html = self.get_html(template["header"], post=home, blog=self.config)
+            header_html = self.get_html(template["header"], post=home, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=home, blog=self.config)
             newsletter_html = self.get_html(template["newsletter"], post=home, blog=self.config)
             home_html = self.get_html(template["home"], post=home, blog=self.config, newsletter=newsletter_html)
@@ -311,7 +314,7 @@ class Layout:
 
     def special_pages(self, post, path, file_name="index.html"):
         for template in self.templates:
-            header_html = self.get_html(template["header"], post=post, blog=self.config)
+            header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=post, blog=self.config)
             article_html = self.get_html(template["article"], post=post, blog=self.config)
             page_html = self.get_html(template["single"], post=post, blog=self.config, article=article_html)
@@ -342,7 +345,7 @@ class Layout:
         return tpl.render(**ctx)
 
     def normal_pages(self, post, template, path, file_name="index.html"):
-        header_html = self.get_html(template["header"], post=post, blog=self.config)
+        header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
         footer_html = self.get_html(template["footer"], post=post, blog=self.config)
         self.save(template, header_html + post['html'] + footer_html, path, file_name)
 

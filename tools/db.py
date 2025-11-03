@@ -566,102 +566,45 @@ class Db:
     def insert_image_cache(self, data_dict):
         """Insère ou met à jour les données d'une image dans le cache
         
-        Args:
-            source_path: Chemin absolu du fichier source
-            data_dict: Dictionnaire contenant les métadonnées de l'image
-        """
-        c = self.conn.cursor()
-
-        source_path = data_dict['media_source_path']
-        
-        data_json = json.dumps(data_dict)
-        
-        c.execute('''INSERT OR REPLACE INTO images_cache (source_path, data) 
-                    VALUES (?, ?)''', (source_path, data_json))
-        
-        self.conn.commit()
-
-
-    def get_image_cache(self, source_path):
-        """Récupère les données d'une image depuis le cache
-        
-        Args:
-            source_path: Chemin absolu du fichier source
-            
         Returns:
-            dict ou None si non trouvé
-        """
-        c = self.conn.cursor()
-        
-        c.execute('SELECT data FROM images_cache WHERE source_path = ?', (source_path,))
-        result = c.fetchone()
-        
-        if result:
-            return json.loads(result[0])
-        return None
-
-
-
-
-
-
-    # Plus utile
-
-    def update_post_template(self, post_id, template_data, template_name):
-        """
-        Insert ou update les données template pour un post.
-        Utilise UPSERT (INSERT OR REPLACE).
-        
-        Args:
-            post_id: ID du post
-            template_name: Nom du template
-            template_data: Dictionnaire avec les données (html, canonical, thumb, etc.)
+            bool: True si succès, False si erreur
         """
         try:
             c = self.conn.cursor()
             
-            # Préparer les valeurs en sérialisant les dict/list
-            processed_data = {}
-            for field_name, value in template_data.items():
-                if isinstance(value, (dict, list)):
-                    processed_data[field_name] = json.dumps(value, cls=DateTimeEncoder)
-                else:
-                    processed_data[field_name] = value
+            source_path = data_dict['media_source_path']
+            data_json = json.dumps(data_dict)
             
-            # Construction de la requête UPSERT
-            fields = list(processed_data.keys())
-            placeholders = ', '.join(['?'] * len(fields))
-            field_names = ', '.join(fields)
-            update_clause = ', '.join([f"{f} = excluded.{f}" for f in fields])
+            c.execute('''INSERT OR REPLACE INTO images_cache (source_path, data) 
+                        VALUES (?, ?)''', (source_path, data_json))
             
-            query = f'''
-                INSERT INTO post_templates (post_id, template_name, {field_names})
-                VALUES (?, ?, {placeholders})
-                ON CONFLICT(post_id, template_name) 
-                DO UPDATE SET {update_clause}
-            '''
-            
-            values = [post_id, template_name] + list(processed_data.values())
-            c.execute(query, values)
             self.conn.commit()
-            
+
+            # print("insert OK")
+            # test = self.get_image_cache('tcrouzet', source_path)
+            # print(test)
             return True
-        
+            
         except Exception as e:
-            print(f"Erreur update post_template {post_id}/{template_name}: {e}")
+            print(f"Erreur lors de l'insertion dans images_cache: {e}")
+            self.conn.rollback()
             return False
 
-
-    def get_all_posts_with_templates(self):
-        """Récupère tous les posts avec leurs données template"""
-        c = self.conn.cursor()
-        
-        query = '''
-            SELECT p.*, pt.*
-            FROM posts p
-            LEFT JOIN post_templates pt ON p.id = pt.post_id
-            ORDER BY p.pub_date DESC, pt.template_name
-        '''
-        
-        c.execute(query)
-        return c.fetchall()
+    def get_image_cache(self, template_name, source_path):
+        # print("get_image_cache")
+        try:
+            c = self.conn.cursor()
+            
+            c.execute('SELECT data FROM images_cache WHERE source_path = ?', (source_path,))
+            result = c.fetchone()
+            
+            if result:
+                img_data = json.loads(result[0])
+                # print(img_data)
+                return img_data[template_name]
+            else:
+                print(f"{source_path} not in cache")
+            return None
+        except Exception as e:
+            print(f"get_image_cache {source_path} {template_name}:", e)
+            exit()
