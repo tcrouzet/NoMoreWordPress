@@ -476,7 +476,7 @@ footer > div:last-of-type a {
   text-align: left;
 }
 
-#menu ul{margin: 0;padding: 0}
+#menu ul{margin: 0;padding: 0;max-width: 100%;}
 
 #menu ul li{
   font-family: var(--font-headings);
