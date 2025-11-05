@@ -530,16 +530,16 @@ class Web:
                     # print(i, post['id'], tag_post['id'], total_posts)
                     if i-1>=0:
                         # print("next1")
-                        url_next_post =  "/" + tag_posts[i-1]['url']
+                        url_next_post =  "/" + tag_posts[i-1]['url'].lstrip("/")
                     else:
                         # print("next2")
-                        url_next_post =  "/" + tag_posts[-1]['url']
+                        url_next_post =  "/" + tag_posts[-1]['url'].lstrip("/")
                     if i==total_posts-1:
                         # print("prev1")
-                        url_prev_post =  "/" + tag_posts[0]['url']
+                        url_prev_post =  "/" + tag_posts[0]['url'].lstrip("/")
                     else:
                         # print("prev2")
-                        url_prev_post =  "/" + tag_posts[i+1]['url']
+                        url_prev_post =  "/" + tag_posts[i+1]['url'].lstrip("/")
                     break
 
             r = {"total_posts": total_posts,
@@ -589,15 +589,37 @@ class Web:
         return count    
     
 
+    def supercharge_posts(self, template, posts):
+        enriched_posts = []
+        for post in posts:
+            enriched_posts.append( self.supercharge_post(template, post) )
+        return enriched_posts
+
+
     def supercharge_post(self, template, post):
         """Get all post datas (text,tags, medias…)"""
 
         if template == None:
             return post
+        
+        if post == None:
+            exit("Big problem avec supercharge post … post None")
+
+        if not isinstance(post, dict):
+            post = dict(post)
+
+        if "url" not in post:
+            print(post)
+            exit("Ce n'est pas un bon post")
 
         try:
-            if isinstance(post, self.db.get_row_factory()):
-                post = dict(post)
+
+            # post = self.db.row_to_dict(post)
+
+            # post = dict(post)
+            # for key in post:
+               
+            #    print(post[key])
 
             post['canonical'] = template['domain'] + post['url']
             
@@ -625,45 +647,64 @@ class Web:
     def supercharge_tags(self, template, tags):
         enriched_tags = []
         for tag in tags:
-            tag_dict = dict(tag)  # Convertir Row en dict
-            if tag_dict['thumb_path']:
-                media_path = self.media_source_path(tag_dict, tag_dict['thumb_path'])
-                tag_dict['thumb'] = self.db.get_image_cache(template['name'], media_path)
-            else:
-                tag_dict['thumb'] = None
-            if tag_dict['navigation']:
-                tag_dict['navigation'] = json.loads(tag_dict['navigation'])
-            if "description" not in  tag_dict:
-                tag_dict["description"] = tag_dict['title']
-            enriched_tags.append(tag_dict)
-
+            enriched_tags.append( self.supercharge_tag(template, tag) )
         return enriched_tags
     
-    def supercharge_tag(self, template, tag, first_post):
+    def supercharge_tag(self, template, tag, first_post=None):
         # First_post déjà superchargé
         # print(first_post)
         # exit()
-        if  "tag_url" not in  tag:
+
+        try:
+
+            if isinstance(tag, self.db.get_row_factory()):
+                tag = dict(tag)
+
+            if "tag_url" not in  tag:
+                print(tag)
+                exit("tag_url in tag")
+                # tag = self.db.row_to_dict(tag)
+
+            tag['menu'] = self.tag_menu(tag)
+
+            tag['canonical'] = template['domain'] + tag['tag_url'].lstrip("/")
+
+            if "description" not in tag and "tag_title" in tag:
+                tag["description"] = tag['tag_title']
+            else:
+                tag["description"] = ""
+
+            if "navigation" in tag and tag['navigation'] and isinstance(tag['navigation'],str):
+                tag['navigation'] = json.loads(tag['navigation'])
+            else:
+                tag['navigation'] = {}
+
+            if first_post:
+                tag['pub_date'] = first_post['pub_date']
+                tag['pub_update'] = first_post['pub_update']
+                tag['pub_date_str'] = tools.format_timestamp_to_paris_time(tag['pub_date'])
+                tag['pub_update_str'] = tools.format_timestamp_to_paris_time(tag['pub_update'])
+
+                tag["thumb_path"] = first_post['thumb_path'],
+                tag["thumb_legend"] = first_post['thumb_legend'],
+
+                media_path = self.media_source_path(first_post, first_post['thumb_path'])
+                tag['thumb'] = self.db.get_image_cache(template['name'], media_path)
+
+            else:
+                if 'thumb_path' in tag and tag['thumb_path']:
+                    media_path = self.media_source_path(tag, tag['thumb_path'])
+                    tag['thumb'] = self.db.get_image_cache(template['name'], media_path)
+                else:
+                    tag['thumb'] = None
+
+            return tag
+
+        except Exception as e:
             print(tag)
-            exit("tag_url in tag")
-            # tag = self.db.row_to_dict(tag)
-
-
-        tag['canonical'] = template['domain'] + tag['tag_url'].lstrip("/")
-        tag['pub_date'] = first_post['pub_date']
-        tag['pub_update'] = first_post['pub_update']
-        tag['pub_date_str'] = tools.format_timestamp_to_paris_time(tag['pub_date'])
-        tag['pub_update_str'] = tools.format_timestamp_to_paris_time(tag['pub_update'])
-
-        tag["thumb_path"] = first_post['thumb_path'],
-        tag["thumb_legend"] = first_post['thumb_legend'],
-
-        media_path = self.media_source_path(first_post, first_post['thumb_path'])
-        tag['thumb'] = self.db.get_image_cache(template['name'], media_path)
-
-        tag['menu'] = self.tag_menu(tag)
-
-        return tag
+            print(f"supercharge_post {e}")
+            exit()
+            # return None
 
 
     def tag_menu(self, tag):

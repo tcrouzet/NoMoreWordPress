@@ -120,7 +120,7 @@ if  db.new_posts >0 or db.updated_posts > 0  or new_home_template:
         "description": f"Tous les articles de {config['title']}",
         "tag_url": "blog/",
     }
-    layout.tag_gen_serie( series, blog_posts )
+    layout.tag_gen( series, blog_posts )
     sitemap.add_post( series, blog_posts[0] )
     feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
     print(f"Blog done {len(blog_posts)}")
@@ -153,7 +153,8 @@ if  db.new_posts + db.updated_posts > 0:
 #TAGS  
 if db.new_tags + db.updated_tags > 0:
 
-    exclude = tuple(config['pages'])
+    # exclude = tuple(config['pages'])
+    exclude = tuple("page")
 
     if config['build'] > 1:
         # Tous les tags
@@ -165,12 +166,12 @@ if db.new_tags + db.updated_tags > 0:
     total = len(tags)
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
-        sitemap.add_post(tag)
+        # sitemap.add_post(tag)
         tag=dict(tag)
         tag_posts = db.get_posts_by_tag(tag['tag_slug'])
         if len(tag_posts)==0:
             continue
-        layout.tag_gen_serie( tag, tag_posts )
+        layout.tag_gen( tag, tag_posts )
 
         if tag['tag_slug']=="carnets":
             feed.builder(tag_posts,"carnet-de-route", "Derniers carnets de Thierry Crouzet")
@@ -193,6 +194,7 @@ if db.new_tags + db.updated_tags > 0:
 #YEARS
 if db.new_tags + db.updated_tags > 0:
 
+    print("Year gen")
     sitemap.open("sitemap-years")
     years_archive = ""
     exclude = ("invisible","book","page")
@@ -212,7 +214,7 @@ if db.new_tags + db.updated_tags > 0:
             else:
                 next_year =  years[-1]
 
-            series = {
+            year = {
                 "tag_slug": str(year),
                 "tag_title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
                 "pub_update": posts[0]['pub_update'],
@@ -220,9 +222,10 @@ if db.new_tags + db.updated_tags > 0:
                 "thumb_legend": posts[0]['thumb_legend'],
                 "post_md": posts[0]['path_md'],
                 "tag_url": f"/{str(year)}/",
+                "url": f"/{str(year)}/",
             }
-            layout.tag_gen_serie( series, posts )
-            sitemap.add_post(series)
+            layout.year_gen( year, posts )
+            # sitemap.add_post(series)
             years_archive += f'<p><a href="/{str(year)}/">{year}</a></p>'
 
     sitemap.save()

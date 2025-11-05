@@ -256,70 +256,87 @@ class Layout:
             tags_super = self.web.supercharge_tags(template, tags)
             # tags_super = self.web.db.row_to_dict(tags_super)
             if len(tags_super)==0:
-                exit("Stage pas de tags_super")
-            series = self.web.supercharge_tag(template, series, tags_super[0])
+                exit("Strange pas de tags_super")
+            new_series = self.web.supercharge_tag(template, series, tags_super[0])
             
             # Générer le HTML
-            header_html = self.get_html(template["header"], post=series, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=series, blog=self.config)
-            tags_list_html = self.get_html(template["tags_list"], post=series, tags=tags_super, blog=self.config)
-            tag_html = self.get_html(template["tag"], post=series, tags={"list": tags_list_html})
+            header_html = self.get_html(template["header"], post=new_series, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=new_series, blog=self.config)
+            tags_list_html = self.get_html(template["tags_list"], post=new_series, tags=tags_super, blog=self.config)
+            tag_html = self.get_html(template["tag"], post=new_series, tags={"list": tags_list_html})
             
             # Sauvegarder
             self.save(template, header_html + tag_html + footer_html, series['tag_url'], "index.html")
 
 
-    def tag_gen(self, tags):
+    def tag_gen(self, tag, posts):
         for template in self.templates:
 
-            new_tag = None
-            header_html = self.get_html(template["header"], post=new_tag, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=new_tag, blog=self.config)
+            posts_super = self.web.supercharge_posts(template, posts)
+            if len(posts_super)==0:
+                exit("Strange pas de posts_super")
+            tag_super = self.web.supercharge_tag(template, tag, posts_super[0])
+
+            header_html = self.get_html(template["header"], post=tag_super, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=tag_super, blog=self.config)
 
             post_per_page = template["post_per_page"]
 
-            new_posts = new_tag['posts']
-            self.dp(len(new_posts), template["infinite_scroll"])
-
             page = 1
-            while new_posts:
+            while posts_super:
                 file_name = f"contener{page}.html"
 
                 if post_per_page>0:
-                    new_tag['posts'] = new_posts[:post_per_page]
+                    posts_super_filter = posts_super[:post_per_page]
                 else:
-                    self.dp("Tous les posts…")
-                    new_tag['posts'] = new_posts
+                    posts_super_filter = posts_super
 
-                if len(new_tag['posts'])<post_per_page or post_per_page==0:
-                    new_tag['next_url'] = ""
+                if len(posts_super_filter)<post_per_page or post_per_page==0:
+                    tag_super['navigation']['next_url']=""
                 else:
-                    new_tag['next_url'] = "/" + new_tag['url'].strip("/") + "/" + f"contener{page+1}.html"
+                    tag_super['navigation']['next_url'] = "/" + tag_super['tag_url'].strip("/") + "/" + f"contener{page+1}.html"
 
-                list_html = self.get_html(template["tags_list"], post=new_tag, blog=self.config)
+                tags_list_html = self.get_html(template["tags_list"], post=tag_super, tags=posts_super_filter,  blog=self.config)
 
                 if page == 1:
-                    tag_html = self.get_html(template["tag"], post=new_tag, list=list_html, blog=self.config)
-                    self.save(template, header_html + tag_html + footer_html, new_tag['url'], "index.html")
+                    tag_html = self.get_html(template["tag"], post=tag_super, tags={"list": tags_list_html})
+                    self.save(template, header_html + tag_html + footer_html, tag_super['tag_url'], "index.html")
                 else:
-                    self.save(template, list_html, new_tag['url'], file_name)
+                    self.save(template, tags_list_html, tag_super['tag_url'], file_name)
                 if post_per_page>0:
-                    del new_posts[:post_per_page]
+                    del posts_super[:post_per_page]
                     page += 1
                 else:
                     break
         self.de()
 
+    def year_gen(self, year, posts):
+        """Génère une page listant tous les tags avec leur dernier post"""
+                
+        for template in self.templates:
+
+            super_posts = self.web.supercharge_posts(template, posts)
+            year_super = self.web.supercharge_tag(template, year, super_posts[0])
+            
+            # Générer le HTML
+            header_html = self.get_html(template["header"], post=year_super, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=year_super, blog=self.config)
+            tags_list_html = self.get_html(template["tags_list"], post=year_super, tags=super_posts, blog=self.config)
+            tag_html = self.get_html(template["tag"], post=year_super, tags={"list": tags_list_html})
+            
+            # Sauvegarder
+            self.save(template, header_html + tag_html + footer_html, year_super['tag_url'], "index.html")
 
     def home_gen(self, last_post, last_carnet, last_bike, last_digest):
         for template in self.templates:
 
             home = {}
             home['digressions'] = self.web.supercharge_post(template, last_post)
-            # home['carnet'] = self.web.db.row_to_dict(self.web.supercharge_post(template, last_carnet))
             home['carnet'] = last_carnet
-            home['bike'] = self.web.supercharge_post(template, last_bike)
-            home['digest'] = self.web.supercharge_post(template, last_digest)
+            # home['bike'] = self.web.supercharge_post(template, last_bike)
+            # home['digest'] = self.web.supercharge_post(template, last_digest)
+            home['bike'] = last_bike
+            home['digest'] = last_digest
             
             home['canonical'] = template['domain']
             home['description'] = self.config['description']

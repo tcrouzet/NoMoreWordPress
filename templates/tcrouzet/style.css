@@ -151,7 +151,7 @@ article header figure img {
   height:70vh;
   object-fit: cover;
 }
-.poster-book{object-fit: contain}
+.poster-img-book{object-fit: contain}
 
 main[itemtype$="CollectionPage"] article img.poster-img-book-small{
   width: 100%;

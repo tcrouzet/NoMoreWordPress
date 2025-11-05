@@ -497,6 +497,30 @@ class Db:
         c.execute(query, (tag_slug,))
         return c.fetchall()
 
+    def get_only_posts_by_tag(self, tag_slug, limit=None):
+        """
+        Retourne tous les posts de blog (type=0) d'un tag spécifique.
+        
+        Args:
+            tag_slug: Le slug du tag
+            limit: Nombre maximum de résultats (None = pas de limite)
+        """
+        c = self.conn.cursor()
+        
+        limit_clause = f"LIMIT {limit}" if limit else ""
+        
+        query = f'''
+            SELECT DISTINCT p.*
+            FROM posts p
+            INNER JOIN connectors c ON p.id = c.con_post_id
+            INNER JOIN tags t ON c.con_tag_id = t.tag_id
+            WHERE p.type = 0 AND t.tag_slug = ?
+            ORDER BY p.pub_date DESC
+            {limit_clause}
+        '''
+        
+        c.execute(query, (tag_slug,))
+        return c.fetchall()
 
     def get_last_published_post(self):
         c = self.conn.cursor()
@@ -574,15 +598,16 @@ class Db:
 
 
     def row_to_dict(self, obj):
-        if isinstance(obj, sqlite3.Row):
+        row_factory = self.get_row_factory()
+        
+        if isinstance(obj, row_factory):
             return {key: self.row_to_dict(obj[key]) for key in obj.keys()}
         elif isinstance(obj, (list, tuple)):
             return [self.row_to_dict(item) for item in obj]
         elif isinstance(obj, dict):
             return {k: self.row_to_dict(v) for k, v in obj.items()}
-        else:
-            return obj
-   
+        return obj
+
     def update_fields(self, post_id, fields_dict):
         """
         Met à jour plusieurs champs d'un post.
