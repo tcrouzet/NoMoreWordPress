@@ -26,6 +26,7 @@ class MicroCodes:
         except Exception as e:
             return f"<!-- book_list: erreur DB: {html.escape(str(e))} -->"
 
+        return f"test {len(rows)}"
         pages = []
         for row in rows:
             # print(dict(row))
