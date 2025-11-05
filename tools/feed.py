@@ -15,16 +15,16 @@ class Feed:
         return re.sub(r'<[^>]+>', '', html_text)
 
 
-    def add_domains(self, html):
+    def add_domains(self, template, html):
         soup = BeautifulSoup(html, 'html.parser')
         # Modifier les liens des images
         for img in soup.find_all('img'):
             if img['src'].startswith('/'):
-                img['src'] = self.config['domain'] + img['src'].lstrip("/")
+                img['src'] = template['domain'] + img['src'].lstrip("/")
         # Modifier les liens des pages
         for link in soup.find_all('a'):
             if link['href'].startswith('/'):
-                link['href'] = self.config['domain'] + link['href'].lstrip("/")
+                link['href'] = template['domain'] + link['href'].lstrip("/")
         return str(soup)
 
 
@@ -71,7 +71,7 @@ class Feed:
                 fe.link(href=template["domain"]+post['url'])
 
                 # Ajouter l'image en haut du contenu si disponible
-                content_html = post['html'].strip()
+                content_html = post['content'].strip()
                 if post.get('thumb'):
                     thumb_url = post['thumb']['url']
                     if thumb_url.startswith('/'):
@@ -81,7 +81,7 @@ class Feed:
                     content_html = img_tag + content_html
 
 
-                cleaned_content = self.clean_content(self.add_domains(content_html.strip()))
+                cleaned_content = self.clean_content(self.add_domains(template, content_html.strip()))
                 fe.content( cleaned_content, type='CDATA')
 
                 fe.author(name=self.config["author"])

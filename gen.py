@@ -41,52 +41,36 @@ layout.web = web
 sitemap = tools.sitemap.Sitemap(config, web)
 feed = tools.feed.Feed(config, web)
 
-print(f"Updating data status: {config['build']}")
-if config['build'] == 1 or config['build'] == 2:
-    #Load new posts only
-    print("Just new/updated posts")
-    db.db_builder(config['vault'],reset=False)
-elif config['build'] == 3:
-     #Rebuild all
-    print("Reset base")
-    db.db_builder(config['vault'],reset=True)
-print(db.new_posts, "new posts")
-print(db.updated_posts, "updated posts")
+if config['build'] > 0:
 
-print("Supercharge posts")
-posts = db.get_posts_updated()
-total = len(posts)
-if total >0:
-    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
-    for post in posts:
-        post = dict(post)
-        non_template_dependant = web.supercharge_post_non_template(post)
-        db.update_fields( post['id'], non_template_dependant)
-        pbar.update(1)
-    pbar.close()
-else:
-    print("No new/updated posts")
+    print(f"Updating data status: {config['build']}")
+    if config['build'] == 1 or config['build'] == 2:
+        #Load new posts only
+        print("Just new/updated posts")
+        db.db_builder(config['vault'],reset=False)
+    elif config['build'] == 3:
+        #Rebuild all
+        print("Reset base")
+        db.db_builder(config['vault'],reset=True)
 
-print("Media management")
-posts = db.get_posts_updated()
-total = len(posts)
-if total >0:
-    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
-    for post in posts:
-        web.media_production(config['templates'], post['content'], post)
-        pbar.update(1)
-    pbar.close()
-else:
-    print("No new media")
+    print("Media and navigation")
+    posts = db.get_posts_updated()
+    total = len(posts)
+    if total >0:
+        pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
+        for post in posts:
 
-#Menu
-layout.menu_gen()
+            navigation = web.navigation(post)
+            db.update_fields( post['id'], navigation)
 
-#Search
-layout.search_gen()
+            web.media_production(config['templates'], post)
+            pbar.update(1)
+        pbar.close()
 
 #POSTS
 print("Post generation")
+posts = db.get_posts_updated()
+total = len(posts)
 if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
@@ -98,8 +82,8 @@ if total >0:
 
 #SITEMAP POSTS
 if total > 0:
-    posts = db.get_all_posts_and_pages()
     sitemap.open("sitemap-posts")
+    posts = db.get_all_posts_and_pages()
     pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
         sitemap.add_post( post )
@@ -112,103 +96,92 @@ if total > 0:
 sitemap.open("sitemap-main")
 
 #SERIES
-if len(db.used_tags) > 0:
-    tags = db.get_tags_with_post_ids()
-    tags = web.get_enriched_tags(tags)
-    tags = web.get_enriched_tags_series(tags) # Parrtie avant du coce da-ans tag_gen_serie
-    # print(dict(tags[0]))
+if db.new_tags + db.updated_tags > 0:
+    exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
+    tags = db.get_tags_with_lastpost(exclude_slugs)
     series = {
-        "tag": "series",
-        "pub_update": tags[0]['pub_update'],
-        # "thumb_path": tags[0]['thumb_path'],
-        # "thumb_legend": tags[0]['thumb_legend'],
-        # "post_md": tags[0]['post_md'],
-        "url": "series/"
+        "tag_slug": "series",
+        "tag_title": "Séries",
+        "description": f"Les thématiques de {config['title']}",
+        "tag_url": "series/"
     }
     layout.tag_gen_serie( series, tags )
-    sitemap.add_post( series )
+    sitemap.add_post( series, tags[0] )
     print("Series done")
 
-exit()
 
 #BLOG
-# layout.setDebug()
 if  db.new_posts >0 or db.updated_posts > 0  or new_home_template:
     exclude = tuple(config['home_exclude'])
     blog_posts = db.get_blog_posts(exclude)
-    first_post = dict(blog_posts[0])
     series = {
-        "tag": "blog",
-        "pub_update": first_post['pub_update'],
-        "thumb_path": first_post['thumb_path'],
-        "thumb_legend": first_post['thumb_legend'],
-        "post_md": first_post['path_md'],
-        "url": "blog/",
+        "tag_slug": "blog",
+        "tag_title": "Digression",
+        "description": f"Tous les articles de {config['title']}",
+        "tag_url": "blog/",
     }
-    layout.tag_gen( series, blog_posts )
-    sitemap.add_post( series, False )
+    layout.tag_gen_serie( series, blog_posts )
+    sitemap.add_post( series, blog_posts[0] )
     feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
     print(f"Blog done {len(blog_posts)}")
-# layout.setDebug()
+
 
 #HOME
 if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
     if posts:
         print("Starting home")
-        last_post=blog_posts[0]
         last_carnet = db.get_posts_by_tag("carnets", 1)
         last_bike = db.get_posts_by_tag("velo", 1)
         last_digest = db.get_posts_by_tag("digest", 1)
-        layout.home_gen( last_post, last_carnet, last_bike, last_digest )
+        layout.home_gen( blog_posts[0], last_carnet[0], last_bike[0], last_digest[0] )
 
-        sitemap.add_post({"url": "index.html", "pub_update_str": tools.tools.now_datetime_str(), "thumb": None }, False)
+        sitemap.add_post({"url": "index.html", "pub_update_str": tools.tools.now_datetime_str(), "thumb": None }, blog_posts[0])
 
         print("Home done")
 
-sitemap.add_page("archives/index.html", supercharge=False)
+sitemap.add_page("archives/index.html")
 sitemap.save()
 
 
 #MAIN FEED
-if  db.new_posts >0 or db.updated_posts > 0:
-    posts = db.get_all_posts()
+if  db.new_posts + db.updated_posts > 0:
+    posts = db.get_blog_posts()
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
     print("Main feed done")
 
 
-#TAGS
-if len(db.used_tags) > 0:
+#TAGS  
+if db.new_tags + db.updated_tags > 0:
 
-    if config['build'] == 2:
+    exclude = tuple(config['pages'])
+
+    if config['build'] > 1:
         # Tous les tags
         sitemap.open("sitemap-tags")
-        tags = db.get_tags()
+        tags = db.get_tags(exclude_slugs=exclude)
     else:
         # Ceux utilisés
-        tags = db.get_used_tags()
+        tags = db.get_tags_used(exclude_slugs=exclude)
     total = len(tags)
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
-        sitemap.add_post(tag, False)
-        if tag['tag'] in db.used_tags:
+        sitemap.add_post(tag)
+        tag=dict(tag)
+        tag_posts = db.get_posts_by_tag(tag['tag_slug'])
+        if len(tag_posts)==0:
+            continue
+        layout.tag_gen_serie( tag, tag_posts )
 
-            if tag['tag']=="carnets":
-                tag_posts = db.get_posts_by_tag(tag['tag'])
-                feed.builder(tag_posts,"carnet-de-route", "Derniers carnets de Thierry Crouzet")
-            if tag['tag']=="velo":
-                tag_posts = db.get_posts_by_tag(tag['tag'])
-                feed.builder(tag_posts,"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
-            if tag['tag']=="ecriture":
-                tag_posts = db.get_posts_by_tag(tag['tag'])
-                feed.builder(tag_posts,"ecriture", "Derniers textes en construction de Thierry Crouzet")
-            if tag['tag']=="mailing":
-                tag_posts = db.get_posts_by_tag(tag['tag'])
-                feed.builder(tag_posts,"mailing", "Autopromotion de Thierry Crouzet")
-            if tag['tag']=="digest":
-                tag_posts = db.get_posts_by_tag(tag['tag'])
-                feed.builder(tag_posts,"digest", "De ma terrasse de Thierry Crouzet")
-
-        layout.tag_gen(tag)
+        if tag['tag_slug']=="carnets":
+            feed.builder(tag_posts,"carnet-de-route", "Derniers carnets de Thierry Crouzet")
+        if tag['tag_slug']=="velo":
+            feed.builder(tag_posts,"borntobike", "Derniers articles sur le vélo de Thierry Crouzet")
+        if tag['tag_slug']=="ecriture":
+            feed.builder(tag_posts,"ecriture", "Derniers textes en construction de Thierry Crouzet")
+        if tag['tag_slug']=="mailing":
+            feed.builder(tag_posts,"mailing", "Autopromotion de Thierry Crouzet")
+        if tag['tag_slug']=="digest":
+            feed.builder(tag_posts,"digest", "De ma terrasse de Thierry Crouzet")
 
         pbar.update(1)
     pbar.close()
@@ -217,9 +190,8 @@ if len(db.used_tags) > 0:
         sitemap.save()
     print(total, "tags updated")
 
-
 #YEARS
-if len(db.used_years) > 0:
+if db.new_tags + db.updated_tags > 0:
 
     sitemap.open("sitemap-years")
     years_archive = ""
@@ -228,7 +200,7 @@ if len(db.used_years) > 0:
     for iy, year in enumerate(years):
 
         posts = db.get_posts_by_year(year, exclude)
-        if posts:
+        if len(posts)>0:
 
             if iy<len(years)-1:
                 prev_year =  years[iy+1]
@@ -241,34 +213,40 @@ if len(db.used_years) > 0:
                 next_year =  years[-1]
 
             series = {
-                "tag": str(year),
-                "type": 5,
-                "title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
+                "tag_slug": str(year),
+                "tag_title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
                 "pub_update": posts[0]['pub_update'],
                 "thumb_path": posts[0]['thumb_path'],
                 "thumb_legend": posts[0]['thumb_legend'],
                 "post_md": posts[0]['path_md'],
-                "url": f"{str(year)}/",
+                "tag_url": f"/{str(year)}/",
             }
-            sitemap.add_post(series, False)
-            layout.tag_gen( series, posts )
-            years_archive += f'<p><a href="{str(year)}/">{year}</a></p>'
+            layout.tag_gen_serie( series, posts )
+            sitemap.add_post(series)
+            years_archive += f'<p><a href="/{str(year)}/">{year}</a></p>'
 
     sitemap.save()
     print("Years done")
 
 
 #ARCHIVES
-if len(db.used_years) > 0:
+if db.new_tags + db.updated_tags > 0:
 
     posts_archive = ""
     exclude = ("invisible")
     posts = db.get_blog_posts(exclude)
     for post in posts:
-        url = web.url(post)
-        posts_archive += f'<p><a href="{url}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'
+        posts_archive += f'<p><a href="{post['url']}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'
     layout.archives_gen( f"<h3>Années</h3>{years_archive}<h3>Billets</h3>{posts_archive}" )
     print("Archives done")
+
+
+#Menu
+layout.menu_gen()
+
+
+#Search
+layout.search_gen()
 
 
 #ERROR
@@ -280,6 +258,7 @@ sitemap.save_index('sitemap')
 
 print("Gen ended")
 
+exit()
 #EXPORT
 if version>0:
     for template in config['templates']:

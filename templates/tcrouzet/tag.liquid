@@ -3,13 +3,13 @@
     <nav>
         {% for menu in post.menu %}
             {% if forloop.index == 1 %}
-                <h1 itemprop="headline">{{ menu.title }}</h1>
+                <h1 itemprop="headline">{{ menu.tag_title }}</h1>
             {% else %}
-                <a href="{{ menu.url }}">{{ menu.title }}</a>
+                <a href="{{ menu.tag_url }}">{{ menu.tag_title }}</a>
             {% endif %}
         {% endfor %}
     </nav>
 
-    {{ list }}
+    {{ tags.list }}
 
 </main>

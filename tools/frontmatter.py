@@ -1,7 +1,34 @@
+from datetime import date, datetime
+import yaml
+
 class Frontmatter:
 
-    def __init__(self, yalm):
-        self.yalm = yalm
+    def __init__(self, yaml_lines):
+        """
+        Args:
+            yaml_text: Texte brut du frontmatter (sans les ---)
+        """
+        self.yaml_text = '\n'.join(yaml_lines)
+        self.yalm = yaml.safe_load(self.yaml_text)
+        self.supercharge()
+        self.yalm = self._serialize_value(self.yalm)
+
+        # print(self.yalm)
+
+    def __call__(self):
+        return self.yalm
+
+    def _serialize_value(self, value):
+        """Convertit récursivement les dates en strings ISO"""
+        if isinstance(value, (date, datetime)):
+            return value.isoformat()
+        elif isinstance(value, dict):
+            return {k: self._serialize_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [self._serialize_value(item) for item in value]
+        else:
+            return value
+
 
     def shop(self, url) ->str:
         if "amazon" in url:
@@ -71,7 +98,7 @@ class Frontmatter:
 
     def supercharge(self) ->dict:
         if not self.yalm:
-            return None
+            exit("NoYALM")
         if "baseline" in self.yalm:
             #book
             if "prix" in self.yalm:
@@ -84,5 +111,3 @@ class Frontmatter:
                 if "eshops" in self.yalm and self.yalm["eshops"]:
                     for shop in self.yalm["eshops"]:
                         self.yalm['ebook'] += f'<a href="{shop}">{self.shop(shop)}</a> '
-
-        return self.yalm

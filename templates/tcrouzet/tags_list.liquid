@@ -1,6 +1,13 @@
-{% for tag_post in post.posts %}
+{% if post.tag_slug == "series" %}
+  {% assign series = true %}
+{% else %}
+  {% assign series = false %}
+{% endif %}
 
-    <article><a href="/{{ tag_post.url }}">
+{% for tag_post in tags %}
+
+    <article>
+        {% if series %}<a href="{{ tag_post.tag_url }}">{% else %}<a href="{{ tag_post.url }}">{% endif %}
     
         {% if tag_post.thumb %}
             <img width="250" height="188"
@@ -16,18 +23,18 @@
         </a>
 
         {% if post.url != "bibliographie" %}
-            <data value="{{ tag_post.order }}"><a href="/{{ tag_post.url }}">{{ tag_post.order }}</a></data>
-            {% if tag_post.navigation.title != 'None' and post.tag != tag_post.navigation.slug %}
-                <h3><a href="tag/{{ tag_post.navigation.url }}">{{ tag_post.navigation.title }}</a></h3>
+            {% if series %}
+                <data value="{{ tag_post.navigation.total_posts }}"><a href="{{ tag_post.tag_url }}">{{ tag_post.navigation.total_posts }}</a></data>
+                <h2>
+                    <a href="{{ tag_post.tag_url }}"><b>{{ tag_post.tag_title }}</b></a>
+                </h2>
+            {% else %}
+                <data value="{{ tag_post.ordre }}"><a href="{{ tag_post.url }}">{{ tag_post.ordre }}</a></data>
+                <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title }}</a></h3>
+                <h2>
+                <a href="tag/{{ tag_post.url }}">{{ tag_post.title }}</a>
+                </h2>
             {% endif %}
-            <h2><a href="/{{ tag_post.url }}">
-                {% if tag_post.type ==5 %}
-                    <b>{{ tag_post.title }}</b>
-                {% else %}
-                    {{ tag_post.title }}
-                {% endif %}
-                </a>
-            </h2>
         {% endif %}
     </article>
     

@@ -3,7 +3,14 @@ import os
 import re
 import json
 import datetime
-from datetime import  date
+from bs4 import BeautifulSoup
+from datetime import date
+from urllib.parse import urlparse
+import markdown
+import tools.frontmatter as ft
+import tools.tools as tools
+import tools.logs as logs
+
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -18,8 +25,8 @@ class Db:
         self.config = config
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(script_dir) + os.sep
-        script_dir = parent_dir
+        self.parent_dir = os.path.dirname(script_dir) + os.sep
+        script_dir = self.parent_dir
 
         temp_dir = os.path.join(script_dir, "_temp")
         os.makedirs(temp_dir, exist_ok=True)
@@ -30,12 +37,15 @@ class Db:
 
         self.new_posts = 0
         self.updated_posts = 0
-        self.used_tags = set()
+        self.new_tags = 0
+        self.updated_tags = 0
         self.used_years = set()
 
     def create_tables(self, reset=False):
         self.create_table_posts(reset)
         self.create_images_cache(reset)
+        self.create_table_tags(reset)
+        self.create_table_connectors(reset)
 
     def create_table_posts(self, reset=False):
         c = self.conn.cursor()
@@ -46,6 +56,7 @@ class Db:
 
         c.execute(f'''CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY,
+            source_path TEXT,
             title TEXT,
             path_md TEXT UNIQUE,
             pub_date INTEGER,
@@ -53,7 +64,7 @@ class Db:
             thumb_path TEXT DEFAULT '',
             thumb_legend TEXT DEFAULT '',
             type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 pour books
-            tags TEXT DEFAULT '',
+            tags TEXT DEFAULT '', -- dic
             url TEXT,
             content TEXT,
             frontmatter TEXT, -- dict json
@@ -66,7 +77,12 @@ class Db:
             navigation TEXT,  -- dict json
             updated BOOLEAN DEFAULT TRUE
         );''')
+
+        # Accélère recherche par path_md
+        c.execute('''CREATE INDEX  IF NOT EXISTS idx_posts_path ON posts(path_md)''')
+
         self.conn.commit()
+
 
     def create_images_cache(self, reset=False):
         """Table pour stocker descriptions images"""
@@ -77,62 +93,192 @@ class Db:
             c.execute('DROP TABLE IF EXISTS images_cache')
 
         c.execute('''CREATE TABLE IF NOT EXISTS images_cache (
-            source_path TEXT PRIMARY KEY,
+            media_source_path TEXT PRIMARY KEY,
             data TEXT
         )''')
         
         self.conn.commit()
 
+    def create_table_tags(self, reset=False):
+        """Table pour stocker les tags"""
+        c = self.conn.cursor()
 
-    def insert_post(self, post):
+        if reset:
+            print("Reset table tags")
+            c.execute('DROP TABLE IF EXISTS tags')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS tags (
+            tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tag_slug TEXT UNIQUE NOT NULL,
+            tag_title TEXT NOT NULL,
+            tag_url TEXT,
+            tag_update INTEGER DEFAULT 0,
+            tag_updated BOOLEAN DEFAULT TRUE
+        )''')
+        
+        # Index pour recherche rapide par slug
+        c.execute('CREATE INDEX IF NOT EXISTS idx_tags_slug ON tags(tag_slug)')
+        
+        self.conn.commit()
+
+
+    def create_table_connectors(self, reset=False):
+        """Table de liaison entre posts et tags (many-to-many)"""
+        c = self.conn.cursor()
+
+        if reset:
+            print("Reset table connectors")
+            c.execute('DROP TABLE IF EXISTS connectors')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS connectors (
+            con_tag_id INTEGER NOT NULL,
+            con_post_id INTEGER NOT NULL,
+            PRIMARY KEY (con_tag_id, con_post_id),
+            FOREIGN KEY (con_tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE,
+            FOREIGN KEY (con_post_id) REFERENCES posts(id) ON DELETE CASCADE
+        )''')
+        
+        # Index pour recherche rapide par tag (déjà couvert par PRIMARY KEY)
+        # Index pour recherche rapide par post
+        c.execute('CREATE INDEX IF NOT EXISTS idx_connectors_post ON connectors(con_post_id)')
+        
+        self.conn.commit()
+
+    def existing_post(self, path_md):
+        c = self.conn.cursor()
+        c.execute('SELECT id, pub_update FROM posts WHERE path_md = ?', (path_md,))
+        existing_post = c.fetchone()
+        return existing_post
+
+    def insert_post(self, post, existing_post = None):
 
         if 'tags' in post and isinstance(post['tags'], list):
-            tags_set = set(post['tags'])
             post['tags'] = json.dumps(post['tags'])
+        
+        if 'frontmatter' in post and post['frontmatter']:
+            post['frontmatter'] = json.dumps(post['frontmatter'])
 
-        #print(post)
-        #exit()
+        if "tagslist" in post:
+            post['tagslist'] = json.dumps(post['tagslist'])
+
+        if not existing_post:
+            existing_post = self.existing_post(post['path_md'])
 
         c = self.conn.cursor()
-        c.execute('SELECT * FROM posts WHERE path_md = :path_md', {'path_md': post['path_md']})
-        existing_post = c.fetchone()
 
         if existing_post and post['pub_update'] > existing_post['pub_update']:
             # Update post
+            post['id'] = existing_post['id']
 
             query = '''UPDATE posts SET
+                        source_path = :source_path,
                         title = :title,
                         pub_date = :pub_date,
                         pub_update = :pub_update,
                         thumb_path = :thumb_path,
                         thumb_legend = :thumb_legend,
+                        content = :content,
+                        frontmatter = :frontmatter,
+                        description = :description,
                         type = :type,
                         tags = :tags,
+                        tagslist = :tagslist,
+                        url = :url,
+                        pub_date_str = :pub_date_str,
+                        pub_update_str = :pub_update_str,
+                        path_md = :path_md,
+                        github = :github,
+                        datelink = :datelink,
                         updated = TRUE
-                    WHERE path_md = :path_md;'''
+                    WHERE id = :id;'''
             c.execute(query, post)
+            self.conn.commit()
 
-            # existing_tags_set = set(json.loads(existing_post['tags']))
-            # self.used_tags.update( existing_tags_set - tags_set )
-            self.used_tags.update( tags_set )
+            return {"new": 0, "update": 1, "id": existing_post['id']}
+        
+        elif existing_post and post['pub_update'] <= existing_post['pub_update']:
+            #No update
 
-            return 0, 1
-
+            return {"new": 0, "update": 0, "id": existing_post['id']}
+        
         else:
             # New post
 
-            query = '''INSERT OR IGNORE INTO posts 
-                    (title, path_md, pub_date, pub_update, thumb_path, thumb_legend, type, tags)
-                    VALUES (:title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags);             
-                    '''
+            query = '''INSERT INTO posts 
+                    (source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  pub_date_str,  pub_update_str,  tagslist,  github,  datelink)
+             VALUES (:source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink);
+            '''
             c.execute(query, post)
-            if c.rowcount > 0:
-                self.used_tags.update( tags_set )
+            self.conn.commit()
+            post_id = c.lastrowid
+
+            if post_id:
+                # self.used_tags.update( tags_set )
                 date_time = datetime.datetime.fromtimestamp(post['pub_date'])
                 self.used_years.add( date_time.year )
-                return 1, 0
+
+                return {"new": 1, "update": 0, "id": post_id}
+
             else:
-                return 0, 0
+                return {"new": 0, "update": 0, "id": None}
+
+
+    def insert_tag(self, post_id, tagslist, tag_update):
+        """
+        Insère ou met à jour les tags et crée les liaisons avec le post.
+        Retourne {'new': int, 'updated': int, 'linked': int}
+        """
+        if not tagslist:
+            return {'new': 0, 'updated': 0, 'linked': 0}
+
+        if isinstance(tagslist, str):
+            tagslist = json.loads(tagslist)
+                
+        c = self.conn.cursor()
+        stats = {'new': 0, 'updated': 0, 'linked': 0}
+        
+        for tagdict in tagslist:
+            tagdict['tag_update'] = tag_update
+            
+            # Vérifier si le tag existe
+            c.execute('SELECT tag_id, tag_update FROM tags WHERE tag_slug = ?', (tagdict['tag_slug'],))
+            existing_tag = c.fetchone()
+            
+            if existing_tag and tag_update > existing_tag['tag_update']:
+                # UPDATE tag existant
+                query = '''UPDATE tags SET
+                            tag_title = :tag_title,
+                            tag_update = :tag_update,
+                            tag_url = :tag_url,
+                            tag_updated = TRUE
+                        WHERE tag_id = :tag_id'''
+                
+                tagdict['tag_id'] = existing_tag['tag_id']
+                c.execute(query, tagdict)
+                tag_id = existing_tag['tag_id']
+                stats['updated'] += 1
+            
+            elif existing_tag:
+                # Tag existe, pas de changement
+                tag_id = existing_tag['tag_id']
+            
+            else:
+                # INSERT nouveau tag
+                query = '''INSERT INTO tags 
+                        (tag_title, tag_update, tag_slug, tag_url)
+                        VALUES (:tag_title, :tag_update, :tag_slug, :tag_url)'''
+                c.execute(query, tagdict)
+                tag_id = c.lastrowid
+                stats['new'] += 1
+            
+            # Créer la liaison post-tag dans connectors (si pas déjà existante)
+            c.execute('''INSERT OR IGNORE INTO connectors (con_tag_id, con_post_id)
+                        VALUES (?, ?)''', (tag_id, post_id))
+            if c.rowcount > 0:
+                stats['linked'] += 1
+        
+        self.conn.commit()
+        return stats
 
 
     def updated(self, post):
@@ -162,100 +308,6 @@ class Db:
     def get_row_factory(self):
         return self.conn.row_factory
 
-    def filter_tags(self, tags):
-        try:
-            date_pattern = re.compile(r'^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2})h(\d{1,2})$')  # 'YYYY-M-D-HhM'
-            year_pattern = re.compile(r'^y(\d{4})$')  # 'yYYYY'
-            filtered_tags = []
-            timestamp = 0
-
-            for tag in tags:
-                date_match = date_pattern.match(tag)
-                if date_match:
-                    year, month, day, hour, minute = map(int, date_match.groups())
-                    date_obj = datetime.datetime(year, month, day, hour, minute)
-                    timestamp = round(date_obj.timestamp())
-                elif not year_pattern.match(tag):
-                    filtered_tags.append(tag)
-            return filtered_tags, timestamp
-        except Exception as e:
-            print("Error in filter_tags:", e)
-            print(tags)
-            exit()
-
-    def markdown_extract(self, path):
-        creation_time = 0
-        modification_time = round(os.path.getmtime(path))
-
-        # Read the file and extract title and tags
-        title = None
-        tags = []
-        thumb_path = None
-        thumb_legend = None
-        with open(path, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-            for line in lines:
-                # Find title
-                if line.startswith('# ') and not title:
-                    title = line.strip('# ')
-                    title = title.strip()
-                # Check tags
-                if line.startswith('#') and ' ' in line:
-                    potential_tags = line.strip().split()
-                    if all(tag.startswith('#') for tag in potential_tags):
-                        tags = [tag[1:] for tag in potential_tags if tag.startswith('#')]
-                        tags, creation_time = self.filter_tags(tags)
-                #Thumb
-                if '![' in line and thumb_path is None:
-                    match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
-                    if match:
-                        thumb_legend = match.group(1)
-                        thumb_path = match.group(2)
-
-            if thumb_path and not thumb_legend:
-                thumb_legend = title
-            # print(tags)
-            # print(type(tags))
-            # exit()
-            answer = {"pub_date":creation_time, "pub_update":modification_time, "title":title, "tags":tags, "thumb_legend":thumb_legend, "thumb_path":thumb_path}
-            return answer
-            
-        return None
-
-
-    def db_builder(self, root_dir, reset=False):
-
-        self.create_tables(reset)
-
-        for root, dirs, files in os.walk(root_dir):
-            # Exlude images dirs
-            # dirs[:] = [d for d in dirs if not d.startswith('_i')]
-            dirs[:] = [d for d in dirs if not d.startswith('_i') and d not in self.config['no_export']]
-
-            for file in files:
-                if file.endswith('.md'):
-                    md_path = os.path.join(root, file)
-                    #print(root,file,root.replace(root_dir,""))
-                    post = self.markdown_extract(md_path)
-                    if post['pub_date'] == 0:
-                        print("post not ready",post['title'],md_path)
-                        continue
-
-                    post['path_md'] = os.path.join(root.replace(root_dir,"").strip("/"), file)
-
-                    if post['path_md'].startswith('books'):
-                        post['type'] = 2
-                    elif any(post['path_md'].startswith(prefix) for prefix in self.config['pages']):
-                        post['type'] = 1
-                    else:
-                        post['type'] = 0
-
-                    added, updated = self.insert_post(post)
-                    self.new_posts += added
-                    self.updated_posts += updated
-
-        self.conn.commit()
-
 
     def get_posts(self, condition=None):
         c = self.conn.cursor()
@@ -281,19 +333,89 @@ class Db:
     def get_all_posts_and_pages(self):
         return self.get_posts("type<5")
 
-    def get_blog_posts(self, tags_tuple):
-        if isinstance(tags_tuple,tuple):
-            plus = str(tags_tuple)
-        else:
-            plus = "('{tags_tuple}')"
-        where = f"id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN {plus}) AND type=0"
-        return self.get_posts(where)
+
+    def get_blog_posts(self, exclude_tags=None):
+        """
+        Retourne tous les posts de blog (type=0) avec les infos de leur premier tag associé.
+        Exclut les posts qui contiennent les tags spécifiés.
+        """
+        c = self.conn.cursor()
+        
+        where_clause = "WHERE p.type = 0"
+        params = ()
+        
+        if exclude_tags:
+            placeholders = ','.join('?' for _ in exclude_tags)
+            where_clause += f" AND p.id NOT IN (SELECT DISTINCT c.con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
+            params = tuple(exclude_tags)
+        
+        query = f'''
+            SELECT 
+                p.*,
+                t.*,
+                (COUNT(*) OVER ()) - ROW_NUMBER() OVER (ORDER BY p.pub_date DESC) + 1 AS ordre
+            FROM posts p
+            LEFT JOIN connectors c ON p.id = c.con_post_id
+            LEFT JOIN tags t ON c.con_tag_id = t.tag_id
+            {where_clause}
+            AND (c.con_tag_id, c.con_post_id) IN (
+                SELECT c2.con_tag_id, c2.con_post_id
+                FROM connectors c2
+                WHERE c2.con_post_id = p.id
+                ORDER BY c2.con_tag_id
+                LIMIT 1
+            ) OR c.con_tag_id IS NULL
+            GROUP BY p.id
+            ORDER BY p.pub_date DESC
+        '''
+        
+        c.execute(query, params)
+        return c.fetchall()
+
 
     def get_posts_by_year(self, year, exclude_tags=None):
-        where = f"strftime('%Y', datetime(pub_date, 'unixepoch')) = '{year}' AND type=0 "
+        """
+        Récupère tous les posts d'une année avec le main tag associé.
+        Exclut les posts qui contiennent les tags spécifiés.
+        """
+        c = self.conn.cursor()
+        
+        where_clause = f"WHERE strftime('%Y', datetime(p.pub_date, 'unixepoch')) = ? AND p.type = 0"
+        params = (year,)
+        
         if exclude_tags:
-             where += "AND id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN " + str(exclude_tags) + ")"
-        return self.get_posts(where)
+            placeholders = ','.join('?' for _ in exclude_tags)
+            where_clause += f" AND p.id NOT IN (SELECT DISTINCT c.con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
+            params = (year,) + tuple(exclude_tags)
+        
+        query = f'''
+            SELECT 
+                p.*,
+                t.*,
+                (COUNT(*) OVER (PARTITION BY strftime('%Y', datetime(p.pub_date, 'unixepoch')))) - ROW_NUMBER() OVER (PARTITION BY strftime('%Y', datetime(p.pub_date, 'unixepoch')) ORDER BY p.pub_date DESC) + 1 AS ordre
+            FROM posts p
+            LEFT JOIN connectors c ON p.id = c.con_post_id
+            LEFT JOIN tags t ON c.con_tag_id = t.tag_id
+            {where_clause}
+            AND (c.con_tag_id, c.con_post_id) IN (
+                SELECT c2.con_tag_id, c2.con_post_id
+                FROM connectors c2
+                WHERE c2.con_post_id = p.id
+                ORDER BY c2.con_tag_id
+                LIMIT 1
+            ) OR c.con_tag_id IS NULL
+            GROUP BY p.id
+            ORDER BY p.pub_date DESC
+        '''
+        
+        c.execute(query, params)
+        return c.fetchall()
+
+    # def get_posts_by_year(self, year, exclude_tags=None):
+    #     where = f"strftime('%Y', datetime(pub_date, 'unixepoch')) = '{year}' AND type=0 "
+    #     if exclude_tags:
+    #          where += "AND id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN " + str(exclude_tags) + ")"
+    #     return self.get_posts(where)
     
     def get_years(self):
         c = self.conn.cursor()
@@ -334,64 +456,47 @@ class Db:
         return post
 
 
-    def get_posts_by_tag(self, tag, limit=""):
-        if not tag:
-            return None
+    def get_posts_by_tag(self, tag_slug, limit=None):
+        """
+        Retourne tous les posts de blog (type=0) d'un tag spécifique avec les infos de leur premier tag associé.
+        
+        Args:
+            tag_slug: Le slug du tag
+            limit: Nombre maximum de résultats (None = pas de limite)
+        """
         c = self.conn.cursor()
-
-        if limit:
-            limit = f"LIMIT {limit}"
+        
+        limit_clause = f"LIMIT {limit}" if limit else ""
         
         query = f'''
-        SELECT * FROM posts, json_each(posts.tags)
-        WHERE json_each.value = ?
-        ORDER BY pub_date DESC {limit}
+            SELECT 
+                p.*,
+                t.*,
+                (COUNT(*) OVER ()) - ROW_NUMBER() OVER (ORDER BY p.pub_date DESC) + 1 AS ordre
+            FROM posts p
+            LEFT JOIN connectors c ON p.id = c.con_post_id
+            LEFT JOIN tags t ON c.con_tag_id = t.tag_id
+            WHERE p.type = 0 AND p.id IN (
+                SELECT DISTINCT c.con_post_id 
+                FROM connectors c 
+                INNER JOIN tags t ON c.con_tag_id = t.tag_id 
+                WHERE t.tag_slug = ?
+            )
+            AND (c.con_tag_id, c.con_post_id) IN (
+                SELECT c2.con_tag_id, c2.con_post_id
+                FROM connectors c2
+                WHERE c2.con_post_id = p.id
+                ORDER BY c2.con_tag_id
+                LIMIT 1
+            ) OR c.con_tag_id IS NULL
+            GROUP BY p.id
+            ORDER BY p.pub_date DESC
+            {limit_clause}
         '''
-        c.execute(query, (tag,))
-        posts = c.fetchall()
-        return posts
-
-    def get_tags(self, order="t.count DESC", exclude_tags=None):
-        c = self.conn.cursor()
-
-        where_clause = ""
-        if exclude_tags:
-            tags_list = ','.join('?' for _ in exclude_tags)  # Créer une chaîne de placeholders
-            where_clause = f"AND t.tag NOT IN ({tags_list})"
         
-        query = f'''
-        SELECT t.tag,
-            t.count,
-            '/tag/' || t.tag as path_md,
-            5 as type,
-            p.id,
-            p.path_md as post_md,
-            p.thumb_path,
-            p.thumb_legend, 
-            p.pub_update
-            FROM (
-                SELECT json_each.value AS tag, 
-                    COUNT(*) AS count, 
-                    MAX(posts.pub_date) AS most_recent_date
-                FROM posts
-                JOIN json_each(posts.tags)
-                GROUP BY json_each.value
-            ) AS t
-            JOIN posts AS p ON p.pub_date = t.most_recent_date
-            WHERE EXISTS (
-                SELECT 1 FROM json_each(p.tags)
-                WHERE json_each.value = t.tag
-            ) {where_clause}
-            ORDER BY {order}
-        '''
+        c.execute(query, (tag_slug,))
+        return c.fetchall()
 
-        if exclude_tags:
-            c.execute(query, exclude_tags)
-        else:
-            c.execute(query)
-        tags = c.fetchall()
-        
-        return tags
 
     def get_last_published_post(self):
         c = self.conn.cursor()
@@ -404,101 +509,50 @@ class Db:
         post = c.fetchone()
         return post
 
-    def get_used_tags(self, order="t.count DESC"):
+
+    def get_tags_used(self, exclude_slugs=None):
+        return self.get_tags(where="WHERE tag_updated = 1", exclude_slugs=exclude_slugs)
+
+    def get_tags(self, order="tag_update DESC", where="", exclude_slugs=None):
         """
-        Récupère les tags de la base de données en filtrant sur un set de tags spécifiques.
+        Récupère tous les tags avec possibilité d'exclusion.
         
         Args:
-            include_tags: Set ou liste de tags à inclure (None = tous les tags)
-            order: Ordre de tri (par défaut: "t.count DESC")
+            order: Ordre de tri (par défaut: "tag_update DESC")
+            where: Clause WHERE personnalisée
+            exclude_tags: Liste de slugs à exclure
         
         Returns:
-            Liste des tags avec leurs informations
+            Liste des tags
         """
         c = self.conn.cursor()
-
-        where_clause = ""
-        if self.used_tags:
-            tags_list = ','.join('?' for _ in self.used_tags)
-            where_clause = f"AND t.tag IN ({tags_list})"
+        
+        # Construire la clause WHERE complète
+        where_clause = where
+        params = ()
+        
+        if exclude_slugs:
+            placeholders = ','.join('?' for _ in exclude_slugs)
+            exclude_condition = f"tag_slug NOT IN ({placeholders})"
+            
+            if where_clause:
+                where_clause += f" AND {exclude_condition}"
+            else:
+                where_clause = f"WHERE {exclude_condition}"
+            
+            params = tuple(exclude_slugs)
         
         query = f'''
-        SELECT t.tag,
-            t.count,
-            '/tag/' || t.tag as path_md,
-            5 as type,
-            p.id,
-            p.path_md as post_md,
-            p.thumb_path,
-            p.thumb_legend, 
-            p.pub_update
-            FROM (
-                SELECT json_each.value AS tag, 
-                    COUNT(*) AS count, 
-                    MAX(posts.pub_date) AS most_recent_date
-                FROM posts
-                JOIN json_each(posts.tags)
-                GROUP BY json_each.value
-            ) AS t
-            JOIN posts AS p ON p.pub_date = t.most_recent_date
-            WHERE EXISTS (
-                SELECT 1 FROM json_each(p.tags)
-                WHERE json_each.value = t.tag
-            ) {where_clause}
+            SELECT *
+            FROM tags
+            {where_clause}
             ORDER BY {order}
         '''
-
-        c.execute(query, tuple(self.used_tags))
+        
+        c.execute(query, params)
         tags = c.fetchall()
         return tags
 
-
-    def timestamp_to_date(self, timestamp):
-        date_time = datetime.datetime.fromtimestamp(timestamp)
-        readable_date = date_time.strftime("%Y-%m-%d")
-        return readable_date
-
-    def list_posts(self, condition=None):
-        posts = self.get_posts(condition)
-        for post in posts:
-            print(dict(post), self.timestamp_to_date(post['pub_date']))
-        exit("List end")
-
-    def list_posts_updated(self):
-        self.list_posts("updated=1")
-
-    def list_posts_updated(self):
-        self.list_posts("updated=1")
-
-    def list_test(self):
-        self.list_posts("path_md=null")
-
-    def list_tags(self):
-        tags = self.get_tags()
-        for tag in tags:
-            print(dict(tag))
-        exit("List end")
-
-    def list_object(self, objects,exit_flag=True):
-        total = len(objects)
-        if total == 0:
-            exit("Empty")
-        else:
-            print(total, "objects")
-        print(type(objects))
-        #objects = dict(objects)
-        if isinstance(objects,dict):
-            pass
-        elif isinstance(objects,list):
-            for key, object in enumerate(objects):
-                print(key, self.list_object(object))
-            exit()
-        else:
-            objects = dict(objects)
-        for key, object in objects.items():
-            print(key, object)
-        if exit_flag:
-            exit()
 
     def test_insert_post(self, post=None):
         self.create_table_posts(True)
@@ -579,17 +633,14 @@ class Db:
         try:
             c = self.conn.cursor()
             
-            source_path = data_dict['media_source_path']
+            media_source_path = data_dict['media_source_path']
             data_json = json.dumps(data_dict)
             
-            c.execute('''INSERT OR REPLACE INTO images_cache (source_path, data) 
-                        VALUES (?, ?)''', (source_path, data_json))
+            c.execute('''INSERT OR REPLACE INTO images_cache (media_source_path, data) 
+                        VALUES (?, ?)''', (media_source_path, data_json))
             
             self.conn.commit()
 
-            # print("insert OK")
-            # test = self.get_image_cache('tcrouzet', source_path)
-            # print(test)
             return True
             
         except Exception as e:
@@ -597,17 +648,16 @@ class Db:
             self.conn.rollback()
             return False
 
-    def get_image_cache(self, template_name, source_path):
+    def get_image_cache(self, template_name, media_source_path):
         # print("get_image_cache")
         try:
 
-            if source_path.endswith("None"):
-                # print(f"Warning {source_path}")
+            if not media_source_path or media_source_path.endswith("None"):
                 return None
 
             c = self.conn.cursor()
             
-            c.execute('SELECT data FROM images_cache WHERE source_path = ?', (source_path,))
+            c.execute('SELECT data FROM images_cache WHERE media_source_path = ?', (media_source_path,))
             result = c.fetchone()
             
             if result:
@@ -615,15 +665,17 @@ class Db:
                 # print(img_data)
                 return img_data[template_name]
             else:
-                print(f"{source_path} not in cache")
+                print(f"{media_source_path} not in cache")
             return None
         except Exception as e:
-            print(f"Get image cache bug {source_path} {template_name}:", e)
+            print(f"Get image cache bug {media_source_path} {template_name}:", e)
             exit()
 
 
-    def get_tags_with_post_ids(self, exclude_tags=None):
-        """Retourne chaque tag avec la liste de ses post IDs triés antichrono"""
+    def get_tags_with_lastpost(self, exclude_tags=None):
+        """
+        Retourne tous les tags avec leur dernier post associé (tous les champs).
+        """
         c = self.conn.cursor()
         
         where_clause = ""
@@ -631,21 +683,492 @@ class Db:
         
         if exclude_tags:
             placeholders = ','.join('?' for _ in exclude_tags)
-            where_clause = f"WHERE json_each.value NOT IN ({placeholders})"
+            where_clause = f"AND t.tag_slug NOT IN ({placeholders})"
             params = tuple(exclude_tags)
         
         query = f'''
             SELECT 
-                json_each.value AS tag,
-                COUNT(*) AS post_count,
-                GROUP_CONCAT(posts.id ORDER BY posts.pub_date DESC) AS post_ids,
-                MAX(posts.pub_date) AS most_recent_date
-            FROM posts
-            JOIN json_each(posts.tags)
+                t.*,
+                p.*,
+                COUNT(DISTINCT c.con_post_id) AS post_count
+            FROM tags t
+            INNER JOIN connectors c ON t.tag_id = c.con_tag_id
+            INNER JOIN posts p ON c.con_post_id = p.id
+            WHERE p.pub_date = (
+                SELECT MAX(p2.pub_date)
+                FROM posts p2
+                INNER JOIN connectors c2 ON p2.id = c2.con_post_id
+                WHERE c2.con_tag_id = t.tag_id
+            )
             {where_clause}
-            GROUP BY json_each.value
-            ORDER BY most_recent_date DESC
+            GROUP BY t.tag_id
+            ORDER BY p.pub_date DESC
         '''
         
         c.execute(query, params)
         return c.fetchall()
+
+    def list_posts(self, condition=None):
+        posts = self.get_posts(condition)
+        for post in posts:
+            print(dict(post), self.timestamp_to_date(post['pub_date']))
+        exit("List end")
+
+    def list_posts_updated(self):
+        self.list_posts("updated=1")
+
+    def list_posts_updated(self):
+        self.list_posts("updated=1")
+
+    def list_test(self):
+        self.list_posts("path_md=null")
+
+    def list_tags(self):
+        tags = self.get_tags()
+        for tag in tags:
+            print(dict(tag))
+        exit("List end")
+
+    def list_object(self, objects,exit_flag=True):
+        total = len(objects)
+        if total == 0:
+            exit("Empty")
+        else:
+            print(total, "objects")
+        print(type(objects))
+        #objects = dict(objects)
+        if isinstance(objects,dict):
+            pass
+        elif isinstance(objects,list):
+            for key, object in enumerate(objects):
+                print(key, self.list_object(object))
+            exit()
+        else:
+            objects = dict(objects)
+        for key, object in objects.items():
+            print(key, object)
+        if exit_flag:
+            exit()
+
+
+    ######## Non pure db, externalisable autre classe #######
+
+
+    def title_formater(self, title):
+        return title.capitalize().replace("-"," ").replace("_"," ")
+
+    def tag_2_dict(self, tag) ->dict:
+        if tag in self.config['tags']:
+            response = {'tag_slug': tag, "tag_title": self.config['tags'][tag].get('title',tag)}
+            turl = self.config['tags'][tag].get("url",None)
+            if turl:
+                response['tag_url'] = "/tag/" + turl
+            else:
+                response['tag_url'] = "/tag/" + tag
+            response['main'] = True
+        else:
+            response = {'tag_slug': tag, "tag_title": self.title_formater(tag), "tag_url": "/tag/" + tag, "main": False}
+        return response
+
+    def filter_tags(self, tags):
+        try:
+            date_pattern = re.compile(r'^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2})h(\d{1,2})$')  # 'YYYY-M-D-HhM'
+            year_pattern = re.compile(r'^y(\d{4})$')  # 'yYYYY'
+            filtered_tags = []
+            timestamp = 0
+
+            for tag in tags:
+                date_match = date_pattern.match(tag)
+                if date_match:
+                    year, month, day, hour, minute = map(int, date_match.groups())
+                    date_obj = datetime.datetime(year, month, day, hour, minute)
+                    timestamp = round(date_obj.timestamp())
+                elif not year_pattern.match(tag):
+                    filtered_tags.append(tag)
+            return filtered_tags, timestamp
+        except Exception as e:
+            print("Error in filter_tags:", e)
+            print(tags)
+            exit()
+
+    def striptags(self, html_text):
+        return re.sub(r'<[^>]+>', '', html_text)
+    
+    def stripmd(self, markdown_text):
+        # Remove images
+        markdown_text = re.sub(r'!\[.*?\]\(.*?\)', '', markdown_text)
+        # Remove links but keep the text
+        markdown_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', markdown_text)
+        markdown_text = markdown_text.replace("*","")
+        return markdown_text
+
+    def resume_paragraph(self, paragraph):
+        # Longueur maximale du résumé
+        max_length = 160
+
+        c_paragraph = self.striptags(paragraph)
+        c_paragraph = self.stripmd(c_paragraph)
+
+        # Si le paragraphe est déjà assez court, le retourner entier
+        if len(c_paragraph) <= max_length:
+            return c_paragraph
+        
+        # Couper le paragraphe aux 160 premiers caractères pour trouver un point
+        end_index = c_paragraph.rfind('.', 0, max_length)
+        
+        # Si un point est trouvé dans la limite, retourner jusqu'au point inclus
+        if end_index != -1:
+            return c_paragraph[:end_index + 1]
+        
+        # Si aucun point n'est trouvé, couper à 157 caractères et ajouter "..."
+        return c_paragraph[:159] + "…"
+
+
+    def extract_tags(self, tags) ->list:
+        
+        if len(tags)>1 and "dialogue" in tags:
+            tags.remove("dialogue")
+        
+        #Enrich
+        tagslist = []
+        main_tag = True
+        for tag in tags:
+            response = self.tag_2_dict(tag)
+            if main_tag and response["main"]:
+                tagslist.insert(0, response)
+                main_tag = False
+            else:
+                tagslist.append(response)
+
+        return tagslist
+
+
+    def get_github_url(self, url):
+        if not url:
+            return ""
+        if not url.endswith('/'):
+            return ""
+        parts = url.strip('/').split('/')
+        if len(parts) != 4:
+            return ""
+        # Si format AAAA/MM/JJ/..., on enlève le "JJ"
+        if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
+            parts.pop(2)
+        parts[-1] += '.md'
+        return self.config['github_raw'] + '/'.join(parts)
+
+    def date_html(self, pub_date) ->str:
+        current_time = tools.timestamp_to_paris_datetime(pub_date)
+        date_iso = current_time.strftime('%Y-%m-%dT%H:%M:00')
+        time_published = current_time.strftime('%H:%M')
+        year_link = current_time.strftime('/%Y/')
+        day_month = current_time.strftime('%d %B')
+        
+        msg = f'<a href="{year_link}"><time datetime="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</time></a>'
+
+        return msg
+
+    def is_valid_year_month_path(self, path):
+        # Utilisation d'une expression régulière pour tester le format
+        pattern = r'^\d{4}/\d{1,2}/'
+        return re.match(pattern, path) is not None
+
+
+    def relative_to_absolute(self, path_md, relative_url, pub_date, post_type):
+        
+        directory_path = os.path.dirname(path_md)
+        full_path = os.path.normpath(os.path.join(directory_path, relative_url.replace(".md","")))
+        absolute_path = os.path.abspath(full_path)
+        url = os.path.relpath(absolute_path, self.parent_dir).strip("/")
+
+        if self.is_valid_year_month_path(url):
+            #C'est un post, faut ajouter le jour
+            found_post = self.get_post_by_path(url+".md")
+            if found_post:
+                url = self.post_url( found_post['path_md'], pub_date, post_type )
+            elif "#com" in url:
+                #Non géré
+                pass
+            else:
+                pass
+                # print("Unknown url", url, "dans:", post['path_md'])
+                # exit()
+        return "/" + url
+    
+
+    def link_manager(self, html, path_md, pub_date, post_type) ->str:
+
+        soup = BeautifulSoup(html, 'html.parser')
+        links = soup.find_all('a')
+
+        # Canonical domaine (ex: https://tcrouzet.com → tcrouzet.com)
+        site_domain = self.config["canonical_domain"]
+        site_netloc = urlparse(site_domain if site_domain.startswith("http") else f"https://{site_domain}").netloc
+
+        for link in links:
+            href = link.get('href', '')
+            if not href:
+                continue
+
+            if href.endswith(".md") and not href.startswith("http"):
+                #internal
+                link['href'] = self.relative_to_absolute(path_md, href, pub_date, post_type)
+                continue
+
+            # Liens externes: ajouter rel="noopener noreferrer"
+            # on ignore ancres, mailto, tel, etc.
+            if href.startswith(("http://", "https://")):
+                netloc = urlparse(href).netloc
+                if netloc and netloc != site_netloc:
+                    existing_rel = link.get("rel", [])
+                    # BeautifulSoup normalise rel en liste si présent
+                    if isinstance(existing_rel, str):
+                        existing_rel = existing_rel.split()
+                    # fusion sans doublons
+                    rel_tokens = set(existing_rel) | {"noopener", "noreferrer"}
+                    link['rel'] = " ".join(sorted(rel_tokens))
+
+        return str(soup)
+
+    def post_url(self, path_md, pub_date, post_type):
+
+        base = os.path.basename(path_md)
+        file_name_without_extension = os.path.splitext(base)[0]
+        if post_type == 0:
+
+            #POST
+            dt = tools.timestamp_to_paris_datetime(pub_date)
+            path = dt.strftime("/%Y/%m/%d")
+            url = "/" + "/".join([path.strip("/"), file_name_without_extension]) + "/"
+        
+        else:
+
+            #PAGES
+            url = "/" + os.path.dirname(path_md) + "/" + file_name_without_extension + "/"
+
+        return url
+
+
+    def timestamp_to_date(self, timestamp):
+        date_time = datetime.datetime.fromtimestamp(timestamp)
+        readable_date = date_time.strftime("%Y-%m-%d")
+        return readable_date
+
+
+    def markdown_extract(self, path, path_md, pub_update):
+        """
+        Extrait toutes les métadonnées et le contenu d'un fichier markdown en un seul passage.
+        Retourne: dict avec pub_date, pub_update, title, tags, thumb_path, thumb_legend, 
+                content, description, frontmatter
+        """
+        pub_date = 0        
+        title = None
+        tags = []
+        tagslist = []
+        thumb_path = None
+        thumb_legend = None
+        frontmatter = None
+        frontmatter_lines = []
+        content = None
+        content_lines = []
+
+        if path_md.startswith('books'):
+            post_type = 2
+        elif any(path_md.startswith(prefix) for prefix in self.config['pages']):
+            post_type = 1
+        else:
+            post_type = 0
+        
+        try:
+            with open(path, 'r', encoding='utf-8') as file:
+                lines = file.readlines()
+            
+            in_frontmatter = False
+            title_found = False
+            first_image_removed = False
+            
+            i = 0
+            while i < len(lines):
+                line = lines[i]
+                
+                # Détection frontmatter (première ligne)
+                if i == 0 and line.strip().startswith('---'):
+                    in_frontmatter = True
+                    i += 1
+                    continue
+                
+                # Dans le frontmatter
+                if in_frontmatter:
+                    if line.strip().startswith('---'):
+                        in_frontmatter = False
+                        frontmatter = ft.Frontmatter(frontmatter_lines)()
+                    else:
+                        frontmatter_lines.append(line)
+                    i += 1
+                    continue
+                
+                # Extraction du titre
+                if line.startswith('# ') and not title_found:
+                    title = line.strip('# ').strip()
+                    title_found = True
+                    i += 1
+                    # Ignorer les lignes vides après le titre
+                    while i < len(lines) and lines[i].strip() == '':
+                        i += 1
+                    continue
+                
+                # Extraction des tags (ligne avec plusieurs #tags)
+                if line.startswith('#') and ' ' in line:
+                    potential_tags = line.strip().split()
+                    if all(tag.startswith('#') for tag in potential_tags):
+                        tags = [tag[1:] for tag in potential_tags if tag.startswith('#')]
+                        tags, pub_date = self.filter_tags(tags)
+                        # Ne pas ajouter cette ligne au contenu
+                        i += 1
+                        continue
+                
+                # Extraction du premier thumb (et suppression du contenu)
+                if '![' in line and thumb_path is None:
+                    match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
+                    if match:
+                        thumb_legend = match.group(1)
+                        thumb_path = match.group(2)
+                        # Supprimer la première image du contenu si juste après le titre
+                        if not first_image_removed and title_found:
+                            first_image_removed = True
+                            i += 1
+                            # Ignorer les lignes vides après l'image
+                            while i < len(lines) and lines[i].strip() == '':
+                                i += 1
+                            continue
+                
+                # Ajouter la ligne au contenu
+                content_lines.append(line)
+                i += 1
+            
+            # Supprimer la ligne de tags à la fin si elle existe
+            # if content_lines and content_lines[-1].strip():
+            #     last_line_parts = content_lines[-1].strip().split()
+            #     if all(part.startswith('#') for part in last_line_parts):
+            #         content_lines.pop()
+            
+            # Construire le contenu final puis convertir en HTML
+            content = ''.join(content_lines).strip()
+            content = markdown.markdown(
+                content, 
+                extensions=['fenced_code'],
+                extension_configs={
+                    'fenced_code': {
+                        'lang_prefix': ''  # Supprime le préfixe de langage
+                    }
+                }
+            )
+
+            content = self.link_manager(content, path_md, pub_date, post_type)
+
+            # Extraire la description (premier paragraphe non vide)
+            description = ""
+            for line in content_lines:
+                if line.strip():
+                    description = self.resume_paragraph(line.strip())
+                    break
+    
+            # Valeurs par défaut
+            if thumb_path and not thumb_legend:
+                thumb_legend = title
+            
+            pub_date_str = tools.format_timestamp_to_paris_time(pub_date)
+            pub_update_str = tools.format_timestamp_to_paris_time(pub_update)
+
+            url = self.post_url(path_md, pub_date, post_type)
+
+            if tags:
+                tagslist = self.extract_tags(tags)
+
+            github = self.get_github_url(url)
+
+            datelink = self.date_html(pub_date)
+
+            r = {
+                "source_path": path,
+                "pub_date": pub_date,
+                "pub_update": pub_update,
+                "title": title,
+                "tags": tags,
+                "thumb_path": thumb_path,
+                "thumb_legend": thumb_legend,
+                "content": content,
+                "description": description,
+                "frontmatter": frontmatter,
+                "type": post_type,
+                "url": url,
+                "pub_date_str": pub_date_str,
+                "pub_update_str": pub_update_str,
+                "path_md": path_md,
+                "tagslist": tagslist,
+                "github": github,
+                "datelink": datelink
+            }
+            # print(r)
+            return r
+            
+        except Exception as e:
+            print(f"Erreur lors de l'extraction de {path}: {e}")
+            exit()
+
+    def count_md_files(self, root_dir):
+        """Compte rapidement le nombre de fichiers .md dans l'arborescence"""
+        count = 0
+        for root, dirs, files in os.walk(root_dir):
+            # Appliquer les mêmes filtres que db_builder
+            dirs[:] = [d for d in dirs if not d.startswith('_i') and d not in self.config['no_export']]
+            
+            count += sum(1 for file in files if file.endswith('.md'))
+        
+        return count
+
+    def db_builder(self, root_dir, reset=False):
+
+        self.create_tables(reset)
+
+        total = self.count_md_files(root_dir)
+        pbar = logs.DualOutput.dual_tqdm(total=total, desc='Markdonw:')
+
+        for root, dirs, files in os.walk(root_dir):
+            # Exlude images dirs
+            dirs[:] = [d for d in dirs if not d.startswith('_i') and d not in self.config['no_export']]
+
+            for file in files:
+                if file.endswith('.md'):
+                    md_source_path = os.path.join(root, file)
+                    path_md = os.path.join(root.replace(root_dir,"").strip("/"), file)
+                    pub_update = round(os.path.getmtime(md_source_path))
+
+                    existiting_post = self.existing_post(path_md)
+                    if existiting_post and pub_update <= existiting_post['pub_update']:
+                        continue
+
+                    #print(root,file,root.replace(root_dir,""))
+                    post = self.markdown_extract(md_source_path, path_md, pub_update)
+                    if post['pub_date'] == 0:
+                        # print("post not ready",post['title'],path_md)
+                        continue
+
+                    status = self.insert_post(post, existiting_post)
+                    self.new_posts += status['new']
+                    self.updated_posts += status['update']
+
+                    if status['id'] and "tags" in post:
+                        status = self.insert_tag(status['id'], post['tagslist'], post['pub_update'])
+                        self.new_tags += status["new"]
+                        self.updated_tags += status["updated"]
+
+                pbar.update(1)
+
+        pbar.close()
+
+        print(self.new_posts, "new posts")
+        print(self.updated_posts, "updated posts")
+        print(self.new_tags, "new tags")
+        print(self.updated_tags, "updated tags")
+

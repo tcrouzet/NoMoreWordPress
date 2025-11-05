@@ -30,7 +30,7 @@ class MicroCodes:
         for row in rows:
             # print(dict(row))
             if row and row["type"]==2:
-                post = web.supercharge_post(None, row, 0)
+                post = web.supercharge_post(None, row)
                 pages.append(post)
 
         if not pages:

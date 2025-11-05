@@ -231,7 +231,6 @@ class Layout:
         for template in self.templates:
             
             supercharged = self.web.supercharge_post(template, post)
-            supercharged['navigation'] = json.loads(supercharged['navigation'])
 
             header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config)
@@ -246,46 +245,28 @@ class Layout:
 
     def tag_gen_serie(self, series, tags):
         """Génère une page listant tous les tags avec leur dernier post"""
-        
-        # Filtrer les tags indésirables
-        exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
-        filtered_tags = [tag for tag in tags if tag['slug'] not in exclude_slugs]
-        
-        # Pour chaque tag, récupérer seulement le dernier post (le plus récent)
-        tags_data = []
-        for tag in filtered_tags:
+                
+        # tags = self.web.db.row_to_dict(tags)
+        if not tags:
+            print(series)
+            exit("tag_gen_serie error")
 
-            # Le premier post_id est le plus récent (antichrono)
-            if tag['post_ids']:
-                latest_post_id = tag['post_ids'][0]
-            else:
-                continue
-            
-            if latest_post_id:
-                # Charger le post complet
-                post = self.db.get_post_by_id(latest_post_id)
-
-                if post:
-                    post['tag'] = tag
-                    tags_data.append(post)
-
-        datas = {}
-        # Générer la page pour chaque template
         for template in self.templates:
 
-            datas[template['name']] = []
-            for post in tags_data:
-                supercharged = self.web.supercharge_post(template, post)
-                datas[template['name']].append(supercharged)
-
+            tags_super = self.web.supercharge_tags(template, tags)
+            # tags_super = self.web.db.row_to_dict(tags_super)
+            if len(tags_super)==0:
+                exit("Stage pas de tags_super")
+            series = self.web.supercharge_tag(template, series, tags_super[0])
             
             # Générer le HTML
-            header_html = self.get_html(template["header"], post=datas, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=datas, blog=self.config)
-            serie_html = self.get_html(template["serie_list"], post=datas, blog=self.config)
+            header_html = self.get_html(template["header"], post=series, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=series, blog=self.config)
+            tags_list_html = self.get_html(template["tags_list"], post=series, tags=tags_super, blog=self.config)
+            tag_html = self.get_html(template["tag"], post=series, tags={"list": tags_list_html})
             
             # Sauvegarder
-            self.save(template, header_html + serie_html + footer_html, "series", "index.html")
+            self.save(template, header_html + tag_html + footer_html, series['tag_url'], "index.html")
 
 
     def tag_gen(self, tags):
@@ -334,16 +315,18 @@ class Layout:
         for template in self.templates:
 
             home = {}
-            home['digressions'] = self.web.supercharge_post(template, last_post, 1)
-            home['carnet'] = self.web.supercharge_post(template, last_carnet, 1)
-            home['bike'] = self.web.supercharge_post(template, last_bike, 1)
-            home['digest'] = self.web.supercharge_post(template, last_digest, 1)
+            home['digressions'] = self.web.supercharge_post(template, last_post)
+            # home['carnet'] = self.web.db.row_to_dict(self.web.supercharge_post(template, last_carnet))
+            home['carnet'] = last_carnet
+            home['bike'] = self.web.supercharge_post(template, last_bike)
+            home['digest'] = self.web.supercharge_post(template, last_digest)
             
             home['canonical'] = template['domain']
             home['description'] = self.config['description']
             home['title'] = self.config['home_title']
             home['pub_update_str'] = home['digressions']['pub_update_str']
             home['pub_update'] = home['digressions']['pub_update']
+
             home['thumb'] = home['digressions']['thumb']
             home['thumb_path'] = home['digressions']['thumb_path']
             home['thumb_legend'] = home['digressions']['thumb_legend']
@@ -370,7 +353,7 @@ class Layout:
         self.special_pages(post, "", "404.html")
 
     def archives_gen(self, archives):
-        post = {"thumb": None, "title": "Archives", "html": archives, "frontmatter": None, "type":1}
+        post = {"thumb": None, "title": "Archives", "content": archives, "frontmatter": None, "type":1}
         self.special_pages(post, "archives/")
 
     def get_html(self, template_obj, post=None, blog=None, **extra_ctx):
@@ -406,7 +389,7 @@ class Layout:
             self.normal_pages(post, template, "search/")
 
 
-    def save(self, template, html, path, file_name="index.html", context=None):
+    def save(self, template, html, dir_path, file_name="index.html", context=None):
 
         # Microcodes avant minification
         html = self._apply_microcodes(template, html, context)
@@ -414,7 +397,7 @@ class Layout:
         if self.config["version"]>0:
             html = htmlmin.minify(html, remove_empty_space=True)
 
-        dir = os.path.join( template['export'], path)
+        dir = os.path.join( template['export'], dir_path.lstrip("/"))
         os.makedirs(dir, exist_ok=True)
 
         file_path = os.path.join( dir, file_name)

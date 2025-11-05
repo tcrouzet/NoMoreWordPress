@@ -3,11 +3,9 @@ from datetime import datetime, timezone
 import time
 import locale
 from PIL import Image
-import markdown
 import shutil
 from bs4 import BeautifulSoup
 import json
-import yaml
 from urllib.parse import urlparse
 import tools.frontmatter as ft
 import tools.tools as tools
@@ -22,53 +20,53 @@ class Web:
         self.parent_dir = os.path.dirname(script_dir) + os.sep
 
 
-    def url(self, post):
+    # def url(self, post):
 
-        if not post:
-            return None
-        post=dict(post)
-        if 'path_md' not in post:
-            print(post)
-            exit("Bad post")
+    #     if not post:
+    #         return None
+    #     post=dict(post)
+    #     if 'path_md' not in post:
+    #         print(post)
+    #         exit("Bad post")
                 
-        base = os.path.basename(post['path_md'])        
-        file_name_without_extension = os.path.splitext(base)[0]
-        if post['type'] == 0:
+    #     base = os.path.basename(post['path_md'])        
+    #     file_name_without_extension = os.path.splitext(base)[0]
+    #     if post['type'] == 0:
 
-            #POST
-            dt = tools.timestamp_to_paris_datetime(post["pub_date"])
-            path = dt.strftime("/%Y/%m/%d")
-            url = "/".join([path.strip("/"), file_name_without_extension]) + "/"
+    #         #POST
+    #         dt = tools.timestamp_to_paris_datetime(post["pub_date"])
+    #         path = dt.strftime("/%Y/%m/%d")
+    #         url = "/".join([path.strip("/"), file_name_without_extension]) + "/"
         
-        elif post['type'] == 1 or post['type'] == 2:
+    #     elif post['type'] == 1 or post['type'] == 2:
 
-            #PAGES
-            url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + "/"
-            #url = file_name_without_extension + "/"
-            # print(url)
-            # print(post)
-            # exit()
+    #         #PAGES
+    #         url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + "/"
+    #         #url = file_name_without_extension + "/"
+    #         # print(url)
+    #         # print(post)
+    #         # exit()
 
-        elif post['type'] == 5:
+    #     elif post['type'] == 5:
 
-            #TAGS
-            url = None
-            if "main" in post:
-                main_url = post['main'].get('url',None)
-                if main_url:
-                    if main_url.startswith("/"):
-                        url = main_url.strip("/")
-                    else:
-                        url = "tag/"+main_url
-            if not url:
-                url = "tag/" + post['path_md']
+    #         #TAGS
+    #         url = None
+    #         if "main" in post:
+    #             main_url = post['main'].get('url',None)
+    #             if main_url:
+    #                 if main_url.startswith("/"):
+    #                     url = main_url.strip("/")
+    #                 else:
+    #                     url = "tag/"+main_url
+    #         if not url:
+    #             url = "tag/" + post['path_md']
 
 
-            #url = "tag/" + post['main'].get('url',post['path_md'])
+    #         #url = "tag/" + post['main'].get('url',post['path_md'])
 
-        # print(url)
-        # exit()
-        return url
+    #     # print(url)
+    #     # exit()
+    #     return url
 
 
     def comment_url(self, post):
@@ -126,8 +124,8 @@ class Web:
         try:
             post=dict(post)
             if not media_src_file:
-                print(post)
-                exit("No media_src")
+                # print(post)
+                # exit("No media_src")
                 return None
             base_dir_name =  post['path_md']
             dirname = os.path.dirname(base_dir_name)
@@ -361,39 +359,6 @@ class Web:
         return thumb
 
 
-    def striptags(self, html_text):
-        return re.sub(r'<[^>]+>', '', html_text)
-    
-    def stripmd(self, markdown_text):
-        # Remove images
-        markdown_text = re.sub(r'!\[.*?\]\(.*?\)', '', markdown_text)
-        # Remove links but keep the text
-        markdown_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', markdown_text)
-        markdown_text = markdown_text.replace("*","")
-        return markdown_text
-
-    def resume_paragraph(self, paragraph):
-        # Longueur maximale du résumé
-        max_length = 160
-
-        c_paragraph = self.striptags(paragraph)
-        c_paragraph = self.stripmd(c_paragraph)
-
-        # Si le paragraphe est déjà assez court, le retourner entier
-        if len(c_paragraph) <= max_length:
-            return c_paragraph
-        
-        # Couper le paragraphe aux 160 premiers caractères pour trouver un point
-        end_index = c_paragraph.rfind('.', 0, max_length)
-        
-        # Si un point est trouvé dans la limite, retourner jusqu'au point inclus
-        if end_index != -1:
-            return c_paragraph[:end_index + 1]
-        
-        # Si aucun point n'est trouvé, couper à 157 caractères et ajouter "..."
-        return c_paragraph[:159] + "…"
-
-
     def source_post_path(self, post):
         if not post:
             return None
@@ -406,67 +371,10 @@ class Web:
         return path
     
 
-    def get_post_content(self, path):
-        try:
-            frontmatter_start = False
-            frontmatter_lines = []
-            with open(path, "r", encoding="utf-8") as file:
-                lines = file.readlines()
-
-            for i, line in enumerate(lines):
-
-                if i==0 and line.strip().startswith('---'):
-                    #print("FrontStart")
-                    frontmatter_start = True
-                    continue
-
-                if frontmatter_start:
-                    if line.strip().startswith('---'):
-                        frontmatter_start = False
-                        frontmatter = yaml.safe_load('\n'.join(frontmatter_lines))
-                    else:
-                        frontmatter_lines.append(line)
-                    continue
-
-                if line.strip().startswith('#'):
-                    # Supprimer tout jusqu'à la ligne après le titre trouvé
-                    lines = lines[i + 1:]
-
-                    # Ignorer les lignes vides après le titre
-                    while lines and lines[0].strip() == '':
-                        lines.pop(0)
-
-                    # Vérifier si la première ligne non vide est une balise d'image et la supprimer
-                    if lines and lines[0].strip().startswith('!['):
-                        lines.pop(0)
-
-                    # Ignorer les lignes vides après le titre
-                    while lines and lines[0].strip() == '':
-                        lines.pop(0)
-
-                    break
-
-            # Supprimer la ligne de tags à la fin si elle existe
-            if lines and all(part.startswith('#') for part in lines[-1].strip().split()):
-                lines.pop()            
-
-            md = ''.join(lines)
-            if len(frontmatter_lines) == 0:
-                frontmatter = None
-
-            description = self.resume_paragraph(lines[0].strip())
-            
-            return {"content": md.strip(), "description":description, "frontmatter": frontmatter}
-
-        except Exception as e:
-            #print(e)
-            return {"content": "", "description":"", "frontmatter": None}
-
-
-    def media_production(self, templates, html, post) ->int:
+    def media_production(self, templates, post) ->int:
         "Genère toutes les images par template"
 
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(post['content'], 'html.parser')
         ps = soup.find_all('p')
         
         index = 0
@@ -592,124 +500,23 @@ class Web:
         return str(soup)
 
 
-    def is_valid_year_month_path(self, path):
-        # Utilisation d'une expression régulière pour tester le format
-        pattern = r'^\d{4}/\d{1,2}/'
-        return re.match(pattern, path) is not None
+    def navigation(self, post):
 
-
-    def relative_to_absolute(self, post, relative_url):
-        
-        directory_path = os.path.dirname(post['path_md'])
-        full_path = os.path.normpath(os.path.join(directory_path, relative_url.replace(".md","")))
-        absolute_path = os.path.abspath(full_path)
-        url = os.path.relpath(absolute_path, self.parent_dir).strip("/")
-
-        if self.is_valid_year_month_path(url):
-            #C'est un post, faut ajouter le jour
-            href_post = self.db.get_post_by_path(url+".md")
-            if href_post:
-                url = self.url( href_post )
-            elif "#com" in url:
-                #Non géré
-                pass
-            else:
-                pass
-                # print("Unknown url", url, "dans:", post['path_md'])
-                # exit()
-        return "/" + url
-    
-
-    def link_manager(self, html, post) ->str:
-
-        soup = BeautifulSoup(html, 'html.parser')
-        links = soup.find_all('a')
-
-        # Canonical domaine (ex: https://tcrouzet.com → tcrouzet.com)
-        site_domain = self.config["canonical_domain"]
-        site_netloc = urlparse(site_domain if site_domain.startswith("http") else f"https://{site_domain}").netloc
-
-        for link in links:
-            href = link.get('href', '')
-            if not href:
-                continue
-
-            if href.endswith(".md") and not href.startswith("http"):
-                #internal
-                link['href'] = self.relative_to_absolute(post, href)
-                continue
-
-            # Liens externes: ajouter rel="noopener noreferrer"
-            # on ignore ancres, mailto, tel, etc.
-            if href.startswith(("http://", "https://")):
-                netloc = urlparse(href).netloc
-                if netloc and netloc != site_netloc:
-                    existing_rel = link.get("rel", [])
-                    # BeautifulSoup normalise rel en liste si présent
-                    if isinstance(existing_rel, str):
-                        existing_rel = existing_rel.split()
-                    # fusion sans doublons
-                    rel_tokens = set(existing_rel) | {"noopener", "noreferrer"}
-                    link['rel'] = " ".join(sorted(rel_tokens))
-
-        return str(soup)
-
-    
-    def extract_tags(self, post) ->list:
-        
-        if 'tags' in post:
-            tags = json.loads(post['tags'])
-        else:
-            return None
-        if len(tags)>1 and "dialogue" in tags:
-            tags.remove("dialogue")
-        
-        #Enrich
-        tagslist = []
-        main_tag = True
-        for tag in tags:
-            if tag in self.config['tags']:
-                response = {'slug': tag, "title":self.config['tags'][tag]['title']}
-                turl = self.config['tags'][tag].get("url",None)
-                if turl:
-                    response['url'] = turl
-                else:
-                    response['url'] = tag
-                if main_tag:
-                    tagslist.insert(0, response)
-                    main_tag = False
-                else:
-                    tagslist.append(response)        
-            else:
-                response = {'slug': tag, "title": self.title_formater(tag), "url": tag}
-                tagslist.append(response)
-
-        return tagslist
-
-    
-    def title_formater(self, title):
-        return title.capitalize().replace("-"," ").replace("_"," ")
-
-    def date_html(self,post) ->str:
-        current_time = tools.timestamp_to_paris_datetime(post["pub_date"])
-        date_iso = current_time.strftime('%Y-%m-%dT%H:%M:00')
-        time_published = current_time.strftime('%H:%M')
-        year_link = current_time.strftime('/%Y/')
-        day_month = current_time.strftime('%d %B')
-        
-        msg = f'<a href="{year_link}"><time datetime="{date_iso}" title="Publié à {time_published}">{day_month} {current_time.year}</time></a>'
-
-        return msg
-
-
-    def navigation(self, post, tagslist):
+        if not post:
+            raise("Impossible to supercharge - empty post")
 
         try:
 
             post=dict(post)
-            main_tag = tagslist[0]
+
+            tagslist = json.loads(post['tagslist'])
+
+            if not 'tagslist':
+                return None
             
-            tag_posts = self.db.get_posts_by_tag(main_tag['slug'])
+            main_tag = tagslist[0]
+
+            tag_posts = self.db.get_posts_by_tag(main_tag['tag_slug'])
             url_prev_post = ""
             url_next_post = ""
             total_posts = len(tag_posts)
@@ -717,8 +524,10 @@ class Web:
             # print(total_posts, main_tag['slug'], tagslist)
 
             for i, tag_post in enumerate(tag_posts):
+                # print("OK")
+                # print(dict(tag_post))
                 if post['id'] == tag_post['id']:
-                    print(i, post['id'], tag_post['id'], total_posts)
+                    # print(i, post['id'], tag_post['id'], total_posts)
                     if i-1>=0:
                         # print("next1")
                         url_next_post =  "/" + tag_posts[i-1]['url']
@@ -733,31 +542,37 @@ class Web:
                         url_prev_post =  "/" + tag_posts[i+1]['url']
                     break
 
-            return {"total_posts": total_posts,
+            r = {"total_posts": total_posts,
                     "prev_url": url_prev_post,
                     "next_url": url_next_post,
                     "order": total_posts-i,
-                    "slug": main_tag['slug'],
-                    "title": main_tag['title']
+                    "slug": main_tag['tag_slug'],
+                    "title": main_tag['tag_title']
                 }
+            r_post = {}
+            r_post['navigation'] = r
+
+            return r_post
+            
         except Exception as e:
             print(f"Navigation {e}")
+            exit()
 
 
-    def tag_2_post(self, post):
-        post = dict(post)
-        post['main'] = self.extract_tags( post['tag'] )[0]
-        post['pub_date'] = time.time()
-        post['pub_update'] = post['pub_date']
-        post['title'] = self.title_formater(post['main']['title'])
-        if post['main']['url']:
-            if post['main']['url'].startswith("/"):
-                post['url'] = post['main']['url'].strip("/")
-            else:
-                post['url'] = "tag/"+post['main']['url']
-        else:
-            post['url'] = "tag/"+post['tag']
-        return post
+    # def tag_2_post(self, post):
+    #     post = dict(post)
+    #     post['main'] = self.extract_tags( post['tag'] )[0]
+    #     post['pub_date'] = time.time()
+    #     post['pub_update'] = post['pub_date']
+    #     post['title'] = self.title_formater(post['main']['title'])
+    #     if post['main']['url']:
+    #         if post['main']['url'].startswith("/"):
+    #             post['url'] = post['main']['url'].strip("/")
+    #         else:
+    #             post['url'] = "tag/"+post['main']['url']
+    #     else:
+    #         post['url'] = "tag/"+post['tag']
+    #     return post
     
     def post_comment_total(self, post):
         comment_url = os.path.join(self.config['comments_root'],self.comment_url(post))
@@ -774,201 +589,97 @@ class Web:
         return count    
     
 
-    def get_github_url(self, url):
-        if not url:
-            return ""
-        if not url.endswith('/'):
-            return ""
-        parts = url.strip('/').split('/')
-        if len(parts) != 4:
-            return ""
-        # Si format AAAA/MM/JJ/..., on enlève le "JJ"
-        if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
-            parts.pop(2)
-        parts[-1] += '.md'
-        return self.config['github_raw'] + '/'.join(parts)
-
-
     def supercharge_post(self, template, post):
         """Get all post datas (text,tags, medias…)"""
+
+        if template == None:
+            return post
 
         try:
             if isinstance(post, self.db.get_row_factory()):
                 post = dict(post)
-            else:
-                exit("Bug supercharge")
-            # elif isinstance(post, list):
-            #     post = dict(post[0])
 
             post['canonical'] = template['domain'] + post['url']
-            post['content'] = self.image_manager(template, post)
-            if post['thumb_path']:
+            
+            if "content" in post:
+                post['content'] = self.image_manager(template, post)
+
+            if 'thumb_path' in post and post['thumb_path']:
                 post['thumb'] = self.db.get_image_cache(template['name'], self.media_source_path( post, post['thumb_path'] ) )
             else:
                 post['thumb'] =  None
 
+            if "navigation" in post and isinstance(post['navigation'], str):
+                post['navigation'] = json.loads(post['navigation'])
+            else:
+                post['navigation'] = None
+
             return post
         
         except Exception as e:
-            print(template)
-            print(post["url"])
-            print(f"supercharge {e}")
+            print(post)
+            print(f"supercharge_post {e}")
+            return None
 
 
-    def supercharge_post_non_template(self, post):
-
-        if not post:
-            raise("Impossible to supercharge - empty post")
-
-        r_post = {}
-        source_path = self.source_post_path(post)
-
-        r_post['url'] = self.url(post)
-
-        content = self.get_post_content(source_path)
-
-        if post['type']==2 and 'frontmatter' in content:
-            frontmatter = ft.Frontmatter(content['frontmatter'])
-            r_post['frontmatter'] = frontmatter.supercharge()
-        else:
-            r_post['frontmatter'] = None
-
-        if 'description' in content:
-            r_post['description'] = content['description']
-        else:
-            r_post['description'] = ""
-
-        r_post['pub_date_str'] = tools.format_timestamp_to_paris_time(post['pub_date'])
-        r_post['pub_update_str'] = tools.format_timestamp_to_paris_time(post['pub_update'])
-
-        r_post['github'] = self.get_github_url(r_post['url'])
-
-        r_post['tagslist'] = self.extract_tags(post)
-
-        r_post['datelink'] = self.date_html(post)
-
-        r_post['navigation'] = self.navigation(post, r_post['tagslist'])
-
-        r_post['content'] = markdown.markdown(
-            content['content'], 
-            extensions=['fenced_code'],
-            extension_configs={
-                'fenced_code': {
-                    'lang_prefix': ''  # Supprime le préfixe de langage
-                }
-            }
-        )
-
-        r_post['content'] = self.link_manager(r_post['content'], post)
-
-        return r_post 
-
-
-    def get_enriched_tags(self, tags_data, exclude_tags=None):
-        """Retourne les tags enrichis avec slug, title, url depuis config"""
-        
+    def supercharge_tags(self, template, tags):
         enriched_tags = []
-        for row in tags_data:
-            tag_slug = row['tag']
-            
-            # Enrichir depuis config['tags']
-            tag_info = self.config['tags'].get(tag_slug, {})
-            
-            enriched_tag = {
-                'slug': tag_slug,
-                'title': tag_info.get('title', tag_slug.replace('-', ' ').capitalize()),
-                'post_count': row['post_count'],
-                'post_ids': [int(id) for id in row['post_ids'].split(',')],  # Convertir en liste d'int
-                'pub_update': row['most_recent_date']
-            }
+        for tag in tags:
+            tag_dict = dict(tag)  # Convertir Row en dict
+            if tag_dict['thumb_path']:
+                media_path = self.media_source_path(tag_dict, tag_dict['thumb_path'])
+                tag_dict['thumb'] = self.db.get_image_cache(template['name'], media_path)
+            else:
+                tag_dict['thumb'] = None
+            if tag_dict['navigation']:
+                tag_dict['navigation'] = json.loads(tag_dict['navigation'])
+            if "description" not in  tag_dict:
+                tag_dict["description"] = tag_dict['title']
+            enriched_tags.append(tag_dict)
 
-            enriched_tags.append(enriched_tag)
-        
         return enriched_tags
     
-    
+    def supercharge_tag(self, template, tag, first_post):
+        # First_post déjà superchargé
+        # print(first_post)
+        # exit()
+        if  "tag_url" not in  tag:
+            print(tag)
+            exit("tag_url in tag")
+            # tag = self.db.row_to_dict(tag)
 
-    def supercharge_tag(self, template, tag, posts=None):
-        """Get all tag datas"""
 
-        if isinstance(tag, self.db.get_row_factory()):
-            tag = dict(tag)
-        elif isinstance(tag, list):
-            print("Tag list")
-            exit()
-
-        # print(tag)
-
-        tag['type'] = 5
-        tag['main'] = self.extract_tags(tag['tag'])[0]
-        # print("Supercharge path_md", tag['post_md'], tag['thumb_path'])
-        tag['path_md'] = tag['tag'] + "/"
-        tag['url'] = self.url(tag)
-        tag['title'] = tag['main']['title']
-        tag['pub_date'] = tag['pub_update']
-
-        tag['description'] = tag['title']
-        tag['canonical'] = tag['url']
+        tag['canonical'] = template['domain'] + tag['tag_url'].lstrip("/")
+        tag['pub_date'] = first_post['pub_date']
+        tag['pub_update'] = first_post['pub_update']
         tag['pub_date_str'] = tools.format_timestamp_to_paris_time(tag['pub_date'])
         tag['pub_update_str'] = tools.format_timestamp_to_paris_time(tag['pub_update'])
-        # print("--TAG--", tag['post_md'], tag['thumb_path'])
-        # print("after")
-        if tag['thumb']:
-            tag['thumb']["alt"] = tag['thumb_legend']
-            # tag['thumb']['tag'] = self.img_tag(tag['thumb'])
 
-        menu = []
-        if "title_date" in tag:
-            menu.append({"title": tag['title_date'], "url": "/tag/"+tag['tag']})
-        else:
-            menu.append({"title": tag['title'], "url": "/tag/"+tag['tag']})
-        if tag['tag'] != "blog":
-            menu.append({"title": "Digressions", "url": "/blog/"})
-        if tag['tag'] != "series":
-            menu.append({"title": "…", "url": "/series/"})
-        index = len(menu)
-        if tag['tag'] != "carnets" and index<4:
-            menu.insert(index-1, {"title": "Carnets", "url": "/tag/carnet-de-route/"})
-        index = len(menu)
-        if tag['tag'] != "borntobike" and index<4:
-            menu.insert(index-1, {"title": "Vélo", "url": "/tag/borntobike/"})
-        tag['menu'] = menu
+        tag["thumb_path"] = first_post['thumb_path'],
+        tag["thumb_legend"] = first_post['thumb_legend'],
 
-        # print(tag['tag'])
-        # print(list(posts))
-        if not posts:
-            posts = self.db.get_posts_by_tag(tag['tag'])
-            if not posts:
-                exit("BUG tag")
+        media_path = self.media_source_path(first_post, first_post['thumb_path'])
+        tag['thumb'] = self.db.get_image_cache(template['name'], media_path)
 
-        
-        total_posts = len(posts)
-        numbered_posts = []
-        for index, post in enumerate(posts, start=1):
+        tag['menu'] = self.tag_menu(tag)
 
-            post=dict(post)
-
-            if post["type"]==5:
-                # print("Type 5")
-                post = self.tag_2_post(post)
-                post['path_md'] = tag['post_md']
-
-                post_with_order = self.supercharge_post(template, post, 1)
-                post_with_order['order']=post['count']
-
-            else:
-                # print("Autre type")
-                # print(post)
-                post_with_order = self.supercharge_post(template, post, 1)
-                if not post_with_order:
-                    total_posts -=1
-                    continue
-                else:
-                    post_with_order['order']=total_posts-index+1
- 
-            numbered_posts.append(post_with_order)
-
-        tag['posts'] = numbered_posts
-        # print(f"Len posts {len(numbered_posts)}")
-      
         return tag
+
+
+    def tag_menu(self, tag):
+        menu = []
+        if "tag_title_date" in tag:
+            menu.append({"tag_title": tag['tag_title_date'], "tag_url": "/tag/"+tag['tag_slug']})
+        else:
+            menu.append({"tag_title": tag['tag_title'], "tag_url": "/tag/"+tag['tag_slug']})
+        if tag['tag_slug'] != "blog":
+            menu.append({"tag_title": "Digressions", "tag_url": "/blog/"})
+        if tag['tag_slug'] != "series":
+            menu.append({"tag_title": "…", "tag_url": "/series/"})
+        index = len(menu)
+        if tag['tag_slug'] != "carnets" and index<4:
+            menu.insert(index-1, {"tag_title": "Carnets", "tag_url": "/tag/carnet-de-route/"})
+        index = len(menu)
+        if tag['tag_slug'] != "borntobike" and index<4:
+            menu.insert(index-1, {"tag_title": "Vélo", "tag_url": "/tag/borntobike/"})
+        return menu

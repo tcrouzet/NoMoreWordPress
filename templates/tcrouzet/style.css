@@ -149,7 +149,7 @@ article header figure {
 article header figure img {
   width:100%;
   height:70vh;
-  object-position: cover;
+  object-fit: cover;
 }
 .poster-book{object-fit: contain}
 
