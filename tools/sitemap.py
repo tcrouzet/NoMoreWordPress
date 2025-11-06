@@ -87,34 +87,38 @@ class Sitemap:
         for template in self.config['templates']:
 
             try:
-                if "tag_slug" in post and first_post:
-                    first_post = self.web.supercharge_post(template, first_post)
+                if "is_tag" in post and post['is_tag']:
+                    if first_post:
+                        first_post = self.web.supercharge_post(template, first_post)
                     new_post = self.web.supercharge_tag(template, post, first_post)
+                    url = new_post['tag_url']
                 else:
                     new_post = self.web.supercharge_post(template, post)
+                    url = new_post['url']
 
-                if new_post and 'pub_update_str' in new_post:
+                if not new_post:
+                    exit("add_post anormal post")
+
+                pub_date = None
+                if 'pub_update_str' in new_post:
                     pub_date = new_post['pub_update_str']
-                else:
-                    pub_date = None
+
                 thumb = None
-                if new_post and 'thumb' in new_post and new_post['thumb']:
+                if 'thumb' in new_post and new_post['thumb']:
                     if 'jpeg' in new_post['thumb']:
                         thumb = new_post['thumb']['jpeg']
 
                 if pub_date is not None:
                     self.lastmod[template['name']] = max(self.lastmod[template['name']], pub_date)
 
-
-                if new_post and "tag_url" in new_post:
-                        url = new_post['tag_url']
-                elif new_post and "url" in new_post:
-                        url = new_post['url']
-                elif "tag_url" in post:
-                        url = post['tag_url']
-                elif "url" in post:
-                        url = post['url']
-
+                # if "tag_url" in new_post:
+                #         url = new_post['tag_url']
+                # elif "url" in new_post:
+                #         url = new_post['url']
+                # elif "tag_url" in post:
+                #         url = post['tag_url']
+                # elif "url" in post:
+                #         url = post['url']
 
                 self.add(template, url, pub_date, thumb)
             

@@ -41,6 +41,9 @@ class Db:
         self.updated_tags = 0
         self.used_years = set()
 
+    def test_init(self):
+        return "test db ok"
+
     def create_tables(self, reset=False):
         self.create_table_posts(reset)
         self.create_images_cache(reset)
@@ -292,6 +295,18 @@ class Db:
         except Exception as e:
             return False
 
+    def updated_tag(self, tag):
+        try:
+            query = '''UPDATE tags SET tag_updated = False WHERE tag_id = ?;'''
+            c = self.conn.cursor()
+
+            c.execute(query, (tag['tag_id'],))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            return False
+
+
     def delete_post(self, post):
         c = self.conn.cursor()
 
@@ -456,6 +471,25 @@ class Db:
         return post
 
 
+    # def get_posts_by_tag(self, tag_slug, limit=None):
+    #     c = self.conn.cursor()
+        
+    #     limit_clause = f"LIMIT {limit}" if limit else ""
+        
+    #     # Version simplifiée : juste les posts avec ce tag
+    #     query = f'''
+    #         SELECT DISTINCT p.*
+    #         FROM posts p
+    #         INNER JOIN connectors c ON p.id = c.con_post_id
+    #         INNER JOIN tags t ON c.con_tag_id = t.tag_id
+    #         WHERE t.tag_slug = ?
+    #         ORDER BY p.pub_date DESC
+    #         {limit_clause}
+    #     '''
+        
+    #     c.execute(query, (tag_slug,))
+    #     return c.fetchall()
+
     def get_posts_by_tag(self, tag_slug, limit=None):
         """
         Retourne tous les posts de blog (type=0) d'un tag spécifique avec les infos de leur premier tag associé.
@@ -476,19 +510,21 @@ class Db:
             FROM posts p
             LEFT JOIN connectors c ON p.id = c.con_post_id
             LEFT JOIN tags t ON c.con_tag_id = t.tag_id
-            WHERE p.type = 0 AND p.id IN (
+            WHERE p.id IN (
                 SELECT DISTINCT c.con_post_id 
                 FROM connectors c 
                 INNER JOIN tags t ON c.con_tag_id = t.tag_id 
                 WHERE t.tag_slug = ?
             )
-            AND (c.con_tag_id, c.con_post_id) IN (
-                SELECT c2.con_tag_id, c2.con_post_id
-                FROM connectors c2
-                WHERE c2.con_post_id = p.id
-                ORDER BY c2.con_tag_id
-                LIMIT 1
-            ) OR c.con_tag_id IS NULL
+            AND (
+                (c.con_tag_id, c.con_post_id) IN (
+                    SELECT c2.con_tag_id, c2.con_post_id
+                    FROM connectors c2
+                    WHERE c2.con_post_id = p.id
+                    ORDER BY c2.con_tag_id
+                    LIMIT 1
+                ) OR c.con_tag_id IS NULL
+            )
             GROUP BY p.id
             ORDER BY p.pub_date DESC
             {limit_clause}
@@ -567,7 +603,7 @@ class Db:
             params = tuple(exclude_slugs)
         
         query = f'''
-            SELECT *
+            SELECT *, TRUE AS is_tag
             FROM tags
             {where_clause}
             ORDER BY {order}

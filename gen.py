@@ -15,6 +15,7 @@ import tools.feed
 
 #Force updating home screen
 new_home_template = True
+force = True
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -30,8 +31,6 @@ for template in config['templates']:
         filtered_templates.append(template)
 config['templates'] = filtered_templates
 
-# print(config)
-# exit()
 
 version = int(config['version'])
 db = tools.db.Db(config)
@@ -69,19 +68,21 @@ if config['build'] > 0:
 
 #POSTS
 print("Post generation")
-posts = db.get_posts_updated()
+if config['build'] == 2:
+    posts = db.get_posts()
+else:
+    posts = db.get_posts_updated()
 total = len(posts)
 if total >0:
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
         layout.single_gen( post )
-        if db.updated(post)==0:
-            exit("ça merde")
+        db.updated(post)
         pbar.update(1)
     pbar.close()
 
 #SITEMAP POSTS
-if total > 0:
+if db.new_posts > 0 or config['build'] == 2:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts_and_pages()
     pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
@@ -96,14 +97,15 @@ if total > 0:
 sitemap.open("sitemap-main")
 
 #SERIES
-if db.new_tags + db.updated_tags > 0:
+if db.new_tags + db.updated_tags > 0 or new_home_template:
     exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
     tags = db.get_tags_with_lastpost(exclude_slugs)
     series = {
         "tag_slug": "series",
         "tag_title": "Séries",
         "description": f"Les thématiques de {config['title']}",
-        "tag_url": "series/"
+        "tag_url": "series/",
+        "is_tag": True
     }
     layout.tag_gen_serie( series, tags )
     sitemap.add_post( series, tags[0] )
@@ -111,7 +113,7 @@ if db.new_tags + db.updated_tags > 0:
 
 
 #BLOG
-if  db.new_posts >0 or db.updated_posts > 0  or new_home_template:
+if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
     exclude = tuple(config['home_exclude'])
     blog_posts = db.get_blog_posts(exclude)
     series = {
@@ -119,6 +121,7 @@ if  db.new_posts >0 or db.updated_posts > 0  or new_home_template:
         "tag_title": "Digression",
         "description": f"Tous les articles de {config['title']}",
         "tag_url": "blog/",
+        "is_tag": True
     }
     layout.tag_gen( series, blog_posts )
     sitemap.add_post( series, blog_posts[0] )
@@ -144,14 +147,14 @@ sitemap.save()
 
 
 #MAIN FEED
-if  db.new_posts + db.updated_posts > 0:
+if  db.new_posts + db.updated_posts > 0 or config['build'] == 2:
     posts = db.get_blog_posts()
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
     print("Main feed done")
 
 
 #TAGS  
-if db.new_tags + db.updated_tags > 0:
+if db.new_tags > 0 or config['build'] == 2:
 
     # exclude = tuple(config['pages'])
     exclude = tuple("page")
@@ -166,8 +169,8 @@ if db.new_tags + db.updated_tags > 0:
     total = len(tags)
     pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
-        # sitemap.add_post(tag)
         tag=dict(tag)
+        sitemap.add_post(tag)
         tag_posts = db.get_posts_by_tag(tag['tag_slug'])
         if len(tag_posts)==0:
             continue
@@ -184,15 +187,16 @@ if db.new_tags + db.updated_tags > 0:
         if tag['tag_slug']=="digest":
             feed.builder(tag_posts,"digest", "De ma terrasse de Thierry Crouzet")
 
+        db.updated_tag(tag)
         pbar.update(1)
     pbar.close()
-    if config['build'] == 2:
+    if config['build'] > 1:
         # Tous les tags
         sitemap.save()
-    print(total, "tags updated")
+
 
 #YEARS
-if db.new_tags + db.updated_tags > 0:
+if db.new_posts > 0 or config['build'] == 2:
 
     print("Year gen")
     sitemap.open("sitemap-years")
@@ -223,9 +227,10 @@ if db.new_tags + db.updated_tags > 0:
                 "post_md": posts[0]['path_md'],
                 "tag_url": f"/{str(year)}/",
                 "url": f"/{str(year)}/",
+                "is_tag": True
             }
             layout.year_gen( year, posts )
-            # sitemap.add_post(series)
+            sitemap.add_post(year)
             years_archive += f'<p><a href="/{str(year)}/">{year}</a></p>'
 
     sitemap.save()
@@ -233,7 +238,7 @@ if db.new_tags + db.updated_tags > 0:
 
 
 #ARCHIVES
-if db.new_tags + db.updated_tags > 0:
+if db.new_posts > 0 or config['build'] == 2:
 
     posts_archive = ""
     exclude = ("invisible")
