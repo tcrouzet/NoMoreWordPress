@@ -95,7 +95,7 @@ if db.new_posts > 0 or config['build'] == 2:
 sitemap.open("sitemap-main")
 
 #SERIES
-if db.new_tags + db.updated_tags > 0 or new_home_template:
+if db.new_tags + db.updated_tags > 0 or config['build'] == 2:
     exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
     tags = db.get_tags_with_lastpost(exclude_slugs)
     series = {
@@ -111,9 +111,10 @@ if db.new_tags + db.updated_tags > 0 or new_home_template:
 
 
 #BLOG
-if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
+if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
     exclude = tuple(config['home_exclude'])
-    blog_posts = db.get_blog_posts(exclude)
+    # blog_posts = db.get_blog_posts(exclude)
+    blog_posts = db.get_posts("type=0", exclude)
     series = {
         "tag_slug": "blog",
         "tag_title": "Digression",
@@ -128,7 +129,7 @@ if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
 
 
 #HOME
-if  db.new_posts >0 or db.updated_posts > 0 or new_home_template:
+if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2:
     if posts:
         print("Starting home")
         last_carnet = db.get_posts_by_tag("carnets", 1)
@@ -152,7 +153,7 @@ if  db.new_posts + db.updated_posts > 0 or config['build'] == 2:
 
 
 #TAGS  
-if db.new_tags > 0 or config['build'] == 2 or force:
+if db.new_tags > 0 or config['build'] == 2:
 
     # exclude = tuple(config['pages'])
     exclude = tuple("page")
@@ -216,7 +217,7 @@ if db.new_posts > 0 or config['build'] == 2:
             else:
                 next_year =  years[-1]
 
-            year = {
+            year_tag = {
                 "tag_slug": str(year),
                 "tag_title_date": f'<a href="/{str(prev_year)}">&lt;</a> {str(year)} <a href="/{str(next_year)}">&gt;</a>',
                 "pub_update": posts[0]['pub_update'],
@@ -227,8 +228,8 @@ if db.new_posts > 0 or config['build'] == 2:
                 "url": f"/{str(year)}/",
                 "is_tag": True
             }
-            layout.year_gen( year, posts )
-            sitemap.add_post(year)
+            layout.year_gen( year_tag, posts )
+            sitemap.add_post(year_tag)
             years_archive += f'<p><a href="/{str(year)}/">{year}</a></p>'
 
     sitemap.save()

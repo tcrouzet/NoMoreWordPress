@@ -557,21 +557,6 @@ class Web:
             print(f"Navigation {e}")
             exit()
 
-
-    # def tag_2_post(self, post):
-    #     post = dict(post)
-    #     post['main'] = self.extract_tags( post['tag'] )[0]
-    #     post['pub_date'] = time.time()
-    #     post['pub_update'] = post['pub_date']
-    #     post['title'] = self.title_formater(post['main']['title'])
-    #     if post['main']['url']:
-    #         if post['main']['url'].startswith("/"):
-    #             post['url'] = post['main']['url'].strip("/")
-    #         else:
-    #             post['url'] = "tag/"+post['main']['url']
-    #     else:
-    #         post['url'] = "tag/"+post['tag']
-    #     return post
     
     def post_comment_total(self, post):
         comment_url = os.path.join(self.config['comments_root'],self.comment_url(post))
@@ -706,20 +691,38 @@ class Web:
             # return None
 
 
+    # def tag_menu(self, tag):
+    #     menu = []
+    #     if "tag_title_date" in tag:
+    #         menu.append({"tag_title": tag['tag_title_date'], "tag_url": "/tag/"+tag['tag_slug']})
+    #     else:
+    #         menu.append({"tag_title": tag['tag_title'], "tag_url": "/tag/"+tag['tag_slug']})
+    #     if tag['tag_slug'] != "blog":
+    #         menu.append({"tag_title": "Digressions", "tag_url": "/blog/"})
+    #     if tag['tag_slug'] != "series":
+    #         menu.append({"tag_title": "…", "tag_url": "/series/"})
+    #     index = len(menu)
+    #     if tag['tag_slug'] != "carnets" and index<4:
+    #         menu.insert(index-1, {"tag_title": "Carnets", "tag_url": "/carnet-de-route/"})
+    #     index = len(menu)
+    #     if tag['tag_slug'] != "borntobike" and index<4:
+    #         menu.insert(index-1, {"tag_title": "Vélo", "tag_url": "/borntobike/"})
+    #     return menu
+
     def tag_menu(self, tag):
         menu = []
         if "tag_title_date" in tag:
-            menu.append({"tag_title": tag['tag_title_date'], "tag_url": "/tag/"+tag['tag_slug']})
+            menu.append({"tag_title": tag['tag_title_date'], "tag_url": tag['tag_slug']})
         else:
-            menu.append({"tag_title": tag['tag_title'], "tag_url": "/tag/"+tag['tag_slug']})
+            menu.append({"tag_title": tag['tag_title'], "tag_url": tag['tag_slug']})
         if tag['tag_slug'] != "blog":
             menu.append({"tag_title": "Digressions", "tag_url": "/blog/"})
         if tag['tag_slug'] != "series":
             menu.append({"tag_title": "…", "tag_url": "/series/"})
         index = len(menu)
         if tag['tag_slug'] != "carnets" and index<4:
-            menu.insert(index-1, {"tag_title": "Carnets", "tag_url": "/tag/carnet-de-route/"})
+            menu.insert(index-1, {"tag_title": "Carnets", "tag_url": "/carnet-de-route/"})
         index = len(menu)
         if tag['tag_slug'] != "borntobike" and index<4:
-            menu.insert(index-1, {"tag_title": "Vélo", "tag_url": "/tag/borntobike/"})
+            menu.insert(index-1, {"tag_title": "Vélo", "tag_url": "/borntobike/"})
         return menu

@@ -51,7 +51,7 @@ class Layout:
                 "dir": base_dir,
                 "export": template['export'],
                 "infinite_scroll": bool(template.get('infinite_scroll', False)),
-                "post_per_page": int(template.get('post_per_page', 40)),
+                "post_per_page": int(template.get('post_per_page', 0)),
                 "image_max_size": int(template.get('image_max_size', 1024)),
                 "image_min_size": int(template.get('image_min_size', 250)),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
@@ -301,10 +301,11 @@ class Layout:
                 else:
                     posts_super_filter = posts_super
 
-                if len(posts_super_filter)<post_per_page or post_per_page==0:
-                    tag_super['navigation']['next_url']=""
-                else:
+                # Vérifier s'il y a une page suivante
+                if post_per_page > 0 and len(posts_super) > post_per_page:
                     tag_super['navigation']['next_url'] = "/" + tag_super['tag_url'].strip("/") + "/" + f"contener{page+1}.html"
+                else:
+                    tag_super['navigation']['next_url'] = ""
 
                 tags_list_html = self.get_html(template["tags_list"], post=tag_super, tags=posts_super_filter,  blog=self.config)
 
@@ -318,7 +319,6 @@ class Layout:
                     page += 1
                 else:
                     break
-        self.de()
 
     def year_gen(self, year, posts):
         """Génère une page listant tous les tags avec leur dernier post"""
@@ -343,8 +343,6 @@ class Layout:
             home = {}
             home['digressions'] = self.web.supercharge_post(template, last_post)
             home['carnet'] = last_carnet
-            # home['bike'] = self.web.supercharge_post(template, last_bike)
-            # home['digest'] = self.web.supercharge_post(template, last_digest)
             home['bike'] = last_bike
             home['digest'] = last_digest
             
@@ -376,7 +374,7 @@ class Layout:
 
     def e404_gen(self):
         text = '<p>Cette page n’existe plus ou n’a jamais existé.</p>'
-        post = {"thumb": None, "title": "Erreur 404", "html": text, "frontmatter": None, "type":1}
+        post = {"thumb": None, "title": "Erreur 404", "content": text, "frontmatter": None, "type":1}
         self.special_pages(post, "", "404.html")
 
     def archives_gen(self, archives):
@@ -401,18 +399,18 @@ class Layout:
     def normal_pages(self, post, template, path, file_name="index.html"):
         header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
         footer_html = self.get_html(template["footer"], post=post, blog=self.config)
-        self.save(template, header_html + post['html'] + footer_html, path, file_name)
+        self.save(template, header_html + post['content'] + footer_html, path, file_name)
 
     def menu_gen(self):
         for template in self.templates:
             menu_html = self.get_html(template["menu"])
-            post = {"thumb": None, "title": "", "html": menu_html, "frontmatter": None, "type":3}
+            post = {"thumb": None, "title": "", "content": menu_html, "description": "Menu", "frontmatter": None, "type":3}
             self.normal_pages(post, template, "menu/")
 
     def search_gen(self):
         for template in self.templates:
             search_html = self.get_html(template["search"])
-            post = {"thumb": None, "title": "", "html": search_html, "frontmatter": None, "type":3}
+            post = {"thumb": None, "title": "", "content": search_html, "description": "Recherche", "frontmatter": None, "type":3}
             self.normal_pages(post, template, "search/")
 
 

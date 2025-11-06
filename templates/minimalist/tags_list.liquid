@@ -1,9 +1,3 @@
-{% if post.tag_slug == "series" %}
-  {% assign series = true %}
-{% else %}
-  {% assign series = false %}
-{% endif %}
-
 {% for tag_post in tags %}
 
     <article>
@@ -23,17 +17,17 @@
         </a>
 
         {% if post.tag_slug != "book" %}
-            {% if series %}
+            {% if post.tag_slug == "series"  %}
                 <data value="{{ tag_post.navigation.total_posts }}"><a href="{{ tag_post.tag_url }}">{{ tag_post.navigation.total_posts }}</a></data>
-                <h2>
-                    <a href="{{ tag_post.tag_url }}"><b>{{ tag_post.tag_title }}</b></a>
-                </h2>
-            {% else %}
+                <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title }}</a></h3>
+                <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
+            {% elsif post.tag_slug == "blog"  %}
                 <data value="{{ tag_post.ordre }}"><a href="{{ tag_post.url }}">{{ tag_post.ordre }}</a></data>
                 <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title }}</a></h3>
-                <h2>
-                <a href="tag/{{ tag_post.url }}">{{ tag_post.title }}</a>
-                </h2>
+                <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
+            {% else %}
+                <data value="{{ tag_post.ordre }}"><a href="{{ tag_post.url }}">{{ tag_post.ordre }}</a></data>
+                <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
             {% endif %}
         {% endif %}
     </article>

@@ -323,17 +323,54 @@ class Db:
     def get_row_factory(self):
         return self.conn.row_factory
 
+    # def get_posts(self, condition=None):
+    #     c = self.conn.cursor()
 
-    def get_posts(self, condition=None):
+    #     if condition:
+    #         where = f"WHERE {condition}"
+    #     else:
+    #         where = ""
+    #     query = f"SELECT * FROM posts {where} ORDER BY pub_date DESC"
+    #     c.execute(query)
+    #     return c.fetchall()
+
+    def get_posts(self, condition=None, exclude_tags=None):
+        """
+        Récupère les posts avec possibilité d'exclusion par tags.
+        
+        Args:
+            condition: Clause WHERE personnalisée (ex: "type=0")
+            exclude_tags: Liste de slugs de tags à exclure
+        
+        Returns:
+            Liste des posts
+        """
         c = self.conn.cursor()
-
+        
+        # Construire la clause WHERE
+        where_clause = ""
+        params = ()
+        
         if condition:
-            where = f"WHERE {condition}"
-        else:
-            where = ""
-        query = f"SELECT * FROM posts {where} ORDER BY pub_date DESC"
-        c.execute(query)
+            where_clause = f"WHERE {condition}"
+        
+        # Ajouter l'exclusion de tags
+        if exclude_tags:
+            placeholders = ','.join('?' for _ in exclude_tags)
+            exclude_condition = f"id NOT IN (SELECT DISTINCT con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
+            
+            if where_clause:
+                where_clause += f" AND {exclude_condition}"
+            else:
+                where_clause = f"WHERE {exclude_condition}"
+            
+            params = tuple(exclude_tags)
+        
+        query = f"SELECT * FROM posts {where_clause} ORDER BY pub_date DESC"
+        
+        c.execute(query, params)
         return c.fetchall()
+
 
     def get_post_by_id(self, id):
         return self.get_posts(f"id = {id}")
@@ -877,7 +914,7 @@ class Db:
             response = {'tag_slug': tag, "tag_title": self.config['tags'][tag].get('title',tag)}
             turl = self.config['tags'][tag].get("url",None)
             if turl:
-                response['tag_url'] = turl
+                response['tag_url'] = "/" + turl
             else:
                 response['tag_url'] = "/tag/" + tag
             response['main'] = True
