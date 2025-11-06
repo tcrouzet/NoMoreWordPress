@@ -90,6 +90,8 @@ class Sitemap:
                 if "is_tag" in post and post['is_tag']:
                     if first_post:
                         first_post = self.web.supercharge_post(template, first_post)
+                    if "thumb_path" in post and isinstance(post['thumb_path'], tuple):
+                        post['thumb_path'] = post['thumb_path'][0]
                     new_post = self.web.supercharge_tag(template, post, first_post)
                     url = new_post['tag_url']
                 else:

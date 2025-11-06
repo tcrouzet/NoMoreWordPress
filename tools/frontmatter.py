@@ -93,6 +93,8 @@ class Frontmatter:
             return "Vilvio"
         if "laprocure" in url:
             return "La Procure"
+        if "pvh-" in url:
+            return "PVH"
         
         return url
 

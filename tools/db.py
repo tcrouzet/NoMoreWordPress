@@ -818,19 +818,6 @@ class Db:
     def title_formater(self, title):
         return title.capitalize().replace("-"," ").replace("_"," ")
 
-    def tag_2_dict(self, tag) ->dict:
-        if tag in self.config['tags']:
-            response = {'tag_slug': tag, "tag_title": self.config['tags'][tag].get('title',tag)}
-            turl = self.config['tags'][tag].get("url",None)
-            if turl:
-                response['tag_url'] = "/tag/" + turl
-            else:
-                response['tag_url'] = "/tag/" + tag
-            response['main'] = True
-        else:
-            response = {'tag_slug': tag, "tag_title": self.title_formater(tag), "tag_url": "/tag/" + tag, "main": False}
-        return response
-
     def filter_tags(self, tags):
         try:
             date_pattern = re.compile(r'^(\d{4})-(\d{1,2})-(\d{1,2})-(\d{1,2})h(\d{1,2})$')  # 'YYYY-M-D-HhM'
@@ -883,6 +870,20 @@ class Db:
         
         # Si aucun point n'est trouvé, couper à 157 caractères et ajouter "..."
         return c_paragraph[:159] + "…"
+
+
+    def tag_2_dict(self, tag) ->dict:
+        if tag in self.config['tags']:
+            response = {'tag_slug': tag, "tag_title": self.config['tags'][tag].get('title',tag)}
+            turl = self.config['tags'][tag].get("url",None)
+            if turl:
+                response['tag_url'] = turl
+            else:
+                response['tag_url'] = "/tag/" + tag
+            response['main'] = True
+        else:
+            response = {'tag_slug': tag, "tag_title": self.title_formater(tag), "tag_url": "/tag/" + tag, "main": False}
+        return response
 
 
     def extract_tags(self, tags) ->list:

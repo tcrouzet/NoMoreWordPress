@@ -124,14 +124,13 @@ class Web:
         try:
             post=dict(post)
             if not media_src_file:
-                # print(post)
-                # exit("No media_src")
                 return None
             base_dir_name =  post['path_md']
             dirname = os.path.dirname(base_dir_name)
             return os.path.join( self.config['vault'], dirname, media_src_file )
         except Exception as e:
-            print(f"Media source for {media_src_file}")
+            print(f"Media source path {e}")
+            print(f"{media_src_file} {base_dir_name} {dirname}")
             print(dict(post))
             exit()
 
@@ -634,7 +633,10 @@ class Web:
             if "navigation" in post and isinstance(post['navigation'], str):
                 post['navigation'] = json.loads(post['navigation'])
             else:
-                post['navigation'] = None
+                post['navigation'] = None 
+
+            if "frontmatter" in post and isinstance(post['frontmatter'], str):
+                post['frontmatter'] = json.loads(post['frontmatter'])
 
             return post
         
@@ -660,10 +662,7 @@ class Web:
             if isinstance(tag, self.db.get_row_factory()):
                 tag = dict(tag)
 
-            if "tag_url" not in  tag:
-                print(tag)
-                exit("tag_url in tag")
-                # tag = self.db.row_to_dict(tag)
+            tag['is_tag'] = True
 
             tag['menu'] = self.tag_menu(tag)
 
@@ -702,7 +701,7 @@ class Web:
 
         except Exception as e:
             print(tag)
-            print(f"supercharge_post {e}")
+            print(f"supercharge_tag {e}")
             exit()
             # return None
 

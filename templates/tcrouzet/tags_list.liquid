@@ -12,7 +12,7 @@
         {% if tag_post.thumb %}
             <img width="250" height="188"
             src="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
-            class="{% if post.tag == 'book' %}poster-img-book-small{% else %}resume-img{% endif %}"
+            class="{% if post.tag_slug == 'book' %}poster-img-book-small{% else %}resume-img{% endif %}"
             alt="{{ tag_post.thumb_legend }}" loading="lazy" decoding="async"
             srcset="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }} 250w,{% endif %}{{ tag_post.thumb.url }} 1024w"
             />
@@ -22,7 +22,7 @@
         
         </a>
 
-        {% if post.url != "bibliographie" %}
+        {% if post.tag_slug != "book" %}
             {% if series %}
                 <data value="{{ tag_post.navigation.total_posts }}"><a href="{{ tag_post.tag_url }}">{{ tag_post.navigation.total_posts }}</a></data>
                 <h2>

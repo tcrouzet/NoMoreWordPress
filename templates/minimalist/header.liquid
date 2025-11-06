@@ -3,12 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if template.inlinecss %}<style>{{ template.inlinecss }}</style>{% endif %}
     <title>{{ post.title }} - {{ blog.title }}</title>
     <link rel="shortcut icon" href="/favicon.ico">
     <link rel="alternate" type="application/rss+xml" title="Thierry Crouzet" href="/feeds/feed.xml" />
-
-    <link rel=preload href='/style.css?ver={{ blog.version }}' as=style>
-    <link rel=stylesheet href='/style.css?ver={{ blog.version }}'>
 
     <meta name='robots' content='index, follow' />
     <meta name="google-site-verification" content="EmtKKbIk2-Tz3Nyp7hJRPjcMbgf68Vwq6yJYs1hvsqA" />

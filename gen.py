@@ -31,7 +31,6 @@ for template in config['templates']:
         filtered_templates.append(template)
 config['templates'] = filtered_templates
 
-
 version = int(config['version'])
 db = tools.db.Db(config)
 web = tools.web.Web(config, db)
@@ -49,7 +48,6 @@ if config['build'] > 0:
         db.db_builder(config['vault'],reset=False)
     elif config['build'] == 3:
         #Rebuild all
-        print("Reset base")
         db.db_builder(config['vault'],reset=True)
 
     print("Media and navigation")
@@ -154,7 +152,7 @@ if  db.new_posts + db.updated_posts > 0 or config['build'] == 2:
 
 
 #TAGS  
-if db.new_tags > 0 or config['build'] == 2:
+if db.new_tags > 0 or config['build'] == 2 or force:
 
     # exclude = tuple(config['pages'])
     exclude = tuple("page")
@@ -196,7 +194,7 @@ if db.new_tags > 0 or config['build'] == 2:
 
 
 #YEARS
-if db.new_posts > 0 or config['build'] == 2 or force:
+if db.new_posts > 0 or config['build'] == 2:
 
     print("Year gen")
     sitemap.open("sitemap-years")
@@ -224,7 +222,7 @@ if db.new_posts > 0 or config['build'] == 2 or force:
                 "pub_update": posts[0]['pub_update'],
                 "thumb_path": posts[0]['thumb_path'],
                 "thumb_legend": posts[0]['thumb_legend'],
-                "post_md": posts[0]['path_md'],
+                "path_md": posts[0]['path_md'],
                 "tag_url": f"/{str(year)}/",
                 "url": f"/{str(year)}/",
                 "is_tag": True
@@ -266,7 +264,6 @@ sitemap.save_index('sitemap')
 
 print("Gen ended")
 
-exit()
 #EXPORT
 if version>0:
     for template in config['templates']:

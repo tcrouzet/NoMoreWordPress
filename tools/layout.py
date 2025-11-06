@@ -20,6 +20,7 @@ def make_liquid_loader(base_dir):
         return Liquid(path)
     return make
 
+
 class Layout:
 
     def __init__(self, config, web_instance):
@@ -56,6 +57,7 @@ class Layout:
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 "comments": bool(template.get('comments', False)),
                 "comments_total": bool(template.get('comments_total', False)),
+                "inlinecss": self.inlinecss(base_dir),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),
@@ -194,6 +196,14 @@ class Layout:
         else:
             shutil.copy2(source, target)
             return True
+
+    def inlinecss(self, base_dir):
+        css_path = os.path.join(base_dir, "style.css")
+        content = ""
+        with open(css_path, "r", encoding="utf-8") as file:
+            content = file.read()
+            content = csscompressor.compress(content)
+        return content
 
 
     def copy_directory(self, source_dir, dest_dir):

@@ -21,6 +21,7 @@ class SyncAWS:
             # Exécution de la synchronisation S3
             command = f'aws s3 sync {self.config['export']} s3://{self.config['bucket_name']} --delete --output json'
             print(command)
+            # result = subprocess.run(command, shell=True, capture_output=True, text=True)
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
             output = result.stdout
             print("AWS command done")
