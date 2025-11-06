@@ -196,7 +196,7 @@ if db.new_tags > 0 or config['build'] == 2:
 
 
 #YEARS
-if db.new_posts > 0 or config['build'] == 2:
+if db.new_posts > 0 or config['build'] == 2 or force:
 
     print("Year gen")
     sitemap.open("sitemap-years")
