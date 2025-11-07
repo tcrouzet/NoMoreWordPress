@@ -546,7 +546,8 @@ class Web:
                     "next_url": url_next_post,
                     "order": total_posts-i,
                     "slug": main_tag['tag_slug'],
-                    "title": main_tag['tag_title']
+                    "title": main_tag['tag_title'],
+                    "url": main_tag['tag_url']
                 }
             r_post = {}
             r_post['navigation'] = r
