@@ -23,9 +23,13 @@
         </a>
 
         {% if post.tag_slug != "book" %}
-            {% if series %}
+            {% if post.tag_slug == "series"  %}
                 <data value="{{ tag_post.navigation.total_posts }}"><a href="{{ tag_post.tag_url }}">{{ tag_post.navigation.total_posts }}</a></data>
                 <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title }}</a></h3>
+                <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
+            {% elsif post.tag_slug == "blog"  %}
+                <data value="{{ tag_post.navigation.order }}"><a href="{{ tag_post.url }}">{{ tag_post.navigation.order }}</a></data>
+                <h3><a href="{{ tag_post.navigation.url }}">{{ tag_post.navigation.title }}</a></h3>
                 <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
             {% else %}
                 <data value="{{ tag_post.ordre }}"><a href="{{ tag_post.url }}">{{ tag_post.ordre }}</a></data>

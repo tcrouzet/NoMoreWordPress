@@ -280,6 +280,46 @@ class Layout:
 
 
     def tag_gen(self, tag, posts):
+
+        for template in self.templates:
+            posts_super = self.web.supercharge_posts(template, posts)
+            if len(posts_super) == 0:
+                exit("Strange pas de posts_super")
+            tag_super = self.web.supercharge_tag(template, tag, posts_super[0])
+
+            header_html = self.get_html(template["header"], post=tag_super, blog=self.config, template=template)
+            footer_html = self.get_html(template["footer"], post=tag_super, blog=self.config)
+
+            post_per_page = template["post_per_page"]
+
+            page = 1
+            while posts_super:
+                if post_per_page > 0:
+                    posts_super_filter = posts_super[:post_per_page] # Prendre post_per_page premiers éléments
+                    posts_super = posts_super[post_per_page:] #Réduit posts_super
+                else:
+                    # Une seule page avec tout
+                    posts_super_filter = posts_super
+                    posts_super = None
+
+                # Vérifier s'il y a une page suivante
+                if post_per_page > 0 and len(posts_super) > 0:
+                    tag_super['navigation']['next_url'] = "/" + tag_super['tag_url'].strip("/") + "/" + f"contener{page+1}.html"
+                else:
+                    tag_super['navigation']['next_url'] = ""
+
+                tags_list_html = self.get_html(template["tags_list"], post=tag_super, tags=posts_super_filter, blog=self.config)
+
+                if page == 1:
+                    tag_html = self.get_html(template["tag"], post=tag_super, tags={"list": tags_list_html})
+                    self.save(template, header_html + tag_html + footer_html, tag_super['tag_url'], "index.html")
+                else:
+                    file_name = f"contener{page}.html"
+                    self.save(template, tags_list_html, tag_super['tag_url'], file_name)
+                
+                page += 1
+
+    def tag_genOld(self, tag, posts):
         for template in self.templates:
 
             posts_super = self.web.supercharge_posts(template, posts)
@@ -296,10 +336,16 @@ class Layout:
             while posts_super:
                 file_name = f"contener{page}.html"
 
-                if post_per_page>0:
+                if post_per_page > 0:
                     posts_super_filter = posts_super[:post_per_page]
+                    posts_super = posts_super[post_per_page:]
                 else:
                     posts_super_filter = posts_super
+                    posts_super = []  # ← Vide pour arrêter la boucle
+                # if post_per_page>0:
+                #     posts_super_filter = posts_super[:post_per_page]
+                # else:
+                #     posts_super_filter = posts_super
 
                 # Vérifier s'il y a une page suivante
                 if post_per_page > 0 and len(posts_super) > post_per_page:
@@ -307,7 +353,7 @@ class Layout:
                 else:
                     tag_super['navigation']['next_url'] = ""
 
-                tags_list_html = self.get_html(template["tags_list"], post=tag_super, tags=posts_super_filter,  blog=self.config)
+                tags_list_html = self.get_html(template["tags_list"], post=tag_super, tags=posts_super_filter, blog=self.config)
 
                 if page == 1:
                     tag_html = self.get_html(template["tag"], post=tag_super, tags={"list": tags_list_html})
@@ -315,7 +361,7 @@ class Layout:
                 else:
                     self.save(template, tags_list_html, tag_super['tag_url'], file_name)
                 if post_per_page>0:
-                    del posts_super[:post_per_page]
+                    # del posts_super[:post_per_page]
                     page += 1
                 else:
                     break

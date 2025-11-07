@@ -15,7 +15,7 @@ import tools.feed
 
 #Force updating home screen
 new_home_template = True
-force = True
+force = False
 
 sys.stdout = tools.logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
@@ -111,22 +111,20 @@ if db.new_tags + db.updated_tags > 0 or config['build'] == 2:
 
 
 #BLOG
-if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
+if db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
     exclude = tuple(config['home_exclude'])
-    # blog_posts = db.get_blog_posts(exclude)
     blog_posts = db.get_posts("type=0", exclude)
     series = {
         "tag_slug": "blog",
         "tag_title": "Digression",
         "description": f"Tous les articles de {config['title']}",
-        "tag_url": "blog/",
+        "tag_url": "/blog",
         "is_tag": True
     }
     layout.tag_gen( series, blog_posts )
     sitemap.add_post( series, blog_posts[0] )
     feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
     print(f"Blog done {len(blog_posts)}")
-
 
 #HOME
 if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2:
@@ -146,17 +144,17 @@ sitemap.save()
 
 
 #MAIN FEED
-if  db.new_posts + db.updated_posts > 0 or config['build'] == 2:
+if  db.new_posts + db.updated_posts > 0 or config['build'] == 2 or force:
     posts = db.get_blog_posts()
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
     print("Main feed done")
 
 
-#TAGS  
-if db.new_tags > 0 or config['build'] == 2:
+#TAGS
+if db.new_tags > 0 or config['build'] == 2 or force:
 
     # exclude = tuple(config['pages'])
-    exclude = tuple("page")
+    exclude = tuple(["page","blog"])
 
     if config['build'] > 1:
         # Tous les tags
