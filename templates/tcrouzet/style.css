@@ -410,26 +410,82 @@ main[itemtype$="AboutPage"] section h3{
 
 /* Footer & Social */
 footer section {
-  display: grid;
-  width: 8rem;
+  display: flex;
+  width: 100%;
+  max-width: var(--max-width);
   margin: 1rem auto;
   gap: 1rem;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  place-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-footer section button,footer section a{
-  display: block;
-  width: 100%;
+footer section button,
+footer section a,
+footer section label {
+  display: inline;
+  width: auto;
   text-align: center;
   background: transparent;
-  border: none
+  border: none;
 }
 
-button.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e96c'}
+label.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!important;content:'\e96c'}
 button.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea82'}
 a.icon_download:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e9c2'}
 a.icon_friends:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e972'}
+
+div.comments{
+  display: none;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 1rem auto 0;
+  padding-left: var(--page-gutter);
+  padding-right: var(--page-gutter);
+}
+
+.com-toggle:checked ~ div.comments {
+  display: block !important;
+}
+
+div.comments form input[type="email"],
+div.comments form input[type="text"] {
+  width: 50%;
+  box-sizing: border-box;
+}
+div.comments form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+div.comments form input[type="radio"] {
+  display: inline;
+  margin-right: 0.5rem;
+}
+div.comments form button, [type='button'], [type='submit'] {
+    display: block;
+    background-color: var(--color-medium);
+}
+
+.comment {
+    margin-bottom: 1.5em;
+    padding: 0 0 1rem 0;
+    border-bottom: 1px solid var(--color--plus);
+}
+.comment-header {
+    margin-bottom: 0.5em;
+}
+.comment-author {
+    font-weight: bold;
+}
+.comment-date {
+    color: var(--color--medium);
+    margin-left: 1em;
+    font-size: 0.9em;
+}
+.comment-content {
+    line-height: 1.4;
+    font-size: smaller;
+}
 
 /* Newsletter */
 footer > div:last-of-type {
@@ -507,34 +563,6 @@ text-align: center;
 
 #search ul li::before {content: none}
 
-/* Comments dans JS*/
-div.comments{
-  max-width: var(--max-width);
-  margin: 1rem auto 0;
-  padding-left: var(--page-gutter);
-  padding-right: var(--page-gutter);
-}
-
-.comment {
-    margin-bottom: 1.5em;
-    padding: 0 0 1rem 0;
-    border-bottom: 1px solid var(--color--plus);
-}
-.comment-header {
-    margin-bottom: 0.5em;
-}
-.comment-author {
-    font-weight: bold;
-}
-.comment-date {
-    color: var(--color--medium);
-    margin-left: 1em;
-    font-size: 0.9em;
-}
-.comment-content {
-    line-height: 1.4;
-    font-size: smaller;
-}
 
 /* Media Queries */
 @media (max-width: 390px){

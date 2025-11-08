@@ -1,9 +1,37 @@
 <section>
-  <button class="icon_com" onclick="showComments('com{{ post.id }}')" title="Commenter" aria-label="Afficher les commentaires"></button>
-  <button class="icon_share" onclick="copyText()" title="Partager" aria-label="Partager l'article"></button>
+  <input type="checkbox" id="com-{{ post.id }}" class="com-toggle" hidden>
+  <label for="com-{{ post.id }}" class="icon_com" title="Commenter"></label>
+  
+  <button class="icon_share" onclick="share()" title="Partager"></button>
+  
   {% if post.github != blank %}
-        <a class="icon_download" href="{{ post.github }}" download title="Télécharger" aria-label="Télécharger en Markdown"></a>
+    <a class="icon_download" href="{{ post.github }}" download title="Télécharger"></a>
   {% endif %}
-  <a class="icon_friends" href="/page/lectures/" title="Sites amis" aria-label="Afficher les sites amis"></a>
+  
+  <a class="icon_friends" href="/page/lectures/" title="Sites amis"></a>
+  
+  <div class="comments">
+
+    {% if post.comments %}{{ post.comments }}{% endif %}
+
+    <form method="POST" action="https://formspree.io/f/mgebvkwn">
+      <input type="hidden" name="postUrl" value="{{ post.url }}">
+      <input type="hidden" name="postTitle" value="{{ post.title }}">
+      <input autocomplete="on" name="email" type="email" placeholder="Votre email" required>
+      <input autocomplete="on" name="nom" type="text" placeholder="Votre nom" required>  
+      <textarea name="message" style="width: 100%;height:10rem" placeholder="Votre commentaire" required></textarea>
+
+      <label>
+      <input type="radio" name="messageType" value="public" checked>
+        Public (en différé)
+      </label>
+      <label>
+        <input type="radio" name="messageType" value="private">
+        Privé
+      </label>
+      
+      <button type="submit">Envoyer</button>
+    </form>
+
+  </div>
 </section>
-<div class="comments" id="com{{ post.id }}" data-post-url="{{ post.url }}" data-post-title="{{ post.title }}" data-post-date="{{ post.pub_date_str }}" hidden></div>
