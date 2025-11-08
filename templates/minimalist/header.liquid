@@ -39,9 +39,11 @@
 <body>
 
 <header>
-  <a aria-label="Menu" href="/menu/"></a>
   <a aria-label="Accueil"
     href="{% if post.is_home %}/page/informations/{% else %}/{% endif %}"
-    title="{% if post.is_home %}Informations{% else %}Accueil{% endif %}">Thierry <b>CROUZET</b></a>
-  <a aria-label="Recherche" href="/search/"></a>
+    title="{% if post.is_home %}Informations{% else %}Accueil{% endif %}">Thierry CROUZET</a>
+  <a aria-label="Menu" href="/menu/">Menu</a>
+  <a aria-label="Newsletter" href="/page/abonnement-par-mail/">Newsletter</a>
+  <a aria-label="Recherche" href="/search/">Recherche</a>
+  <a aria-label="Soutien" href="/page/me-soutenir/">€</a>
 </header>

@@ -1,6 +1,41 @@
+{% assign now = 'now' | date: '%s' | plus: 0 %}
+{% assign post_age_days = now | minus: post.pub_date | divided_by: 86400 %}
+{% assign comments_open = post_age_days < template.comments %}
+
 <section>
-  {% if post.github != blank %}
-        <a class="icon_download" href="{{ post.github }}" download title="Télécharger" aria-label="Télécharger en Markdown"></a>
+  <input type="checkbox" id="com-{{ post.id }}" class="com-toggle" hidden>
+  <label for="com-{{ post.id }}" title="Commenter">Commenter</label>
+    
+  {% if post.github %}
+    <a href="{{ post.github }}" download title="Télécharger">Télécharger</a>
   {% endif %}
-  <a class="icon_friends" href="/page/lectures/" title="Sites amis" aria-label="Afficher les sites amis"></a>
+  
+  <a href="/page/lectures/" title="Sites amis">Sites amis</a>
+  
+  <div class="comments">
+
+    {% if post.comments %}{{ post.comments }}{% endif %}
+
+    <form method="POST" action="https://formspree.io/f/mgebvkwn">
+      <input type="hidden" name="postUrl" value="{{ post.url }}">
+      <input type="hidden" name="postTitle" value="{{ post.title }}">
+      <input autocomplete="on" name="email" type="email" placeholder="Votre email" required>
+      <input autocomplete="on" name="nom" type="text" placeholder="Votre nom" required>  
+      <textarea name="message" style="width: 100%;height:10rem" placeholder="Votre commentaire" required></textarea>
+
+      <label>
+        <input type="radio" name="messageType" value="private" checked>
+        Privé
+      </label>
+      {% if comments_open %}
+      <label>
+      <input type="radio" name="messageType" value="public">
+        Public (modéré)
+      </label>
+      {% endif %}
+      
+      <button type="submit">Envoyer</button>
+    </form>
+
+  </div>
 </section>

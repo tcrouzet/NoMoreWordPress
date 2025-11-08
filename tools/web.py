@@ -511,7 +511,7 @@ class Web:
                
             #    print(post[key])
 
-            post['canonical'] = template['domain'] + post['url'].lstrim("/")
+            post['canonical'] = template['domain'] + post['url'].lstrip("/")
             
             if "content" in post:
                 post['content'] = self.image_manager(template, post)

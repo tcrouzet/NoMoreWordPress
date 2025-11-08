@@ -1,80 +1,69 @@
 ::before,::after{box-sizing:border-box}
-html{font-family: "Monospace", "New York", "Charter", "Noto Serif", 'Bitstream Charter', 'Sitka Text', "Courier New", Courier, serif;-webkit-text-size-adjust:100%;tab-size:4}
-body{margin:0;background-color: #fdf6e3;color: #657b83;}
+html{
+  background-color: #fffbd4;
+  color: black;
+  /* font-family: "Monospace", "New York", "Charter", "Noto Serif", 'Bitstream Charter', 'Sitka Text', "Courier New", Courier, serif; */
+  font-family: Monospace;
+  -webkit-text-size-adjust:100%;
+  tab-size:4;
+  font-size: 100%;
+  box-sizing: border-box;
+  text-rendering: optimizeLegibility;
+}
+body{
+  max-width: 90ch;
+  margin: 0 auto;
+  padding: 0 1rem;
+  /* color: #657b83; */
+}
 button,input,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}
 button,select{text-transform:none}
 button,[type='button'],[type='submit']{appearance:button}
 
 :root {
-  --font-headings: "Monospace", "San Francisco",'Segoe UI', "Roboto", system-ui, "BlinkMacSystemFont", Helvetica,Arial,system-ui,sans-serif;
-  --font-size: 1.13rem;
+  /* --font-headings: "Monospace", "San Francisco",'Segoe UI', "Roboto", system-ui, "BlinkMacSystemFont", Helvetica,Arial,system-ui,sans-serif; */
+  --font-size: 1.3rem;
   --line-height: calc(1ex/0.32);
   --font-size-small: 1rem;
   --font-size-title: calc(var(--font-size)*2.4);
   --font-size-h3: 1.7rem;
-  --max-width: 40rem;
-  --max-width-wide: 60rem;
-  --page-gutter: 1rem;
   --top-height: 3rem;
-}
-
-html {
-  box-sizing: border-box;
-  line-height: var(--line-height);
-  text-rendering: optimizeLegibility;
-}
- 
-body {
-  font-size: var(--font-size);
 }
  
 button,input,select,textarea,label{font-family:var(--font-headings)}
-h1,h2,h3,h6,nav,header{font-family:var(--font-headings);font-weight:bold}
+h1,h2,h3,h6,nav,header{font-family:monospace;font-weight:bold}
 h4{font-weight:bold}
 
 button,a{cursor:pointer}
 a,a:visited,a:active,a:hover{color:inherit;text-decoration:none;border:none}
 
+/* Footer */
+footer{margin:2rem 0 4rem 0}
+
 /* Header */
 header {
-  position: fixed;
-  top: 0;
-  inset-inline: 0;
-  align-items: center;
-  height: var(--top-height);
   display: flex;
-  gap: 0.8rem;
-  padding-inline: 0.6rem;
-  z-index: 99;
-}
-
-header > a[aria-label="Menu"]::after {
-  content: "\2630";
-  font-size: 1.4em;
+  align-items: center; /* Centre les éléments verticalement */
+  height: var(--top-height);
+  gap: 1rem;
 }
 
 header > a[aria-label="Accueil"]{
   font-size: 1.35rem;
 }
 
-header > a[aria-label="Recherche"]{
+header > a[aria-label="Menu"]{
   margin-left: auto;
-  margin-top: 0.3rem;
-}
-header > a[aria-label="Recherche"]::after {
-  content: "\1F50D";
-  font-size: 1.2em;
 }
 
 /* Article */
-main{margin-top: var(--top-height)}
+main{margin-top: 1rem}
 
 article header{display:contents}
 
 article header figure {
-  margin: 0 auto;
-  max-width: var(--max-width-wide);
-  text-align: center;
+  width: 100%;
+  margin:0;padding:0;
 }
 
 article header figure img {
@@ -82,7 +71,7 @@ article header figure img {
   height:70vh;
   object-fit: cover;
 }
-.poster-book{object-fit: contain}
+.poster-book{object-fit: contain;object-position: left center;}
 
 main[itemtype$="CollectionPage"] article img.poster-img-book-small{
   width: 100%;
@@ -92,17 +81,13 @@ main[itemtype$="CollectionPage"] article img.poster-img-book-small{
 }
 
 h1{
-  text-align: center;
   font-size: var(--font-size-title);
   line-height: 1.1;
-  max-width: var(--max-width-wide);
-  margin: 0 auto;
-  padding: 0 var(--page-gutter);
+  margin: 1rem auto;
 }
 
 nav{
-  margin-top: 2rem;
-  text-align: center;
+  margin: 2rem 0;
   font-weight: normal;
 }
 nav a.prev{margin-right: 0.5rem}
@@ -112,9 +97,7 @@ nav a.next{margin-left: 0.5rem}
 p, li{
   font-size: var(--font-size);
   line-height: var(--line-height);
-  max-width: var(--max-width);
-  margin: 1rem auto 0 auto;
-  padding: 0 var(--page-gutter);
+  margin-top: 1rem;
   overflow-wrap: break-word;
 }
 
@@ -125,13 +108,10 @@ section[itemprop="articleBody"]>p:first-child::first-letter {
 }
 
 pre{
-  max-width: var(--max-width);
   margin: 1rem auto 0;
-  padding: 0 var(--page-gutter);
 }
 
 ul, ol{
-  max-width: var(--max-width);
   margin: 0 auto;
 }
 
@@ -157,46 +137,37 @@ ol{list-style-type:decimal}
 li p{margin:0;padding:0}
 
 article section a{
-  background: linear-gradient(to bottom, var(--color-medium) 95%, var(--color-medium) 100%);
+  background: linear-gradient(to bottom, black 95%, black 100%);
   background-repeat: no-repeat;
   background-size: 100% 1px;
   background-position: 0 calc(100% - 0.1ex);  
 }
 
-blockquote{margin: 1rem auto 0;max-width:34em;font-style:italic}
+blockquote{margin: 1rem 0;font-style:italic}
 blockquote p{margin:0 2em;font-style:italic}
 
 article section figure{
   display: block;
   margin: 1.6rem auto;
-  max-width: var(--max-width-wide);
   text-align: center;
+  width: 100%;
 }
 article section figure img{
   border:1px solid #ccc;
   width: 100%;
   height: auto;
 }
-article section figure img[src$=".png"],
-article section figure img[src$=".gif"],
-article section figure img.small{
-  max-width: var(--max-width);
-}
 
 figcaption{
-  font-family: var(--font-headings);
   font-weight: normal;
   text-align: right;
-  padding-right: 0.5em;
+  padding-right: 0;
   font-size: 0.6em;
-  margin-top: -0.5rem;
 }
-figcaption.legend-center{text-align: center;padding: 0}
+figcaption.legend-center{text-align: right;padding: 0}
 
 article section h2,article section h3,article section h4{
-  max-width: var(--max-width);
   margin: 1.6rem auto 0;
-  padding: 0 var(--page-gutter);
   line-height: var(--line-height);
 }
 
@@ -211,10 +182,9 @@ article section hr{
 }
 
 article section iframe{
-  margin:auto;
   padding:1rem 0;
   display: block;
-  width: var(--max-width)
+  width: 100%
 }
 
 code{
@@ -227,6 +197,8 @@ code{
   overflow-x: auto;  
 }
 
+article footer{margin: 1rem 0}
+
 /* Collection Pages */
 main[itemtype$="CollectionPage"] {
   text-align: center;
@@ -235,7 +207,6 @@ main[itemtype$="CollectionPage"] {
   justify-content: space-between;
   margin: var(--top-height) auto 0;
   max-width: 90rem;
-  padding: 0 var(--page-gutter);
 }
 
 main[itemtype$="CollectionPage"] nav *{
@@ -246,7 +217,6 @@ main[itemtype$="CollectionPage"] nav{
   display: flex;
   align-items: baseline;
   gap: 1.5rem;
-  justify-content: center;
   width: 100%;
   flex-wrap: wrap;
   margin: 0 0 1rem;
@@ -274,20 +244,19 @@ main[itemtype$="CollectionPage"] article img{
 main[itemtype$="CollectionPage"] article img.resume-img{height:12rem}
 
 main[itemtype$="CollectionPage"] data{
-  font-family: var(--font-headings);
   font-weight: bold;
   text-align: center;
   font-size: 1.35rem;
   position: absolute;
   top: 0;
   right: 0;
-  background-color: var(--color-contrast);
-  color: var(--color-bg);
+  background-color: black;
+  color: #fffbd4;
   min-width: 2rem;
 }
 
 main[itemtype$="CollectionPage"] h2{
-  font-size: var(--font-size);
+  font-size: small;
   font-weight: normal;
   margin: 0;
 }
@@ -299,33 +268,19 @@ main[itemtype$="CollectionPage"] h3{
 
 /* Books */
 article[itemtype$="Book"] > section[itemprop="articleBody"] > h2:first-of-type {
-  max-width: var(--max-width-wide);
   margin: 0 auto;
-  padding: 0 var(--page-gutter);
-  text-align: center;
   font-size: var(--font-size-h3);
   font-weight: normal;
 }
 
 h6{
-  max-width: var(--max-width);
   font-size: var(--font-size);
-  text-align: center;
   margin: 0.5rem auto 0;
-  padding: 0 var(--page-gutter);
 }
 
 .book_genre{color:var(--color-medium);font-variant: small-caps}
 
 /* Home */
-main[itemtype$="AboutPage"]{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 90vh;
-  text-align: center;
-}
-
 main[itemtype$="AboutPage"] section h2{
   margin: 2rem 0 0.5rem;
 }
@@ -337,32 +292,57 @@ main[itemtype$="AboutPage"] section h3{
 
 /* Footer & Social */
 footer section {
-  display: grid;
-  width: 8rem;
-  margin: 1rem auto;
+  display: flex;
+  width: 100%;
+  margin: 2rem auto;
   gap: 1rem;
-  grid-template-columns: 1fr 1fr;
-  place-items: center;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-footer section button,footer section a{
-  display: block;
-  width: 100%;
+footer section button,
+footer section a,
+footer section label {
+  display: inline;
+  width: auto;
   text-align: center;
   background: transparent;
-  border: none
+  border: none;
+  cursor:pointer
 }
 
-a.icon_download:before{
-  content: "\2913";
-  font-size: 1.4em;
-  color: var(--color-medium);
+div.comments{
+  display: none;
+  width: 100%;
+  margin: 0;
 }
-a.icon_friends:before{
-  content: "\26AF";
-  font-size: 1.4em;
-  color: var(--color-medium);
+
+.com-toggle:checked ~ div.comments {
+  display: block !important;
 }
+
+div.comments form{margin-top: 1rem;}
+
+div.comments form input[type="email"],
+div.comments form input[type="text"] {
+  width: 50%;
+  box-sizing: border-box;
+}
+div.comments form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+div.comments form input[type="radio"] {
+  display: inline;
+  margin-right: 0.5rem;
+}
+div.comments form button, [type='button'], [type='submit'] {
+    display: block;
+    color: #fffbd4;
+    background-color: black;
+}
+
+div.comments h5{text-align: left;font-weight: bold;font-family: var(--font-headings);}
 
 /* Newsletter */
 footer > div:last-of-type {
@@ -391,9 +371,7 @@ footer > div:last-of-type a {
 /* Menu */
 #menu{
   margin: var(--top-height) 0 0 0;
-  padding: 0 var(--page-gutter);
   font-family: var(--font-headings);
-  max-width:100%
 }
 
 #menu hr{
@@ -459,11 +437,9 @@ text-align: center;
   #menu div{display: block}
   #menu ul li {display: block}
   #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
-  iframe{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
-  main[itemtype$="CollectionPage"] article{width: 32%}
 }
 
 @media (min-width: 120ch){
-  main[itemtype$="CollectionPage"] article{width: 24%}
+  main[itemtype$="CollectionPage"] article{width: 33%}
 }
