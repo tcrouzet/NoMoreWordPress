@@ -18,85 +18,6 @@ class Web:
         self.db = db
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
-
-
-    # def url(self, post):
-
-    #     if not post:
-    #         return None
-    #     post=dict(post)
-    #     if 'path_md' not in post:
-    #         print(post)
-    #         exit("Bad post")
-                
-    #     base = os.path.basename(post['path_md'])        
-    #     file_name_without_extension = os.path.splitext(base)[0]
-    #     if post['type'] == 0:
-
-    #         #POST
-    #         dt = tools.timestamp_to_paris_datetime(post["pub_date"])
-    #         path = dt.strftime("/%Y/%m/%d")
-    #         url = "/".join([path.strip("/"), file_name_without_extension]) + "/"
-        
-    #     elif post['type'] == 1 or post['type'] == 2:
-
-    #         #PAGES
-    #         url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + "/"
-    #         #url = file_name_without_extension + "/"
-    #         # print(url)
-    #         # print(post)
-    #         # exit()
-
-    #     elif post['type'] == 5:
-
-    #         #TAGS
-    #         url = None
-    #         if "main" in post:
-    #             main_url = post['main'].get('url',None)
-    #             if main_url:
-    #                 if main_url.startswith("/"):
-    #                     url = main_url.strip("/")
-    #                 else:
-    #                     url = "tag/"+main_url
-    #         if not url:
-    #             url = "tag/" + post['path_md']
-
-
-    #         #url = "tag/" + post['main'].get('url',post['path_md'])
-
-    #     # print(url)
-    #     # exit()
-    #     return url
-
-
-    def comment_url(self, post):
-
-        if not post:
-            print("No post")
-            return None
-
-        if "comment_url" in post:
-            return post['comment_url']
-                
-        base = os.path.basename(post['path_md'])        
-        file_name_without_extension = os.path.splitext(base)[0]
-        if post['type'] == 0:
-
-            #POST
-            date = tools.timestamp_to_paris_datetime(post["pub_date"])
-            path = date.strftime("/%Y/%-m/")
-            url = '/'.join([path.strip('/'), file_name_without_extension]) + ".md"
-        
-        elif post['type'] == 1 or post['type'] == 2 or post['type'] == 5:
-
-            #PAGES
-            url = os.path.dirname(post['path_md']) + "/" + file_name_without_extension + ".md"
-        
-        else:
-
-            url = None
-
-        return url
     
 
     def url_image_relatif(self, src, post):
@@ -556,23 +477,7 @@ class Web:
             
         except Exception as e:
             print(f"Navigation {e}")
-            exit()
-
-    
-    def post_comment_total(self, post):
-        comment_url = os.path.join(self.config['comments_root'],self.comment_url(post))
-
-        try:
-            with open(comment_url, 'r', encoding='utf-8') as file:
-                content = file.read()
-                count = content.count('---\n\n')
-                    
-        except FileNotFoundError:
-            count = 0
-        if count == 0:
-            count = "&nbsp;&nbsp;"
-        return count    
-    
+            exit()    
 
     def supercharge_posts(self, template, posts):
         enriched_posts = []

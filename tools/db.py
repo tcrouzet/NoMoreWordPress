@@ -75,9 +75,10 @@ class Db:
             pub_date_str TEXT,
             pub_update_str TEXT,
             github TEXT,
-            tagslist TEXT, -- list json,
+            tagslist TEXT, -- list json
             datelink TEXT,
             navigation TEXT,  -- dict json
+            comments TEXT,
             updated BOOLEAN DEFAULT TRUE
         );''')
 
@@ -192,6 +193,7 @@ class Db:
                         path_md = :path_md,
                         github = :github,
                         datelink = :datelink,
+                        comments = :comments,
                         updated = TRUE
                     WHERE id = :id;'''
             c.execute(query, post)
@@ -208,8 +210,8 @@ class Db:
             # New post
 
             query = '''INSERT INTO posts 
-                    (source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  pub_date_str,  pub_update_str,  tagslist,  github,  datelink)
-             VALUES (:source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink);
+                    (source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  pub_date_str,  pub_update_str,  tagslist,  github,  datelink, comments)
+             VALUES (:source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink, :comments);
             '''
             c.execute(query, post)
             self.conn.commit()
@@ -322,17 +324,6 @@ class Db:
 
     def get_row_factory(self):
         return self.conn.row_factory
-
-    # def get_posts(self, condition=None):
-    #     c = self.conn.cursor()
-
-    #     if condition:
-    #         where = f"WHERE {condition}"
-    #     else:
-    #         where = ""
-    #     query = f"SELECT * FROM posts {where} ORDER BY pub_date DESC"
-    #     c.execute(query)
-    #     return c.fetchall()
 
     def get_posts(self, condition=None, exclude_tags=None):
         """
@@ -649,25 +640,6 @@ class Db:
         c.execute(query, params)
         tags = c.fetchall()
         return tags
-
-
-    def test_insert_post(self, post=None):
-        self.create_table_posts(True)
-        if not post:
-            post = {
-                'title': 'Test Entry', 
-                'path_md': 'test/path.md', 
-                'pub_date': 1379706780, 
-                'pub_update': 1416085181, 
-                'thumb_path': '/_i/test.jpg', 
-                'thumb_legend': 'Test Image', 
-                'type': 1, 
-                'tags': json.dumps(["test"])
-            }
-        result = self.insert_post(post)
-        self.conn.commit()
-        print("Insert/Update result:", result)
-        self.list_posts()
 
 
     def row_to_dict(self, obj):
@@ -1046,7 +1018,58 @@ class Db:
             url = "/" + os.path.dirname(path_md) + "/" + file_name_without_extension + "/"
 
         return url
+    
+    def comments(self, path_md):
+        try:
+            source_path = os.path.join(self.config['vault'], self.config['vault_comments'], path_md)
+            if os.path.exists(source_path):
+                with open(source_path, 'r', encoding='utf-8') as file:
+                    content = file.read()
 
+            # Séparer les commentaires par ---
+            parts = content.split('---')
+            
+            # Ignorer la première partie (lien du post)
+            comments_list = parts[1:]
+            
+            html = ''
+            
+            for i in range(0, len(comments_list), 1):
+                part = comments_list[i].strip()
+                if not part:
+                    continue
+                
+                lines = part.split('\n')
+                if len(lines) < 2:
+                    continue
+                
+                # Première ligne : nom @ date heure
+                header = lines[0].strip()
+                
+                # Extraire nom et date
+                if '@' in header:
+                    author, datetime_str = header.split('@', 1)
+                    author = author.strip()
+                    datetime_str = datetime_str.strip()
+                else:
+                    continue
+                
+                # Récupérer le texte
+                text_lines = []
+                for line in lines[1:]:
+                    text_lines.append(line)
+                
+                text = '\n'.join(text_lines).strip()
+                
+                # Générer le HTML
+                if text:
+                    html += f'''<h5>{author} @ {datetime_str}</h5><p>{text}</p>'''
+
+            return html
+                    
+        except Exception as e:
+            exit(f"Bug open comments {e}")
+ 
 
     def timestamp_to_date(self, timestamp):
         date_time = datetime.datetime.fromtimestamp(timestamp)
@@ -1188,6 +1211,9 @@ class Db:
 
             datelink = self.date_html(pub_date)
 
+            comments = self.comments(path_md)
+
+
             r = {
                 "source_path": path,
                 "pub_date": pub_date,
@@ -1206,7 +1232,8 @@ class Db:
                 "path_md": path_md,
                 "tagslist": tagslist,
                 "github": github,
-                "datelink": datelink
+                "datelink": datelink,
+                "comments": comments
             }
             # print(r)
             return r

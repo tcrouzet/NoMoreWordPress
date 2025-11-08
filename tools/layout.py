@@ -55,8 +55,6 @@ class Layout:
                 "image_max_size": int(template.get('image_max_size', 1024)),
                 "image_min_size": int(template.get('image_min_size', 250)),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
-                "comments": bool(template.get('comments', False)),
-                "comments_total": bool(template.get('comments_total', False)),
                 "inlinecss": self.inlinecss(base_dir),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
@@ -79,10 +77,6 @@ class Layout:
 
         print(f"{self.templates_count} template(s) loaded.")
 
-
-    # def load_template(self, template_dir, name):
-    #     path = os.path.join(template_dir, f"{name}.liquid")
-    #     return Liquid( path)
 
     def setDebug(self):
         self.debug = not self.debug
