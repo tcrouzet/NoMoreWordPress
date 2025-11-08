@@ -55,6 +55,7 @@ class Layout:
                 "image_max_size": int(template.get('image_max_size', 1024)),
                 "image_min_size": int(template.get('image_min_size', 250)),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
+                'comments': int(template.get('comments', 0)),
                 "inlinecss": self.inlinecss(base_dir),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
@@ -238,7 +239,7 @@ class Layout:
 
             header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config)
-            share_html = self.get_html(template["share"], post=supercharged, blog=self.config)
+            share_html = self.get_html(template["share"], post=supercharged, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
             article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html)
             single_html = self.get_html(template['single'], post=supercharged, blog=self.config, article=article_html)

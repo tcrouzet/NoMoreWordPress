@@ -439,14 +439,14 @@ div.comments{
   display: none;
   width: 100%;
   max-width: var(--max-width);
-  margin: 1rem auto 0;
-  padding-left: var(--page-gutter);
-  padding-right: var(--page-gutter);
+  margin: 0 auto 1rem;
 }
 
 .com-toggle:checked ~ div.comments {
   display: block !important;
 }
+
+div.comments form{margin-top: 1rem;}
 
 div.comments form input[type="email"],
 div.comments form input[type="text"] {
@@ -466,26 +466,7 @@ div.comments form button, [type='button'], [type='submit'] {
     background-color: var(--color-medium);
 }
 
-.comment {
-    margin-bottom: 1.5em;
-    padding: 0 0 1rem 0;
-    border-bottom: 1px solid var(--color--plus);
-}
-.comment-header {
-    margin-bottom: 0.5em;
-}
-.comment-author {
-    font-weight: bold;
-}
-.comment-date {
-    color: var(--color--medium);
-    margin-left: 1em;
-    font-size: 0.9em;
-}
-.comment-content {
-    line-height: 1.4;
-    font-size: smaller;
-}
+div.comments h5{text-align: left;font-weight: bold;font-family: var(--font-headings);}
 
 /* Newsletter */
 footer > div:last-of-type {

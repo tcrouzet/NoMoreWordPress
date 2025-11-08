@@ -15,8 +15,8 @@
         <figure>
             <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
             {% if post.thumb.height > post.thumb.width %}class="poster-book"{% endif %}
-            alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async"
-            srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 250w,{% endif %}{% if post.thumb.url_small %}{{ post.thumb.url_small }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w" />
+            alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async" itemprop="image"
+            srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 300w,{% endif %}{% if post.thumb.url_small %}{{ post.thumb.url_small }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w" />
 
             {% if post.thumb_legend != empty and not post.frontmatter.baseline %}<figcaption {% if post.thumb.height > post.thumb.width %}class="legend-center"{% endif %}>{{ post.thumb_legend }}</figcaption>{% endif %}
         </figure>
@@ -31,7 +31,18 @@
         {{ post.title }}
         {%- endif -%}
         </h1>
-    {% endif %}    
+    {% endif %}
+
+    {% if post.type == 0 and post.navigation %}    
+        <nav>
+            <a href="{{ post.navigation.prev_url }}" class="prev" rel="prev">&lt; </a>
+            {% if post.navigation.prev_url %}
+                <a href="/tag/{{ post.navigation.slug }}" itemprop="articleSection">{{ post.navigation.title }} {{ post.navigation.order }}</a> - 
+            {% endif %}
+            {{ post.datelink }}
+            <a href="{{ post.navigation.next_url }}" class="next" rel="next"> &gt;</a>
+        </nav>
+    {% endif %}
 
 </header>
 
@@ -67,18 +78,6 @@
 </section>
 
 <footer>
-
-    {% if post.type == 0 and post.navigation %}    
-        <nav>
-            <a href="{{ post.navigation.prev_url }}" class="prev" rel="prev">&lt; </a>
-            {% if post.navigation.prev_url %}
-                <a href="/tag/{{ post.navigation.slug }}" itemprop="articleSection">{{ post.navigation.title }} {{ post.navigation.order }}</a> - 
-            {% endif %}
-            {{ post.datelink }}
-            <a href="{{ post.navigation.next_url }}" class="next" rel="next"> &gt;</a>
-        </nav>
-    {% endif %}
-
     {% if post.type != 3 %}{{ share }}{% endif %}
     {{ newsletter }}
 </footer>

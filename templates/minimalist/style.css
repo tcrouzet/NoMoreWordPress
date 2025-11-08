@@ -1,17 +1,12 @@
 ::before,::after{box-sizing:border-box}
-html{font-family: "New York", "Charter", "Noto Serif", 'Bitstream Charter', 'Sitka Text', "Courier New", Courier, serif;-webkit-text-size-adjust:100%;tab-size:4}
-body{margin:0}
+html{font-family: "Monospace", "New York", "Charter", "Noto Serif", 'Bitstream Charter', 'Sitka Text', "Courier New", Courier, serif;-webkit-text-size-adjust:100%;tab-size:4}
+body{margin:0;background-color: #fdf6e3;color: #657b83;}
 button,input,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}
 button,select{text-transform:none}
 button,[type='button'],[type='submit']{appearance:button}
 
 :root {
-  --font-headings: "San Francisco",'Segoe UI', "Roboto", system-ui, "BlinkMacSystemFont", Helvetica,Arial,system-ui,sans-serif;
-  --color-bg: #1A1C18;
-  --color-contrast: #eee;
-  --color-medium: #aaa;
-  --color-light: #ddd;
-  --color-form: #31312F;
+  --font-headings: "Monospace", "San Francisco",'Segoe UI', "Roboto", system-ui, "BlinkMacSystemFont", Helvetica,Arial,system-ui,sans-serif;
   --font-size: 1.13rem;
   --line-height: calc(1ex/0.32);
   --font-size-small: 1rem;
@@ -31,13 +26,11 @@ html {
  
 body {
   font-size: var(--font-size);
-  color: var(--color-contrast);
-  background-color: var(--color-bg);
 }
  
-button,input,select,textarea,label{font-family:var(--font-headings);color:var(--color-form)}
+button,input,select,textarea,label{font-family:var(--font-headings)}
 h1,h2,h3,h6,nav,header{font-family:var(--font-headings);font-weight:bold}
-h4{color:var(--color-form);font-weight:bold}
+h4{font-weight:bold}
 
 button,a{cursor:pointer}
 a,a:visited,a:active,a:hover{color:inherit;text-decoration:none;border:none}
@@ -52,18 +45,15 @@ header {
   display: flex;
   gap: 0.8rem;
   padding-inline: 0.6rem;
-  background: var(--color-bg);
   z-index: 99;
 }
 
 header > a[aria-label="Menu"]::after {
   content: "\2630";
   font-size: 1.4em;
-  color: var(--color-medium);
 }
 
 header > a[aria-label="Accueil"]{
-  color: var(--color-contrast);
   font-size: 1.35rem;
 }
 
@@ -74,13 +64,12 @@ header > a[aria-label="Recherche"]{
 header > a[aria-label="Recherche"]::after {
   content: "\1F50D";
   font-size: 1.2em;
-  color: var(--color-medium);
 }
 
 /* Article */
 main{margin-top: var(--top-height)}
 
-article header{color:var(--color-contrast);display:contents}
+article header{display:contents}
 
 article header figure {
   margin: 0 auto;
@@ -99,7 +88,7 @@ main[itemtype$="CollectionPage"] article img.poster-img-book-small{
   width: 100%;
   height: auto;
   aspect-ratio: 3/4.5;
-  border: 1pt solid var(--color-medium);
+  border: 1pt solid;
 }
 
 h1{
@@ -139,7 +128,6 @@ pre{
   max-width: var(--max-width);
   margin: 1rem auto 0;
   padding: 0 var(--page-gutter);
-  color: var(--color-bg);
 }
 
 ul, ol{
@@ -163,7 +151,6 @@ ul li::before {
   font-size: 2rem;
   position: absolute;
   left: -0.5rem;
-  color: var(--color-medium);
 }
 
 ol{list-style-type:decimal}
@@ -220,7 +207,7 @@ article section h5{text-align: right;font-size: var(--font-size)}
 article section hr{
   width: 10ch;
   margin:2rem auto;
-  border: 1px solid var(--color-medium);
+  border: 1px solid;
 }
 
 article section iframe{
@@ -234,8 +221,6 @@ code{
   white-space: pre-wrap;
   display: block;
   padding: 1rem;
-  background-color: var(--color-form);
-  color: var(--color-light);
   border-radius: 4px;
   font-family: 'Monaco', 'Consolas', monospace;
   font-size: 0.8em;
@@ -413,7 +398,7 @@ footer > div:last-of-type a {
 
 #menu hr{
   margin: 1.5rem 0;
-  border: 1px solid var(--color-contrast);
+  border: 1px solid;
 }
 
 #menu h1{

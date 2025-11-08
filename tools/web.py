@@ -363,7 +363,7 @@ class Web:
                         if img_data['url_medium']:
                             srcset_parts.append(f"{img_data['url_medium']} 1024w")
                         if img_data['url_small']:
-                            srcset_parts.append(f"{img_data['url_small']} {template['image_min_size']}")
+                            srcset_parts.append(f"{img_data['url_small']} {template['image_min_size']}w")
 
                         new_div = soup.new_tag('figure')
                         img_attrs = {
@@ -511,7 +511,7 @@ class Web:
                
             #    print(post[key])
 
-            post['canonical'] = template['domain'] + post['url']
+            post['canonical'] = template['domain'] + post['url'].lstrim("/")
             
             if "content" in post:
                 post['content'] = self.image_manager(template, post)

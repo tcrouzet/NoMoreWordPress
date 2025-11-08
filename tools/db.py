@@ -1025,6 +1025,8 @@ class Db:
             if os.path.exists(source_path):
                 with open(source_path, 'r', encoding='utf-8') as file:
                     content = file.read()
+            else:
+                return ""
 
             # Séparer les commentaires par ---
             parts = content.split('---')
@@ -1050,7 +1052,9 @@ class Db:
                 if '@' in header:
                     author, datetime_str = header.split('@', 1)
                     author = author.strip()
+                    author = author.lstrip("n")
                     datetime_str = datetime_str.strip()
+                    datetime_str = ' '.join(datetime_str.split()[:2])
                 else:
                     continue
                 
@@ -1063,7 +1067,8 @@ class Db:
                 
                 # Générer le HTML
                 if text:
-                    html += f'''<h5>{author} @ {datetime_str}</h5><p>{text}</p>'''
+                    text = self.to_markdown(text)
+                    html += f'''<h5>{author} @ {datetime_str}</h5>{text}'''
 
             return html
                     
@@ -1075,6 +1080,18 @@ class Db:
         date_time = datetime.datetime.fromtimestamp(timestamp)
         readable_date = date_time.strftime("%Y-%m-%d")
         return readable_date
+
+    def to_markdown(self, content):
+        content = markdown.markdown(
+            content, 
+            extensions=['fenced_code'],
+            extension_configs={
+                'fenced_code': {
+                    'lang_prefix': ''  # Supprime le préfixe de langage
+                }
+            }
+        )
+        return content
 
 
     def markdown_extract(self, path, path_md, pub_update):
@@ -1176,15 +1193,7 @@ class Db:
             
             # Construire le contenu final puis convertir en HTML
             content = ''.join(content_lines).strip()
-            content = markdown.markdown(
-                content, 
-                extensions=['fenced_code'],
-                extension_configs={
-                    'fenced_code': {
-                        'lang_prefix': ''  # Supprime le préfixe de langage
-                    }
-                }
-            )
+            content = self.to_markdown(content)
 
             content = self.link_manager(content, path_md, pub_date, post_type)
 
