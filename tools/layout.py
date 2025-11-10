@@ -398,6 +398,7 @@ class Layout:
             home['thumb_path'] = home['digressions']['thumb_path']
             home['thumb_legend'] = home['digressions']['thumb_legend']
             home['is_home'] = True
+            home['frontmatter'] = None
 
             header_html = self.get_html(template["header"], post=home, blog=self.config, template=template)
             footer_html = self.get_html(template["footer"], post=home, blog=self.config)
@@ -416,11 +417,11 @@ class Layout:
 
     def e404_gen(self):
         text = '<p>Cette page n’existe plus ou n’a jamais existé.</p>'
-        post = {"thumb": None, "title": "Erreur 404", "content": text, "frontmatter": None, "type":1}
+        post = {"thumb": None, "title": "Erreur 404", "content": text, "frontmatter": None, "type":1, "frontmatter": None}
         self.special_pages(post, "", "404.html")
 
     def archives_gen(self, archives):
-        post = {"thumb": None, "title": "Archives", "content": archives, "frontmatter": None, "type":1}
+        post = {"thumb": None, "title": "Archives", "content": archives, "frontmatter": None, "type":1, "frontmatter": None}
         self.special_pages(post, "archives/")
 
     def get_html(self, template_obj, post=None, blog=None, **extra_ctx):
@@ -446,13 +447,13 @@ class Layout:
     def menu_gen(self):
         for template in self.templates:
             menu_html = self.get_html(template["menu"])
-            post = {"thumb": None, "title": "", "content": menu_html, "description": "Menu", "frontmatter": None, "type":3}
+            post = {"thumb": None, "title": "", "content": menu_html, "description": "Menu", "frontmatter": None, "type":3, "frontmatter": None}
             self.normal_pages(post, template, "menu/")
 
     def search_gen(self):
         for template in self.templates:
             search_html = self.get_html(template["search"])
-            post = {"thumb": None, "title": "", "content": search_html, "description": "Recherche", "frontmatter": None, "type":3}
+            post = {"thumb": None, "title": "", "content": search_html, "description": "Recherche", "frontmatter": None, "type":3, "frontmatter": None}
             self.normal_pages(post, template, "search/")
 
 

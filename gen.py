@@ -103,7 +103,8 @@ if db.new_tags + db.updated_tags > 0 or config['build'] == 2:
         "tag_title": "Séries",
         "description": f"Les thématiques de {config['title']}",
         "tag_url": "series/",
-        "is_tag": True
+        "is_tag": True,
+        "frontmatter": None
     }
     layout.tag_gen_serie( series, tags )
     sitemap.add_post( series, tags[0] )
@@ -119,7 +120,8 @@ if db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
         "tag_title": "Digression",
         "description": f"Tous les articles de {config['title']}",
         "tag_url": "/blog",
-        "is_tag": True
+        "is_tag": True,
+        "frontmatter": None
     }
     layout.tag_gen( series, blog_posts )
     sitemap.add_post( series, blog_posts[0] )
@@ -224,7 +226,8 @@ if db.new_posts > 0 or config['build'] == 2:
                 "path_md": posts[0]['path_md'],
                 "tag_url": f"/{str(year)}/",
                 "url": f"/{str(year)}/",
-                "is_tag": True
+                "is_tag": True,
+                "frontmatter": None
             }
             layout.year_gen( year_tag, posts )
             sitemap.add_post(year_tag)
