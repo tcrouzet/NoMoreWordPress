@@ -54,6 +54,7 @@ class Layout:
                 "post_per_page": int(template.get('post_per_page', 0)),
                 "image_max_size": int(template.get('image_max_size', 1024)),
                 "image_min_size": int(template.get('image_min_size', 250)),
+                "sizes": template.get('sizes', '100vw'),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 'comments': int(template.get('comments', 0)),
                 "inlinecss": self.inlinecss(base_dir),
@@ -241,7 +242,7 @@ class Layout:
             footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config)
             share_html = self.get_html(template["share"], post=supercharged, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
-            article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html)
+            article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html, template=template)
             single_html = self.get_html(template['single'], post=supercharged, blog=self.config, article=article_html)
             self.save(template, header_html + single_html + footer_html, supercharged['url'], "index.html")
             if template['infinite_scroll']:

@@ -35,10 +35,13 @@ class Webot:
         self.page = self.browser.new_page()
 
 
-    def substack(self, markdown_text):
+    def substack(self, post):
 
-        html, title = self.markdown2html(markdown_text)
-
+        html = f'<img src="{post[("thumb_path")]}"/>'
+        print(html)
+        html += post['content'].replace(config['images_dir'], config['canonical_domain'] + config['images_dir'].lstrip("/"))
+        print(html)
+        exit()
 
         # Naviguer vers Substack
         self.page.goto(f'{self.substack_url}/publish/post/')
@@ -47,7 +50,7 @@ class Webot:
         self.page.wait_for_selector('#post-title')
 
         # Remplir le champ de titre
-        self.page.fill('#post-title', title)
+        self.page.fill('#post-title', post['title'])
 
         self.page.wait_for_selector('div[data-testid="editor"]')
         # self.page.fill('div[data-testid="editor"]', html)
@@ -254,12 +257,9 @@ mode = "FR"
 
 if mode == "FR":
     last = db.get_last_published_post()
-    # last = db.get_post_by_title("Se soustraire au monde")
     print(last['path_md'])
-    path = os.path.join( template['export'], last['path_md'])
-
     bot = Webot(config, config['substack_fr'])
-    bot.substack(path)
+    bot.substack(last)
 
 elif mode == "BIKE":
     last = db.get_last_published_post()

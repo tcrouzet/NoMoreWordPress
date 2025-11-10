@@ -225,7 +225,7 @@ main[itemtype$="CollectionPage"] nav{
 main[itemtype$="CollectionPage"] article{
   display:inline-block;
   position:relative;
-  width:100%;
+  width:33%;
   min-width: 10rem;
   min-height: 13rem;
   margin-bottom: 1.6rem;
@@ -420,26 +420,24 @@ text-align: center;
 #search ul li::before {content: none}
 
 /* Media Queries */
-@media (max-width: 390px){
+@media (max-width: 40ch){
   :root{--font-size: 1rem}
-}
-
-@media (max-width: 60ch){
   label{margin-right: 0.5em}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;justify-content: flex-start}
-  main[itemtype$="CollectionPage"] nav h1{padding: 0;font-size: 1.2rem}
 }
 
 /*small screen */
-@media (max-width: 80ch){
+@media (max-width: 70ch){
   article header figure img{height:40vh}
   h1 {font-size:calc(var(--font-size)*2)}
+  main[itemtype$="CollectionPage"] nav h1{padding: 0;font-size: 1.2rem}
   #menu div{display: block}
   #menu ul li {display: block}
   #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
+  main[itemtype$="CollectionPage"] article{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
 }
 
 @media (min-width: 120ch){
-  main[itemtype$="CollectionPage"] article{width: 33%}
+  main[itemtype$="CollectionPage"] article{width: 28%}
 }

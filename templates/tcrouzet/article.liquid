@@ -15,8 +15,8 @@
             <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
             class="{% if post.thumb.height > post.thumb.width %}poster-img-book{% else %}poster-img-full{% endif %}" 
             alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async" itemprop="image"
-            srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 300w,{% endif %}{% if post.thumb.url_medium %}{{ post.thumb.url_medium }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w" />
-
+            srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 300w,{% endif %}{% if post.thumb.url_medium %}{{ post.thumb.url_medium }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w"
+            sizes="{{ template.sizes }}" />
             {% if post.thumb_legend != empty and not post.frontmatter.baseline %}<figcaption {% if post.thumb.height > post.thumb.width %}class="legend-center"{% endif %}>{{ post.thumb_legend }}</figcaption>{% endif %}
         </figure>
         

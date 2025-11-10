@@ -82,8 +82,9 @@ html {
   box-sizing: border-box;
   line-height: var(--line-height);
   text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
 }
- 
+
 body {
   font-size: var(--font-size);
   color: var(--color-contrast);
@@ -328,7 +329,8 @@ main[itemtype$="CollectionPage"] nav{
 main[itemtype$="CollectionPage"] article{
   display:inline-block;
   position:relative;
-  width:100%;
+  width:33%;
+  max-width: none;
   min-width: 10rem;
   min-height: 13rem;
   margin-bottom: 1.6rem;
@@ -546,26 +548,25 @@ text-align: center;
 
 
 /* Media Queries */
-@media (max-width: 390px){
+/* Petits écrans (moins de 40ch ≈ 320-400px) */
+@media (max-width: 40ch){
   :root{--font-size: 1rem}
-}
-
-@media (max-width: 60ch){
   label{margin-right: 0.5em}
-  main[itemtype$="CollectionPage"] nav{gap: 0.5rem;justify-content: flex-start}
-  main[itemtype$="CollectionPage"] nav h1{padding: 0;font-size: 1.2rem}
 }
+ 
 
-/*small screen */
-@media (max-width: 80ch){
+/* Écrans moyens (moins de 70ch ≈ 560-700px) - Mobile/Tablette portrait */
+@media (max-width: 70ch){
   article header figure img{height:40vh}
   h1 {font-size:calc(var(--font-size)*2)}
+  main[itemtype$="CollectionPage"] nav{gap: 0.5rem;justify-content: flex-start}
+  main[itemtype$="CollectionPage"] nav h1{padding: 0;font-size: 1.2rem}
   #menu div{display: block}
   #menu ul li {display: block}
   #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
   iframe{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
-  main[itemtype$="CollectionPage"] article{width: 32%}
+  main[itemtype$="CollectionPage"] article{width: 100%}
 }
 
 @media (min-width: 120ch){

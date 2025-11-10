@@ -373,8 +373,8 @@ class Web:
                             'height': img_data['height'],
                             'loading': 'lazy',
                             'decoding': 'async',
-                            'srcset': ', '.join(srcset_parts)
-                            # 'sizes': f'(max-width: {img_data['width']}px) 100vw, {img_data['width']}px'
+                            'srcset': ', '.join(srcset_parts),
+                            'sizes': template['sizes']
                         }
 
                         if myclass:

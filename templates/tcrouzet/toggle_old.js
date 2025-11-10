@@ -1,68 +1,54 @@
 let oktoload = true;
 
 document.addEventListener("DOMContentLoaded", function() {
-  window.addEventListener("scroll", scrollFire, { passive: true });
-  // Check initial (utile si la page est courte)
-  scrollFire();
+  if (document.getElementById("loadMore")) {
+    window.addEventListener("scroll", scrollFire, { passive: true });
+    scrollFire(); // si déjà proche du bas
+  }
 });
 
 function scrollFire() {
-  // Si déjà en charge, ne rien faire
   if (!oktoload) return;
-
   const more = document.getElementById("loadMore");
-  if (!more) return; // plus rien à charger
+  if (!more) return;
 
   const scrollY = window.scrollY || window.pageYOffset;
   const viewportH = window.innerHeight;
-
   const docHeight = Math.max(
     document.documentElement.scrollHeight,
     document.body.scrollHeight
   );
 
-  if (scrollY + viewportH >= docHeight - 600) {
+  if (scrollY + viewportH >= docHeight - 500) {
     oktoload = false;
-    loadMoreContent(more);
+    loadMoreContent();
   }
 }
 
-function loadMoreContent(moreEl) {
-  if (!moreEl) return;
+function loadMoreContent() {
+  const more = document.getElementById("loadMore");
+  if (!more) return;
 
-  let url = moreEl.getAttribute('next-url');
+  let url = more.getAttribute('next-url');
   if (!url) return;
-
   if (!url.includes('.html')) url += "content.html";
 
-  // Retire le placeholder pour éviter double déclenchement
-  moreEl.remove();
+  more.remove();
 
   fetch(url)
-    .then(r => {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.text();
-    })
+    .then(r => r.text())
     .then(html => {
       const main = document.querySelector('main');
       if (!main) return;
-
-      // Insère le HTML renvoyé (il DOIT contenir à la fin un nouveau #loadMore s’il reste des pages)
       main.insertAdjacentHTML('beforeend', html);
-
-      // Autorise un nouveau chargement et relance un check au prochain frame
-      requestAnimationFrame(() => {
-        oktoload = true;
-        scrollFire(); // si la page est encore courte, on enchaîne
-      });
-    })
-    .catch(e => {
-      console.error(e);
-      // En cas d’erreur, autorise à retenter au scroll suivant
       oktoload = true;
-    });
+      // Si on est encore proche du bas (grand écran / contenu court), relance un check
+      scrollFire();
+    })
+    .catch(e => console.error(e));
 }
 
+// Share bouton
 function share(customTitle, customUrl) {
   const title = customTitle || document.title;
   const url = customUrl || window.location.href;
