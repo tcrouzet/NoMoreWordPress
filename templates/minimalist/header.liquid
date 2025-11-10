@@ -1,6 +1,10 @@
 {% assign title = post.frontmatter.metatitle | default: post.title | default: blog.title %}
 {% assign description = post.frontmatter.metadescription | default: post.description | default: blog.description %}
-{% assign thumb_url = template.domain | append: post.thumb.jpeg | replace: '//', '/' %}
+{% if post.thumb.jpeg %}
+  {% set thumb_url = template.domain.rstrip('/') + post.thumb.jpeg %}
+{% else %}
+  {% set thumb_url = '' %}
+{% endif %}
 
 <!DOCTYPE html>
 <html lang="fr">

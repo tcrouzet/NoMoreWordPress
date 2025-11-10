@@ -357,7 +357,7 @@ class Db:
             
             params = tuple(exclude_tags)
         
-        query = f"SELECT * FROM posts {where_clause} ORDER BY pub_date DESC"
+        query = f"SELECT *, (COUNT(*) OVER ()) - ROW_NUMBER() OVER (ORDER BY pub_date DESC) + 1 AS ordre FROM posts {where_clause} ORDER BY pub_date DESC"
         
         c.execute(query, params)
         return c.fetchall()
@@ -1067,7 +1067,7 @@ class Db:
                 
                 # Générer le HTML
                 if text:
-                    text = self.to_markdown(text)
+                    text = self.to_html(text)
                     html += f'''<h5>{author} @ {datetime_str}</h5>{text}'''
 
             return html
@@ -1081,7 +1081,7 @@ class Db:
         readable_date = date_time.strftime("%Y-%m-%d")
         return readable_date
 
-    def to_markdown(self, content):
+    def to_html(self, content):
         content = markdown.markdown(
             content, 
             extensions=['fenced_code'],
@@ -1093,6 +1093,54 @@ class Db:
         )
         return content
 
+    def normalise_md(self, content):
+        """
+        Normalise la hiérarchie des titres Markdown pour éviter les sauts de niveaux.
+        Si pas de h2, décale tout (h3->h2, h4->h3, etc.)
+        Sinon, assure une hiérarchie stricte sans sauts.
+        """
+        # Trouver tous les titres avec leur niveau
+        pattern = r'^(#{2,6})\s+(.+)$'
+        lines = content.split('\n')
+        
+        # Identifier les niveaux présents
+        levels_present = set()
+        for line in lines:
+            match = re.match(pattern, line)
+            if match:
+                level = len(match.group(1))
+                levels_present.add(level)
+        
+        if not levels_present:
+            return content
+        
+        # Créer un mapping de normalisation
+        sorted_levels = sorted(levels_present)
+        
+        # Si pas de h2, on décale tout de -1
+        if 2 not in sorted_levels:
+            level_mapping = {level: level - 1 for level in sorted_levels}
+        else:
+            # Sinon, on crée une hiérarchie stricte à partir de h2
+            level_mapping = {}
+            target_level = 2
+            for level in sorted_levels:
+                level_mapping[level] = target_level
+                target_level += 1
+        
+        # Appliquer la transformation
+        result_lines = []
+        for line in lines:
+            match = re.match(pattern, line)
+            if match:
+                current_level = len(match.group(1))
+                new_level = level_mapping[current_level]
+                title_text = match.group(2)
+                result_lines.append('#' * new_level + ' ' + title_text)
+            else:
+                result_lines.append(line)
+        
+        return '\n'.join(result_lines)
 
     def markdown_extract(self, path, path_md, pub_update):
         """
@@ -1193,7 +1241,8 @@ class Db:
             
             # Construire le contenu final puis convertir en HTML
             content = ''.join(content_lines).strip()
-            content = self.to_markdown(content)
+            content = self.normalise_md(content)
+            content = self.to_html(content)
 
             content = self.link_manager(content, path_md, pub_date, post_type)
 

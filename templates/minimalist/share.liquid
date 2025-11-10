@@ -19,21 +19,23 @@
     <form method="POST" action="https://formspree.io/f/mgebvkwn">
       <input type="hidden" name="postUrl" value="{{ post.url }}">
       <input type="hidden" name="postTitle" value="{{ post.title }}">
-      <input autocomplete="on" name="email" type="email" placeholder="Votre email" required>
-      <input autocomplete="on" name="nom" type="text" placeholder="Votre nom" required>  
-      <textarea name="message" style="width: 100%;height:10rem" placeholder="Votre commentaire" required></textarea>
+      <input aria-label="Email" autocomplete="on" name="email" type="email" placeholder="Votre email" required>
+      <input aria-label="Nom" autocomplete="on" name="nom" type="text" placeholder="Votre nom" required>  
+      <textarea aria-label="Message" name="message" placeholder="Votre commentaire" required></textarea>
 
-      <label>
-        <input type="radio" name="messageType" value="private" checked>
-        Privé
-      </label>
-      {% if comments_open %}
-      <label>
-      <input type="radio" name="messageType" value="public">
-        Public (modéré)
-      </label>
-      {% endif %}
-      
+      <fieldset>
+        <legend>Visibilité</legend>
+        <label>
+          <input type="radio" name="messageType" value="private" checked>
+          Privé
+        </label>
+        {% if comments_open %}
+        <label>
+        <input type="radio" name="messageType" value="public">
+          Public (modéré)
+        </label>
+        {% endif %}
+      </fieldset>
       <button type="submit">Envoyer</button>
     </form>
 

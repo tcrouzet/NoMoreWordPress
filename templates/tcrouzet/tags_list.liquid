@@ -14,7 +14,8 @@
             src="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
             class="{% if post.tag_slug == 'book' %}poster-img-book-small{% else %}resume-img{% endif %}"
             alt="{{ tag_post.thumb_legend }}" loading="lazy" decoding="async"
-            srcset="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }} 250w,{% endif %}{{ tag_post.thumb.url }} 1024w"
+            srcset="{% if tag_post.thumb.url_small %}{{ tag_post.thumb.url_small }} 300w{% endif %}{% if tag_post.thumb.url_1024 %}, {{ tag_post.thumb.url_1024 }} 1024w{% endif %}"
+            sizes="(min-width: 48rem) 300px, calc(100vw - 2rem)"
             />
         {% else %}
             <img width="250" height="188" class="resume-img"/>
@@ -28,7 +29,7 @@
                 <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title }}</a></h3>
                 <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
             {% elsif post.tag_slug == "blog"  %}
-                <data value="{{ tag_post.navigation.order }}"><a href="{{ tag_post.url }}">{{ tag_post.navigation.order }}</a></data>
+                <data value="{{ blog_order }}"><a href="{{ tag_post.url }}">{{  tag_post.ordre }}</a></data>
                 <h3><a href="{{ tag_post.navigation.url }}">{{ tag_post.navigation.title }}</a></h3>
                 <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
             {% else %}

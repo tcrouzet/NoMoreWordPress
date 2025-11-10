@@ -3,6 +3,8 @@ from playwright.sync_api import sync_playwright
 import markdown
 import tools.tools
 import tools.db
+import tools.web
+import tools.logs
 
 import requests
 from PIL import Image
@@ -10,14 +12,18 @@ from io import BytesIO
 import tempfile
 import base64
 
+sys.stdout = tools.logs.DualOutput("_log.txt")
+sys.stderr = sys.stdout
+
 
 class Webot:
 
-    def __init__(self, config, substack_url=None):
+    def __init__(self, config, db, template=None, substack_url=None):
         self.config = config
         self.profile = config['playwright_profile'] # Chemin du profil
         self.substack_url = substack_url
-
+        self.db = db
+        self.template = template
         self.base_dir = None
 
         p = sync_playwright().start()
@@ -37,11 +43,11 @@ class Webot:
 
     def substack(self, post):
 
-        html = f'<img src="{post[("thumb_path")]}"/>'
-        print(html)
-        html += post['content'].replace(config['images_dir'], config['canonical_domain'] + config['images_dir'].lstrip("/"))
-        print(html)
-        exit()
+        web = tools.web.Web(config, self.db)
+        post = web.supercharge_post(self.template, post)
+
+        html = f'<img src="{post["thumb"]["url"]}"/>{post['content']}'
+        html = html.replace('src="/',f'src="{self.template['domain']}')
 
         # Naviguer vers Substack
         self.page.goto(f'{self.substack_url}/publish/post/')
@@ -114,23 +120,6 @@ class Webot:
                 print(f"Erreur lors de la conversion de l'image {webp_url}: {e}")
         
         return html
-
-
-    def load_markdown(self, url):
-
-        if not os.path.exists(url):
-            print(f"Can't find {url}")
-            raise(f"Error load_markdown")
-        
-        md = tools.tools.read_file(url)
-        match = re.search(r'/(\d{4})/(\d{1,2})/', url)
-
-        if match:
-            year = match.group(1)  # Extrait l'année (4 chiffres)
-            month = match.group(2)   # Extrait le mois (1 ou 2 chiffres)
-            return md, year, month
-        return md, None, None
-
 
     def replace_with_base64(self, match):
         img_src = match.group(1)
@@ -258,7 +247,7 @@ mode = "FR"
 if mode == "FR":
     last = db.get_last_published_post()
     print(last['path_md'])
-    bot = Webot(config, config['substack_fr'])
+    bot = Webot(config, db, template=template, substack_url=config['substack_fr'])
     bot.substack(last)
 
 elif mode == "BIKE":

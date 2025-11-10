@@ -269,10 +269,9 @@ article section h2,article section h3,article section h4{
   max-width: var(--max-width);
   margin: 1.6rem auto 0;
   padding: 0 var(--page-gutter);
-  line-height: var(--line-height);
 }
 
-article section h2,article section h3{font-size: var(--font-size-h3)}
+/* article section h2,article section h3{font-size: var(--font-size-h3)} */
 article section h4{font-size: smaller}
 article section h5{text-align: right;font-size: var(--font-size)}
 
@@ -448,7 +447,7 @@ div.comments{
   display: block !important;
 }
 
-div.comments form{margin-top: 1rem;}
+div.comments form{margin: 1rem auto};
 
 div.comments form input[type="email"],
 div.comments form input[type="text"] {
@@ -466,6 +465,19 @@ div.comments form input[type="radio"] {
 div.comments form button, [type='button'], [type='submit'] {
     display: block;
     background-color: var(--color-medium);
+}
+div.comments form fieldset {border:none;margin:0;padding: 0;}
+
+div.comments form legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 div.comments h5{text-align: left;font-weight: bold;font-family: var(--font-headings);}
@@ -559,6 +571,7 @@ text-align: center;
 @media (max-width: 70ch){
   article header figure img{height:40vh}
   h1 {font-size:calc(var(--font-size)*2)}
+  nav{font-size: smaller}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;justify-content: flex-start}
   main[itemtype$="CollectionPage"] nav h1{padding: 0;font-size: 1.2rem}
   #menu div{display: block}
@@ -567,6 +580,10 @@ text-align: center;
   iframe{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
   main[itemtype$="CollectionPage"] article{width: 100%}
+  div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);
+}
+
+
 }
 
 @media (min-width: 120ch){

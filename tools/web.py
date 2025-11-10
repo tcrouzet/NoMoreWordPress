@@ -569,6 +569,8 @@ class Web:
             else:
                 tag['navigation'] = {}
 
+            tag['frontmatter'] = None
+
             if first_post:
                 tag['pub_date'] = first_post['pub_date']
                 tag['pub_update'] = first_post['pub_update']

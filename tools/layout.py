@@ -447,13 +447,13 @@ class Layout:
     def menu_gen(self):
         for template in self.templates:
             menu_html = self.get_html(template["menu"])
-            post = {"thumb": None, "title": "", "content": menu_html, "description": "Menu", "frontmatter": None, "type":3, "frontmatter": None}
+            post = {"thumb": None, "title": "", "content": menu_html, "description": "Menu", "frontmatter": None, "type":3}
             self.normal_pages(post, template, "menu/")
 
     def search_gen(self):
         for template in self.templates:
             search_html = self.get_html(template["search"])
-            post = {"thumb": None, "title": "", "content": search_html, "description": "Recherche", "frontmatter": None, "type":3, "frontmatter": None}
+            post = {"thumb": None, "title": "", "content": search_html, "description": "Recherche", "frontmatter": None, "type":3}
             self.normal_pages(post, template, "search/")
 
 
