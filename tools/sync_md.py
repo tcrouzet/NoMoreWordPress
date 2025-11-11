@@ -1,21 +1,24 @@
+#python3 ./tools/sync_md.py
+
+import subprocess
+from datetime import datetime
 from tqdm import tqdm
 import os, sys, re
 import shutil
-import tools.tools
-import tools.logs
-import tools.sync_github
+import tools
+import logs
 from PIL import Image
 
-sys.stdout = tools.logs.DualOutput("_log.txt")
+sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-config = tools.tools.site_yml('site.yml')
+config = tools.site_yml('site.yml')
 
 def sync_files(src, dst):
 
     print(f"Syncing {src} to {dst}")
     # Étape 1: Copier de la source vers la destination
-    total = tools.tools.count_files(src)
+    total = tools.count_files(src)
     pbar = tqdm(total=total, desc='MD:')
     for root, dirs, files in os.walk(src):
 
@@ -36,7 +39,7 @@ def sync_files(src, dst):
 
                 if "/comments/" not in src_path:
 
-                    content = tools.tools.read_file(src_path)
+                    content = tools.read_file(src_path)
                     if content is None:
                         continue
 
@@ -48,7 +51,7 @@ def sync_files(src, dst):
                         # print(f"Missing date tag in {src_path}")
                         continue
 
-                if not os.path.exists(dst_path) or tools.tools.calculate_hash(src_path) != tools.tools.calculate_hash(dst_path):
+                if not os.path.exists(dst_path) or tools.calculate_hash(src_path) != tools.calculate_hash(dst_path):
                     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
                     shutil.copy2(src_path, dst_path)
             else:
@@ -107,24 +110,24 @@ def clean_files(src, dst, preserved_files):
 
 def index():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    src_path = os.path.join(script_dir, "templates", config['template'], "md.html")
+    parent_dir = os.path.dirname(script_dir) + os.sep
+    src_path = os.path.join(parent_dir, "templates", "md", "md.html")
     dst_path = os.path.join(config['export_github_md'], "index.html")
 
-    if not os.path.exists(dst_path) or tools.tools.calculate_hash(src_path) != tools.tools.calculate_hash(dst_path):
+    if not os.path.exists(dst_path) or tools.calculate_hash(src_path) != tools.calculate_hash(dst_path):
         shutil.copy2(src_path, dst_path)
 
 
-gh = tools.sync_github.MyGitHub(config, "md", config['export_github_md'])
-
 # Quand des fichiers montent pas
-#gh.sync_local_with_github()
-# exit()
 
 preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
 clean_files(config['vault'], config['export_github_md'], preserved_files)
 index()
 
-gh.pull()
-gh.push()
-# gh.sync_and_push()
+dossier = config['export_github_md']
+current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+subprocess.run(["git", "add", "."], cwd=dossier)
+subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
+subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)

@@ -1,20 +1,22 @@
+#python3 ./tools/sync_gmi.py
+
 import os, sys, re
 from datetime import date
 import shutil
-import tools.tools
-import tools.logs
-import tools.sync_github
-import tools.sync_files
+import tools
+import logs
+import sync_github as github
+import sync_files
 from md2gemini import md2gemini
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw
 
 import numpy as np
 import subprocess
 
-sys.stdout = tools.logs.DualOutput("_log.txt")
+sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-config = tools.tools.site_yml('site.yml')
+config = tools.site_yml('site.yml')
 
 def mount_synology_volume():
     server_address = "smb://NasZone._smb._tcp.local/Web"
@@ -292,7 +294,7 @@ def sync_one_file(src_path, src, dst):
         if "/comments/" not in src_path and dst_path.endswith('.gmi'):
             # Pour les fichiers Markdown, copier si différent ou inexistant
 
-            content = tools.tools.read_file(src_path)
+            content = tools.read_file(src_path)
             if content is None:
                 return None
 
@@ -307,7 +309,7 @@ def sync_one_file(src_path, src, dst):
             gmi = sync_images(gmi, os.path.dirname(src_path), os.path.dirname(dst_path))
             
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            if not os.path.exists(dst_path) or tools.tools.calculate_hash(dst_path) != tools.tools.hash_content(gmi):
+            if not os.path.exists(dst_path) or tools.calculate_hash(dst_path) != tools.hash_content(gmi):
                 print("New file: ", dst_path)
                 with open(dst_path, 'w', encoding='utf-8') as f:
                     f.write(gmi)
@@ -315,7 +317,7 @@ def sync_one_file(src_path, src, dst):
             return {'date': post_date, 'link': f"=> {rel_path} {post_date} - {title}\n"}
 
 
-def sync_files(src, dst):
+def sync_gmi_files(src, dst):
 
     print(f"GMI syncing {src} to {dst}")
 
@@ -382,15 +384,10 @@ if not mount_synology_volume():
     print("No NAS connected!")
     sys.exit(1)
 
-sync_files(config['export_github_md'], config['gemini_export'] )
+sync_gmi_files(config['export_github_md'], config['gemini_export'] )
 
-sync = tools.sync_files.SyncFiles(config['gemini_export'],'/Volumes/docker/gemini/content')
+sync = sync_files.SyncFiles(config['gemini_export'],'/Volumes/docker/gemini/content')
 
-# command = 'rsync -av --update --exclude=".DS_Store" --exclude=".*/" --delete --checksum=false ~/Documents/gemini/ /Volumes/docker/gemini/content'
-# subprocess.run(command, shell=True, check=True)
+# gh = github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
+# gh.push()
 
-gh = tools.sync_github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
-gh.push()
-
-
-# rsync -av --update --exclude=".DS_Store" --exclude=".*/" --delete --checksum=false ~/Documents/gemini/ /Volumes/docker/gemini/content

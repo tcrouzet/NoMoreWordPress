@@ -3,7 +3,7 @@
 
 import os
 import shutil
-import tools.tools
+import tools
 import subprocess
 import time
 
@@ -20,14 +20,14 @@ class SyncFiles:
         self.parent_dir = os.path.dirname(script_dir) + os.sep
         
         self.previous_state_path = os.path.join(self.parent_dir, 'state_file.json')
-        self.previous_state = tools.tools.load_json(self.previous_state_path)
+        self.previous_state = tools.load_json(self.previous_state_path)
         self.previous_state = {k: float(v) for k, v in self.previous_state.items()}
 
         # print(self.previous_state)
         # exit()
 
         self.current_state = self.get_file_state(source_directory)
-        tools.tools.save_json("test.json", self.current_state)
+        tools.save_json("test.json", self.current_state)
 
         # Identifier les fichiers modifiés avec tolérance
         changed_files = [file for file in self.current_state 
@@ -39,7 +39,7 @@ class SyncFiles:
 
         # Save current file state
         sorted_current_state = dict(sorted(self.current_state.items(), key=lambda x: x[0], reverse=True))
-        tools.tools.save_json(self.previous_state_path, sorted_current_state)
+        tools.save_json(self.previous_state_path, sorted_current_state)
 
     def get_file_state(self, directory):
         print(f"Getting file state for {directory}")

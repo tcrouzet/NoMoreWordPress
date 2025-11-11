@@ -54,7 +54,7 @@ class Layout:
                 "post_per_page": int(template.get('post_per_page', 0)),
                 "image_max_size": int(template.get('image_max_size', 1024)),
                 "image_min_size": int(template.get('image_min_size', 250)),
-                "sizes": template.get('sizes', '100vw'),
+                "sizes": template.get('sizes', None),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 'comments': int(template.get('comments', 0)),
                 "inlinecss": self.inlinecss(base_dir),

@@ -7,11 +7,10 @@ from datetime import datetime
 
 class MyGitHub:
 
-    def __init__(self, config, mode="sourcehut"):
-        self.config = config
-        self.token = config['GITHUB_TOKEN']
-        self.owner = config['REPO_OWNER']
-        self.repo_name = config['repo_name']
+    def __init__(self, token=None, owner=None, repo_name=None, export= None, mode="sourcehut"):
+        self.token = token
+        self.owner = owner
+        self.repo_name = repo_name
         self.mode = mode
 
         # self.test_connection()
@@ -21,7 +20,7 @@ class MyGitHub:
             print("GitHub actions running. No commit.")
             sys.exit()
 
-        self.repo = Repo(config['export'])
+        self.repo = Repo(export)
 
         self.clean()
 

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tcrouzet.com archives markdown</title>
+    <style>
+        ul {
+            list-style-type: none;
+        }
+        .nested {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .year, .month {
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>tcrouzet.com archives markdown</h1>
+    <ul id="markdown-list"></ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const repoUrl = 'https://api.github.com/repos/tcrouzet/md/contents/';
+            
+            function createListItem(text, isFolder = false) {
+                const listItem = document.createElement('li');
+                listItem.textContent = text;
+                if (isFolder) {
+                    listItem.classList.add('folder');
+                }
+                return listItem;
+            }
+
+            function fetchContents(url, parentElement, isMonth = false) {
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.sort((a, b) => {
+                            const nameA = a.name.length === 1 ? '0' + a.name : a.name;
+                            const nameB = b.name.length === 1 ? '0' + b.name : b.name;
+                            return nameA.localeCompare(nameB);
+                        });
+                        data.forEach(file => {
+                            if (file.type === 'dir' && !file.name.startsWith('_')  && !file.name.startsWith('.')) {
+                                const listItem = createListItem(file.name, true);
+                                listItem.classList.add(isMonth ? 'month' : 'year');
+                                parentElement.appendChild(listItem);
+                                const nestedList = document.createElement('ul');
+                                nestedList.classList.add('nested');
+                                parentElement.appendChild(nestedList);
+                                listItem.addEventListener('click', function() {
+                                    nestedList.classList.toggle('active');
+                                    if (!nestedList.classList.contains('loaded')) {
+                                        fetchContents(file.url, nestedList, !isMonth);
+                                        nestedList.classList.add('loaded');
+                                    }
+                                });
+                            } else if (file.name.endsWith('.md') && parentElement !== document.getElementById('markdown-list')) {
+                                const listItem = document.createElement('li');
+                                const link = document.createElement('a');
+                                link.href = file.html_url;
+                                link.textContent = file.name;
+                                listItem.appendChild(link);
+                                parentElement.appendChild(listItem);
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            fetchContents(repoUrl, document.getElementById('markdown-list'));
+        });
+    </script>
+</body>
+</html>

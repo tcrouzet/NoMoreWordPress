@@ -371,10 +371,6 @@ class Web:
                             'alt': alt_text,
                             'width': img_data['width'],
                             'height': img_data['height'],
-                            'loading': 'lazy',
-                            'decoding': 'async',
-                            'srcset': ', '.join(srcset_parts),
-                            'sizes': template['sizes']
                         }
 
                         #Not small web
