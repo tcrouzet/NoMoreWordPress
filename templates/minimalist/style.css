@@ -234,11 +234,11 @@ main[itemtype$="CollectionPage"] article{
 main[itemtype$="CollectionPage"] data{
   font-weight: bold;
   text-align: center;
-  position: relative;
   background-color: black;
   color: #fffbd4;
-  min-width: 2rem;
+  min-width: 3rem;
   margin-right: 0.5rem;
+  display: inline-block;
 }
 
 main[itemtype$="CollectionPage"] h2{

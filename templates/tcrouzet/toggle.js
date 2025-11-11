@@ -30,7 +30,7 @@ function scrollFire() {
 function loadMoreContent(moreEl) {
   if (!moreEl) return;
 
-  let url = moreEl.getAttribute('next-url');
+  let url = moreEl.getAttribute('data-next-url');
   if (!url) return;
 
   if (!url.includes('.html')) url += "content.html";

@@ -45,7 +45,7 @@
 </header>
     
 
-<section itemprop="articleBody">
+<div itemprop="articleBody">
 
     {% if post.frontmatter.exergue %}
         <h2>{{ post.frontmatter.exergue }}</h2>
@@ -74,7 +74,7 @@
     </ul>
     {% endif %}
     
-</section>
+</div>
 
 <footer>
     {% if post.type != 3 %}{{ share }}{% endif %}
@@ -84,5 +84,5 @@
 </article>
 
 {% if post.type == 0 and post.navigation and post.navigation.prev_url != post.navigation.next_url %}
-    <div id="loadMore" next-url="{{ post.navigation.prev_url }}" hidden></div>
+    <div id="loadMore" data-next-url="{{ post.navigation.prev_url }}" hidden></div>
 {% endif %}

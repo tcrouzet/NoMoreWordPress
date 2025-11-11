@@ -188,7 +188,7 @@ p, li{
   overflow-wrap: break-word;
 }
 
-section[itemprop="articleBody"]>p:first-child::first-letter {
+[itemprop="articleBody"]>p:first-child::first-letter {
   font-family: var(--font-headings);
   font-weight: 700;
   font-size: large;
@@ -228,7 +228,7 @@ ul li::before {
 ol{list-style-type:decimal}
 li p{margin:0;padding:0}
 
-article section a{
+article [itemprop="articleBody"] a{
   background: linear-gradient(to bottom, var(--color-medium) 95%, var(--color-medium) 100%);
   background-repeat: no-repeat;
   background-size: 100% 1px;
@@ -238,20 +238,23 @@ article section a{
 blockquote{margin:auto;max-width:var(--max-width);font-style:italic}
 blockquote p{margin:1rem;font-style:italic}
 
-article section figure{
+article [itemprop="articleBody"] figure{
   display: block;
   margin: 1.6rem auto;
   max-width: var(--max-width-wide);
   text-align: center;
 }
-article section figure img{
+article [itemprop="articleBody"] figure img{
   border:1px solid #ccc;
   width: 100%;
   height: auto;
 }
-article section figure img[src$=".png"],
-article section figure img[src$=".gif"],
-article section figure img.small{
+article [itemprop="articleBody"] figure img[src$=".png"],
+article [itemprop="articleBody"] figure img[src$=".gif"],
+article [itemprop="articleBody"] figure img.small{
+  max-width: var(--max-width);
+}
+article [itemprop="articleBody"] figure img.portrait{
   max-width: var(--max-width);
 }
 
@@ -265,23 +268,22 @@ figcaption{
 }
 figcaption.legend-center{text-align: center;padding: 0}
 
-article section h2,article section h3,article section h4{
+article [itemprop="articleBody"] h2,article [itemprop="articleBody"] h3,article [itemprop="articleBody"] h4{
   max-width: var(--max-width);
   margin: 1.6rem auto 0;
   padding: 0 var(--page-gutter);
 }
 
-/* article section h2,article section h3{font-size: var(--font-size-h3)} */
-article section h4{font-size: smaller}
-article section h5{text-align: right;font-size: var(--font-size)}
+article [itemprop="articleBody"] h4{font-size: smaller}
+article [itemprop="articleBody"] h5{text-align: right;font-size: var(--font-size)}
 
-article section hr{
+article [itemprop="articleBody"] hr{
   width: 10ch;
   margin:2rem auto;
   border: 1px solid var(--color-medium);
 }
 
-article section iframe{
+article [itemprop="articleBody"] iframe{
   margin:auto;
   padding:1rem 0;
   display: block;
@@ -372,7 +374,7 @@ main[itemtype$="CollectionPage"] h3{
 }
 
 /* Books */
-article[itemtype$="Book"] > section[itemprop="articleBody"] > h2:first-of-type {
+article[itemtype$="Book"] > [itemprop="articleBody"] > h2:first-of-type {
   max-width: var(--max-width-wide);
   margin: 0 auto;
   padding: 0 var(--page-gutter);
@@ -410,7 +412,7 @@ main[itemtype$="AboutPage"] section h3{
 }
 
 /* Footer & Social */
-footer section {
+footer > div:first-of-type {
   display: flex;
   width: 100%;
   max-width: var(--max-width);
@@ -421,9 +423,9 @@ footer section {
   align-items: center;
 }
 
-footer section button,
-footer section a,
-footer section label {
+footer > div:first-of-type button,
+footer > div:first-of-type a,
+footer > div:first-of-type label {
   display: inline;
   width: auto;
   text-align: center;

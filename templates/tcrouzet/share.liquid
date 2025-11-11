@@ -2,7 +2,7 @@
 {% assign post_age_days = now | minus: post.pub_date | divided_by: 86400 %}
 {% assign comments_open = post_age_days < template.comments %}
 
-<section>
+<div>
   <input type="checkbox" id="com-{{ post.id }}" class="com-toggle" hidden>
   <label for="com-{{ post.id }}" class="icon_com" title="Commenter"></label>
   
@@ -44,4 +44,4 @@
     </form>
 
   </div>
-</section>
+</div>
