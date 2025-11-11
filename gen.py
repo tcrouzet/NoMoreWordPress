@@ -125,7 +125,7 @@ if db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
     }
     layout.tag_gen( series, blog_posts )
     sitemap.add_post( series, blog_posts[0] )
-    feed.builder(posts,"blog", "Derniers articles de Thierry Crouzet")
+    feed.builder(blog_posts,"blog", "Derniers articles de Thierry Crouzet")
     print(f"Blog done {len(blog_posts)}")
 
 #HOME
@@ -146,7 +146,7 @@ sitemap.save()
 
 
 #MAIN FEED
-if  db.new_posts + db.updated_posts > 0 or config['build'] == 2 or force:
+if  db.new_posts + db.updated_posts > 0 or config['build'] == 2:
     posts = db.get_blog_posts()
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
     print("Main feed done")

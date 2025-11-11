@@ -46,7 +46,7 @@ class Webot:
         web = tools.web.Web(config, self.db)
         post = web.supercharge_post(self.template, post)
 
-        html = f'<img src="{post["thumb"]["url"]}"/>{post['content']}'
+        html = f'<img src="{post["thumb"]["url"]}" alt="{post["thumb"]["legend"]}" />{post['content']}'
         html = html.replace('src="/',f'src="{self.template['domain']}')
 
         # Naviguer vers Substack
@@ -166,75 +166,6 @@ class Webot:
         html = img_pattern.sub(self.replace_with_base64, html)
         
         return html
-
-
-    def markdown2html(self, markdown_path):
-
-        self.base_dir = os.path.dirname(markdown_path)
-        markdown_text, year, month = self.load_markdown(markdown_path)
-
-        title = None
-        lines = markdown_text.split('\n')    
-        # Find first title
-        for line in lines:
-            if line.startswith('# ') and not title:
-                title = line.strip('# ').strip()
-                markdown_text = markdown_text.replace(line + '\n', '', 1)
-                break
-        if title is None:
-            sys.exit("No title found")
-
-        # Supprimer tags
-        markdown_text = re.sub(r'^#\S+(?:\s+#\S+)*\s*$', '', markdown_text, flags=re.MULTILINE)
-
-        html = markdown.markdown(markdown_text)
-
-        # Chemin img
-        if year and month:
-            html = html.replace("_i/",f"https://github.com/tcrouzet/md/raw/main/{year}/{month}/_i/")
-        else:
-            html = self.embed_local_images(html, markdown_path)
-            
-        html = self.html_optimize(html)
-        # print(html)
-        # exit()
-
-        return html, title
-
-
-    def html_optimize(self, html):
-        """
-        Version simplifiée qui se concentre uniquement sur les paragraphes contenant des images.
-        """
-        from bs4 import BeautifulSoup
-        
-        soup = BeautifulSoup(html, 'html.parser')
-        
-        # Trouver tous les paragraphes contenant des images
-        img_paragraphs = []
-        for p in soup.find_all('p'):
-            if p.find('img'):
-                img_paragraphs.append(p)
-        
-        # Si nous avons au moins deux paragraphes avec des images
-        if len(img_paragraphs) >= 2:
-            # Parcourir les paragraphes consécutifs
-            for i in range(len(img_paragraphs) - 1):
-                current = img_paragraphs[i]
-                next_p = img_paragraphs[i + 1]
-                
-                # Vérifier si les paragraphes sont directement consécutifs
-                # en vérifiant si le prochain élément après current est next_p
-                next_elem = current.next_sibling
-                while next_elem and (not next_elem.name or next_elem.name not in ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
-                    next_elem = next_elem.next_sibling
-                
-                if next_elem == next_p:
-                    # Ajouter un espaceur entre les deux paragraphes
-                    spacer = soup.new_tag('p')
-                    current.insert_after(spacer)
-        
-        return str(soup)
 
 
 config = tools.tools.site_yml('site.yml')

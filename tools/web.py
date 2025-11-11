@@ -1,7 +1,5 @@
 import os, re
 from datetime import datetime, timezone
-import time
-import locale
 from PIL import Image
 import shutil
 from bs4 import BeautifulSoup
@@ -152,86 +150,88 @@ class Web:
                                 "legend": legend
                             }
 
-                        # Webp et JPEG
-                        max_size = int(template['image_max_size'])
-                        min_size = int(template['image_min_size'])
-                        
-                        sizes = {}
-                        # print(width, max_size, min_size)
-                        if width > max_size and max_size > 1024:
-                            # print("cas 1")
-                            sizes = {'max': 'resize', 'medium': 'resize', 'small': 'resize'}
-                        elif width > 1024 and max_size > 1024:
-                            # print("cas 2")
-                            sizes = {'max': None, 'medium': 'resize', 'small': 'resize'}
-                        elif width > 1024 and max_size <= 1024:
-                            # print("cas 3")
-                            sizes = {'max': 'resize', 'small': 'resize'}
                         else:
-                            # print("case 1")
-                            sizes = {'max': None, 'small': 'resize'}
 
-                        # print(sizes)
-
-                        # Création des versions redimensionnées de l'image
-                        for size, value in sizes.items():
-
-                            # print("Size:", size, "Value:", value)
-                            if value is None:
-                                self.copy_if_needded(media_source_path, media_target_path)
-                                sizes[size] = self.relativise_path(template['export'], media_target_path)
-                                if size == 'max':
-                                    final_max_width = width
-                                    final_max_height = height
-                                continue
+                            # Webp et JPEG
+                            max_size = int(template['image_max_size'])
+                            min_size = int(template['image_min_size'])
                             
-                            # resize needed
-
-                            if size == 'max':
-                                new_path = media_target_path
-                                new_width = max_size
-                                ratio = (new_width / float(width))
-                                new_height = int((float(height) * float(ratio)))
-                                final_max_width = max_size
-                                final_max_height = new_height
+                            sizes = {}
+                            # print(width, max_size, min_size)
+                            if width > max_size and max_size > 1024:
+                                # print("cas 1")
+                                sizes = {'max': 'resize', 'medium': 'resize', 'small': 'resize'}
+                            elif width > 1024 and max_size > 1024:
+                                # print("cas 2")
+                                sizes = {'max': None, 'medium': 'resize', 'small': 'resize'}
+                            elif width > 1024 and max_size <= 1024:
+                                # print("cas 3")
+                                sizes = {'max': 'resize', 'small': 'resize'}
                             else:
-                                new_path = self.add_before_extension(media_target_path,size)
-                                if size=="small":
-                                    new_width = int(min_size)
+                                # print("case 1")
+                                sizes = {'max': None, 'small': 'resize'}
+
+                            # print(sizes)
+
+                            # Création des versions redimensionnées de l'image
+                            for size, value in sizes.items():
+
+                                # print("Size:", size, "Value:", value)
+                                if value is None:
+                                    self.copy_if_needded(media_source_path, media_target_path)
+                                    sizes[size] = self.relativise_path(template['export'], media_target_path)
+                                    if size == 'max':
+                                        final_max_width = width
+                                        final_max_height = height
+                                    continue
+                                
+                                # resize needed
+
+                                if size == 'max':
+                                    new_path = media_target_path
+                                    new_width = max_size
+                                    ratio = (new_width / float(width))
+                                    new_height = int((float(height) * float(ratio)))
+                                    final_max_width = max_size
+                                    final_max_height = new_height
                                 else:
-                                    new_width = 1024
-                                ratio = (new_width / float(width))
-                                new_height = int((float(height) * float(ratio)))
+                                    new_path = self.add_before_extension(media_target_path,size)
+                                    if size=="small":
+                                        new_width = int(min_size)
+                                    else:
+                                        new_width = 1024
+                                    ratio = (new_width / float(width))
+                                    new_height = int((float(height) * float(ratio)))
 
-                            if os.path.exists(new_path):
+                                if os.path.exists(new_path):
+                                    sizes[size] = self.relativise_path(template['export'], new_path)
+                                    # print(f"size {size} exist")
+                                    continue
+
+                                destination_dir = os.path.dirname(new_path)
+                                os.makedirs(destination_dir, exist_ok=True)
+
+                                img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                                img_resized.save(new_path)
                                 sizes[size] = self.relativise_path(template['export'], new_path)
-                                # print(f"size {size} exist")
-                                continue
 
-                            destination_dir = os.path.dirname(new_path)
-                            os.makedirs(destination_dir, exist_ok=True)
+                                # print("Fin for")
+                            
+                            template_image = {
+                                "width": final_max_width,
+                                "height": final_max_height,
+                                "format": "image/"+img.format.lower(),
+                                "url": sizes.get('max',''),
+                                "url_medium": sizes.get('medium', '' ),
+                                "url_small": sizes.get('small', ''),
+                                "jpeg": "",
+                                "legend": legend,
+                            }
 
-                            img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                            img_resized.save(new_path)
-                            sizes[size] = self.relativise_path(template['export'], new_path)
-
-                            # print("Fin for")
-                        
-                        template_image = {
-                            "width": final_max_width,
-                            "height": final_max_height,
-                            "format": "image/"+img.format.lower(),
-                            "url": sizes.get('max',''),
-                            "url_medium": sizes.get('medium', '' ),
-                            "url_small": sizes.get('small', ''),
-                            "jpeg": "",
-                            "legend": legend,
-                        }
-
-                        if thumb:
-                            template_image['jpeg'] = self.makeJPEGthumb(template, template_image)
-                        else:
-                            template_image['jpeg'] =  template_image['url']
+                            if thumb:
+                                template_image['jpeg'] = self.makeJPEGthumb(template, template_image)
+                            else:
+                                template_image['jpeg'] =  template_image['url']
                     
                 images[template['name']] = template_image
         
@@ -376,6 +376,13 @@ class Web:
                             'srcset': ', '.join(srcset_parts),
                             'sizes': template['sizes']
                         }
+
+                        #Not small web
+                        if template['sizes']:
+                            img_attrs['loading'] = 'lazy'
+                            img_attrs['decoding'] = 'async'
+                            img_attrs['srcset'] = ', '.join(srcset_parts)
+                            img_attrs['sizes'] = template['sizes']
 
                         if myclass:
                             img_attrs['class'] = myclass

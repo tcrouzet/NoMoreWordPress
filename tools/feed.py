@@ -65,10 +65,12 @@ class Feed:
 
                 #print(post['title'])
 
-                fe.id(f"{template['domain']}{post['url']}")  # Utiliser l'URL complète comme GUID
+                url = f"{template['domain']}{post['url'].lstrip("/")}"
+
+                fe.id(url)  # Utiliser l'URL complète comme GUID
 
                 fe.title(post['title'])
-                fe.link(href=template["domain"]+post['url'])
+                fe.link(href=url)
 
                 # Ajouter l'image en haut du contenu si disponible
                 content_html = post['content'].strip()
