@@ -1,3 +1,5 @@
+# python ./tools/img_effects.py
+
 import os
 from PIL import Image, ImageDraw, ImageEnhance
 import numpy as np
@@ -8,7 +10,7 @@ class ImgEffects:
         self.config = config
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
-        self.temp_dir = os.path.join(script_dir, "_temp")
+        self.temp_dir = os.path.join(self.parent_dir, "_temp")
         os.makedirs(self.temp_dir, exist_ok=True)
 
 
@@ -368,12 +370,13 @@ class ImgEffects:
         output_img.save(output_path)
         print(f"✓ Image tramée créée : {output_path}")
 
-    def halftone_simple(self, image_path, output_path, cell_size=4):
+    def halftone_simple(self, image_path, output_path, cell_size=4, size_factor=2, fill_color="black", format="PNG"):
+
         img = Image.open(image_path).convert('L')
         w, h = img.size
         
-        # Image de sortie 2x plus grande pour meilleure qualité
-        output = Image.new('RGB', (w*2, h*2), 'white')
+        size_factor = int(size_factor)
+        output = Image.new('RGB', (w*size_factor, h*size_factor), 'white')
         draw = ImageDraw.Draw(output)
         
         for y in range(0, h, cell_size):
@@ -390,23 +393,38 @@ class ImgEffects:
                 radius = (cell_size * (255 - brightness) / 255) * 0.9
                 
                 if radius > 0.3:
-                    cx = (x + cell_size/2) * 2
-                    cy = (y + cell_size/2) * 2
-                    draw.ellipse([cx-radius*2, cy-radius*2, 
-                                cx+radius*2, cy+radius*2], 
-                            fill='black')
-        
-        output.save(output_path, quality=95)
+                    cx = (x + cell_size/size_factor) * size_factor
+                    cy = (y + cell_size/size_factor) * size_factor
+                    draw.ellipse([cx-radius*size_factor, cy-radius*size_factor, 
+                                cx+radius*size_factor, cy+radius*size_factor], 
+                            fill=fill_color)
+                    
+        if format.upper() == 'WEBP':
+            output_path = output_path + ".webp"
+            print(output_path)
+            output.save(output_path, format='WEBP', quality=95, method=6)
+        else:  # PNG par défaut
+            output.save(output_path +".png", format='PNG', optimize=True)
+            
+        # output.save(output_path, quality=95)
+
+
 
 if __name__ == '__main__':
-    os.system('clear')
+    # os.system('clear')
     import tools
     config = tools.site_yml('site.yml')
     img = ImgEffects(config)
 
+    source = os.path.join(img.temp_dir,'test2.webp')
+    target = os.path.join(img.temp_dir,'effect')
+
+    img.halftone_simple(source, target, cell_size=2, size_factor=2, fill_color="black")
+    exit()
+
     img.image_to_halftone(
-        'macron.webp', 
-        'image_tramee.png',
+        source,
+        target,
         bg_color='#FFFFFF',
         dot_color='#4e3eb5',
         dot_size=6,

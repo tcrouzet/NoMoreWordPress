@@ -289,7 +289,7 @@ if version>0 and db.new_posts + db.updated_posts > 0:
             subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
             subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
 
-    tools.tools.run_script('sync_md.py')
-    tools.tools.run_script('sync_gmi.py')
+    tools.tools.run_script('tools/sync_md.py')
+    tools.tools.run_script('tools/sync_gmi.py')
 else:
     print("No export")

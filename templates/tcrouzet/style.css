@@ -437,6 +437,7 @@ label.icon_com:before{color:var(--color--social);font: 400 1.3rem/1 icomoon!impo
 button.icon_share:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\ea82'}
 a.icon_download:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e9c2'}
 a.icon_friends:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e972'}
+a.icon_money:before{color:var(--color--social);font: 400 1.4rem/1 icomoon!important;content:'\e93c'}
 
 div.comments{
   display: none;
@@ -505,8 +506,6 @@ footer > div:last-of-type a {
   font-size: 1rem;
   border: none;
 }
-
-.link-background{background: #7700ff !important}
 
 /* Menu */
 #menu{
