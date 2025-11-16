@@ -4,6 +4,7 @@ import os
 import subprocess
 import json
 import re
+import locale
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo  # Python 3.9+
 
@@ -110,6 +111,16 @@ def now_datetime() -> datetime:
 def now_datetime_str() -> str:
     dt_paris = now_datetime()
     return dt_paris.isoformat(timespec="seconds")
+
+def month_year(timestamp: int) -> str:
+    # Configure la locale pour obtenir le nom du mois en français
+    try:
+        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8') 
+    except locale.Error:
+        locale.setlocale(locale.LC_TIME, 'fr_FR')
+
+    dt_paris = timestamp_to_paris_datetime(timestamp)
+    return dt_paris.strftime('%B %Y')    
 
 def output_dir():
     output_dir = "_output"

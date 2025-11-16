@@ -11,13 +11,7 @@
 <header>
     
     {% if post.type != 3 %}
-        <h1 itemprop="headline">
-        {%- if post.frontmatter.baseline -%}
-        <span class="book_genre">{{ post.frontmatter.genre }} </span>{{ post.frontmatter.baseline }}
-        {%- else -%}
-        {{ post.title }}
-        {%- endif -%}
-        </h1>
+        <h1 itemprop="headline">{{ post.title }}</h1>
     {% endif %}    
 
     {% if post.type == 0 and post.navigation %}
@@ -29,14 +23,22 @@
             {{ post.datelink }}
             <a href="{{ post.navigation.next_url }}" class="next" rel="next"> &gt;</a>
         </nav>
+    {% elsif post.frontmatter.baseline %}
+        <nav><span>{{ post.frontmatter.genre }} </span>{{ post.frontmatter.baseline }}</nav>
     {% endif %}
 </header>
     
 
 <div itemprop="articleBody">
 
-    {% if post.frontmatter.exergue %}
-        <h2>{{ post.frontmatter.exergue }}</h2>
+    {% if post.type == 2 and post.thumb %}
+        <figure>
+            <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
+            class="book" 
+            alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async" itemprop="image"
+            srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 300w,{% endif %}{% if post.thumb.url_medium %}{{ post.thumb.url_medium }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w"
+            sizes="{{ template.sizes }}" />
+        </figure>
     {% endif %}
 
     {% if post.frontmatter.lire %}

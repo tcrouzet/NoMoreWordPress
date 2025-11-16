@@ -707,8 +707,9 @@ class Db:
             
             if result:
                 img_data = json.loads(result[0])
-                # print(img_data)
-                return img_data[template_name]
+                r = img_data[template_name]
+                r['media_size'] = img_data['media_size']
+                return r
             else:
                 print(f"{media_source_path} not in cache")
             return None
@@ -1344,4 +1345,3 @@ class Db:
         print(self.updated_posts, "updated posts")
         print(self.new_tags, "new tags")
         print(self.updated_tags, "updated tags")
-

@@ -1,5 +1,11 @@
 ::before,::after{box-sizing:border-box}
-html{font-family: system-ui, sans-serif;-webkit-text-size-adjust:100%;tab-size:4}
+html{
+  -webkit-text-size-adjust:100%;
+  tab-size:4;
+  box-sizing: border-box;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
 body{margin:0}
 button,input,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}
 button,select{text-transform:none}
@@ -13,10 +19,9 @@ button,[type='button'],[type='submit']{appearance:button}
   --color-medium: #aaa;
   --color-light: #fafafa;
   --color-link: #e30613;
-  --color-link-text: #600000;
+  --color-link-text: #700000;
   --font-size: 1.18rem;
   --line-height: calc(1ex/0.32);
-  --font-size-small: 1rem;
   --font-size-h1: 2.7rem;
   --font-size-h3: 1.7rem;
   --max-width: 40rem;
@@ -26,10 +31,8 @@ button,[type='button'],[type='submit']{appearance:button}
 }
 
 html {
-  box-sizing: border-box;
+  font-family: var(--font-normal);
   line-height: var(--line-height);
-  text-rendering: optimizeLegibility;
-  scroll-behavior: smooth;
 }
 
 body {
@@ -52,9 +55,7 @@ header {
   align-items: baseline;
   display: flex;
   gap: 0.8rem;
-  background: var(--color-bg);
   z-index: 99;
-  font-weight: normal;
   padding: 0.5rem var(--page-gutter);
   background-color: var(--color-light);
 }
@@ -92,21 +93,6 @@ article header{
   position: unset;
 }
 
-article header figure {
-  display: block;
-  margin: 0 auto;
-  width: 100%;
-  max-width: var(--max-width-wide);
-  text-align: center;
-}
-
-article header figure img {
-  width:100%;
-  height:70vh;
-  object-fit: cover;
-}
-.poster-img-book{object-fit: contain}
-
 main[itemtype$="CollectionPage"] article img.poster-img-book-small{
   width: 100%;
   height: auto;
@@ -132,6 +118,7 @@ nav{
 }
 nav a.prev{margin-right: 0.5rem}
 nav a.next{margin-left: 0.5rem}
+nav span{font-weight: bold;}
 
 /* Content */
 p, li{
@@ -202,23 +189,20 @@ blockquote{
 }
 blockquote p{margin:1rem;font-style:italic}
 
-article [itemprop="articleBody"] figure{
+/* figure{
   display: block;
   margin: 1.6rem auto;
   max-width: var(--max-width-wide);
   text-align: center;
 }
-article [itemprop="articleBody"] figure img{
+figure img{
   border:1px solid #ccc;
   width: 100%;
   height: auto;
 }
-article [itemprop="articleBody"] figure img[src$=".png"],
-article [itemprop="articleBody"] figure img[src$=".gif"],
-article [itemprop="articleBody"] figure img.small{
-  max-width: var(--max-width);
-}
-article [itemprop="articleBody"] figure img.portrait{
+figure img[src$=".png"],
+figure img[src$=".gif"],
+figure img.portrait{
   max-width: var(--max-width);
 }
 
@@ -229,8 +213,49 @@ figcaption{
   font-size: 0.6em;
   margin-top: -0.5rem;
   line-height: normal;
+} */
+/* figcaption.legend-center{text-align: center;padding: 0} */
+
+
+figure {
+  display: block;
+  margin: 1.6rem auto;
+  max-width: var(--max-width-wide);
+  text-align: center;
 }
-figcaption.legend-center{text-align: center;padding: 0}
+
+figure img {
+  border: 1px solid #ccc;
+  width: 100%;
+  height: auto;
+}
+
+figure img[src$=".png"],
+figure img[src$=".gif"],
+figure img.portrait {
+  max-width: var(--max-width);
+}
+
+figcaption {
+  font-weight: normal;
+  text-align: right;
+  padding-right: 0.5em;
+  font-size: 0.6em;
+  margin-top: -0.5rem;
+  line-height: normal;
+  /* width: 100%; */
+  margin-left: auto;
+  margin-right: auto;
+  max-width: var(--max-width-wide);
+}
+
+/* Appliquer les mêmes max-width à figcaption */
+figure img[src$=".png"] ~ figcaption,
+figure img[src$=".gif"] ~ figcaption,
+figure img.portrait ~ figcaption {
+  max-width: var(--max-width);
+}
+
 
 article [itemprop="articleBody"] h2,article [itemprop="articleBody"] h3,article [itemprop="articleBody"] h4{
   max-width: var(--max-width);
@@ -247,7 +272,7 @@ article [itemprop="articleBody"] hr{
   max-width: var(--max-width);
 }
 
-article [itemprop="articleBody"] iframe{
+iframe{
   margin:auto;
   padding:1rem 0;
   display: block;
@@ -266,12 +291,6 @@ code{
 }
 
 /* Collection Pages */
-main[itemtype$="CollectionPage"] {
-  text-align: center;
-  margin: var(--top-height) auto 0;
-  width: 100%;
-}
-
 main[itemtype$="CollectionPage"] nav *{
     margin:0;
 }
@@ -282,7 +301,6 @@ main[itemtype$="CollectionPage"] nav{
   align-items: baseline;
   gap: 1.5rem;
   justify-content: center;
-  width: 100%;
   flex-wrap: wrap;
   padding: 1rem var(--page-gutter) 2rem;
 }
@@ -291,12 +309,10 @@ main[itemtype$="CollectionPage"] article{
   max-width: var(--max-width);
   padding: 0 var(--page-gutter);
   margin: 2rem auto;
-  text-align: left;
 }
 
 main[itemtype$="CollectionPage"] data{
   font-weight: bold;
-  text-align: center;
   background-color: var(--color-medium);
   color: var(--color-bg);
   padding: 0.1rem;
@@ -314,16 +330,15 @@ main[itemtype$="CollectionPage"] h3{
   font-size: 1.2rem;
   margin-left: 0.5rem;
   font-variant: small-caps;
+  color: var(--color-medium);
+  font-family: var(--font-normal);
+  font-weight: normal;
 }
 
 /* Books */
-article[itemtype$="Book"] > [itemprop="articleBody"] > h2:first-of-type {
-  max-width: var(--max-width-wide);
-  margin: 0 auto;
-  padding: 0 var(--page-gutter);
-  text-align: center;
-  font-size: var(--font-size-h3);
-  font-weight: normal;
+
+figure img.book{
+  max-width: 40ch;
 }
 
 h6{
@@ -333,8 +348,6 @@ h6{
   margin: 0.5rem auto 0;
   padding: 0 var(--page-gutter);
 }
-
-.book_genre{color:var(--color-medium);font-variant: small-caps}
 
 /* Home */
 main[itemtype$="AboutPage"]{
@@ -346,12 +359,15 @@ main[itemtype$="AboutPage"]{
 }
 
 main[itemtype$="AboutPage"] section h2{
+  font-variant: small-caps;
+  font-weight: normal;
+  color: var(--color-medium);
   font-family: var(--font-normal);
   margin: 2rem 0 0.5rem;
 }
 
 main[itemtype$="AboutPage"] section h3{
-  font-family: var(--font-normal);
+  font-size: var(--font-size-h3);
   font-weight: normal;
   margin: 0;
 }
@@ -374,8 +390,7 @@ footer > div:first-of-type label {
   display: inline;
   width: auto;
   text-align: center;
-  background: transparent;
-  border: none;
+  cursor: pointer;
 }
 
 label.icon_com:before{
@@ -383,6 +398,10 @@ label.icon_com:before{
   color:var(--color--social);
   font-size: 1.6rem;
   font-weight: bold;
+}
+button.icon_share{
+  background: transparent;
+  border: none;
 }
 button.icon_share:before{
   content:'⤴';
@@ -449,10 +468,6 @@ div.comments form textarea {
 div.comments form input[type="radio"] {
   display: inline;
   margin-right: 0.5rem;
-}
-div.comments form button, [type='button'], [type='submit'] {
-    display: block;
-    background-color: var(--color-medium);
 }
 div.comments form fieldset {border:none;margin:0;padding: 0;}
 
@@ -523,13 +538,23 @@ footer > div:last-of-type a {
 
 /* Search */
 #search{
-margin-top: var(--top-height);
+max-width: var(--max-width);
+padding: var(--top-height) var(--page-gutter) 0;
+margin:0 auto;
 display: flex;
 flex-direction: column;
 justify-content: center;
 align-items: center;
 height: 60vh;
 text-align: center;
+}
+
+#search form{
+  width: 80%;
+  text-align: center;
+}
+#search form input[type="text"] {
+  width:100%;
 }
 
 #search ul li{
@@ -548,19 +573,17 @@ text-align: center;
   label{margin-right: 0.5em}
 }
  
-
 /* Écrans moyens (moins de 70ch ≈ 560-700px) - Mobile/Tablette portrait */
 @media (max-width: 70ch){
-  article header figure img{height:40vh}
   h1 {font-size:calc(var(--font-size-h1)*0.7)}
   nav{font-size: smaller}
-  main[itemtype$="CollectionPage"] nav{gap: 0.5rem;justify-content: flex-start}
-  main[itemtype$="CollectionPage"] nav h1{padding: 0;font-size: 1.2rem}
+  main[itemtype$="CollectionPage"] nav{gap: 0.5rem}
+  main[itemtype$="CollectionPage"] nav h1{padding: 0}
+  main[itemtype$="AboutPage"] section h3{font-size: calc(var(--font-size-h3)*0.8);}
   #menu div{display: block}
   #menu ul li {display: block}
   #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
   iframe{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
-  main[itemtype$="CollectionPage"] article{width: 100%}
   div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);}
 }

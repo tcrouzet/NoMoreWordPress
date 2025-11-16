@@ -104,7 +104,10 @@ class Web:
         media_source_path = self.media_source_path( post, media_src_file )
         url_media_relatif = self.url_image_relatif( media_src_file, post)
 
-        images = {'media_source_path': media_source_path}
+        images = {
+            'media_source_path': media_source_path,
+            'media_size': os.path.getsize(media_source_path)
+        }
         try:
             for template in templates:
 
@@ -346,14 +349,14 @@ class Web:
 
                     if img_data["format"].startswith("image/"):
 
-                        if img_data['width'] < img_data['height']:
+                        if img_data['width'] < img_data['height'] or img_data['media_size']<100000:
                             myclass = 'portrait'
                             myclasslegend = 'legend-center'
                         else:
                             myclass = ''
                             myclasslegend = ''
                         if img_data['width'] < 1024:
-                            myclass += ' small'
+                            myclass += ' portrait'
                             myclasslegend = 'legend-center'
 
                         if "png" in img_data["format"]:
@@ -387,7 +390,7 @@ class Web:
 
                         new_div.append(new_img)
 
-                        if myclasslegend:
+                        if myclasslegend and False:
                             new_legend = soup.new_tag('figcaption', **{'class': f'legend {myclasslegend}'})
                         else:
                             new_legend = soup.new_tag('figcaption')
@@ -507,14 +510,11 @@ class Web:
 
         try:
 
-            # post = self.db.row_to_dict(post)
-
-            # post = dict(post)
-            # for key in post:
-               
-            #    print(post[key])
-
             post['canonical'] = template['domain'] + post['url'].lstrip("/")
+            if 'pub_date' in post:
+                post['month'] = tools.month_year(post['pub_date'])
+            else:
+                post['month'] = ""
             
             if "content" in post:
                 post['content'] = self.image_manager(template, post)
@@ -601,24 +601,6 @@ class Web:
             exit()
             # return None
 
-
-    # def tag_menu(self, tag):
-    #     menu = []
-    #     if "tag_title_date" in tag:
-    #         menu.append({"tag_title": tag['tag_title_date'], "tag_url": "/tag/"+tag['tag_slug']})
-    #     else:
-    #         menu.append({"tag_title": tag['tag_title'], "tag_url": "/tag/"+tag['tag_slug']})
-    #     if tag['tag_slug'] != "blog":
-    #         menu.append({"tag_title": "Digressions", "tag_url": "/blog/"})
-    #     if tag['tag_slug'] != "series":
-    #         menu.append({"tag_title": "…", "tag_url": "/series/"})
-    #     index = len(menu)
-    #     if tag['tag_slug'] != "carnets" and index<4:
-    #         menu.insert(index-1, {"tag_title": "Carnets", "tag_url": "/carnet-de-route/"})
-    #     index = len(menu)
-    #     if tag['tag_slug'] != "borntobike" and index<4:
-    #         menu.insert(index-1, {"tag_title": "Vélo", "tag_url": "/borntobike/"})
-    #     return menu
 
     def tag_menu(self, tag):
         menu = []

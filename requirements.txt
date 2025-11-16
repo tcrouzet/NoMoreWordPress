@@ -19,3 +19,4 @@ md2gemini
 playwright
 numpy
 tinycss2
+jsmin

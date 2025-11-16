@@ -5,6 +5,7 @@ import shutil
 import time
 import htmlmin
 import csscompressor
+import jsmin
 import hashlib
 import importlib.util
 import re
@@ -58,6 +59,7 @@ class Layout:
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 'comments': int(template.get('comments', 0)),
                 "inlinecss": self.inlinecss(base_dir),
+                "inlinejs": self.inlinejs(base_dir),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),
@@ -183,6 +185,8 @@ class Layout:
                 content = file.read()
             if ext == ".css":
                 content = csscompressor.compress(content)
+            elif ext == ".js":
+                content = jsmin.jsmin(content)
             elif ext == ".html":
                 content = htmlmin.minify(content)
 
@@ -201,6 +205,14 @@ class Layout:
             content = csscompressor.compress(content)
         return content
 
+    def inlinejs(self, base_dir):
+        content = ""
+        js_path = os.path.join(base_dir, "toggle.js")
+        if os.path.exists(js_path):
+            with open(js_path, "r", encoding="utf-8") as file:
+                content = file.read()
+                content = jsmin.jsmin(content)
+        return content
 
     def copy_directory(self, source_dir, dest_dir):
             """
@@ -239,7 +251,7 @@ class Layout:
             supercharged = self.web.supercharge_post(template, post)
 
             header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config, template=template)
             share_html = self.get_html(template["share"], post=supercharged, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
             article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html, template=template)
@@ -267,7 +279,7 @@ class Layout:
             
             # Générer le HTML
             header_html = self.get_html(template["header"], post=new_series, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=new_series, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=new_series, blog=self.config, template=template)
             tags_list_html = self.get_html(template["tags_list"], post=new_series, tags=tags_super, blog=self.config)
             tag_html = self.get_html(template["tag"], post=new_series, tags={"list": tags_list_html})
             
@@ -284,7 +296,7 @@ class Layout:
             tag_super = self.web.supercharge_tag(template, tag, posts_super[0])
 
             header_html = self.get_html(template["header"], post=tag_super, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=tag_super, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=tag_super, blog=self.config, template=template)
 
             post_per_page = template["post_per_page"]
 
@@ -315,52 +327,6 @@ class Layout:
                 
                 page += 1
 
-    def tag_genOld(self, tag, posts):
-        for template in self.templates:
-
-            posts_super = self.web.supercharge_posts(template, posts)
-            if len(posts_super)==0:
-                exit("Strange pas de posts_super")
-            tag_super = self.web.supercharge_tag(template, tag, posts_super[0])
-
-            header_html = self.get_html(template["header"], post=tag_super, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=tag_super, blog=self.config)
-
-            post_per_page = template["post_per_page"]
-
-            page = 1
-            while posts_super:
-                file_name = f"contener{page}.html"
-
-                if post_per_page > 0:
-                    posts_super_filter = posts_super[:post_per_page]
-                    posts_super = posts_super[post_per_page:]
-                else:
-                    posts_super_filter = posts_super
-                    posts_super = []  # ← Vide pour arrêter la boucle
-                # if post_per_page>0:
-                #     posts_super_filter = posts_super[:post_per_page]
-                # else:
-                #     posts_super_filter = posts_super
-
-                # Vérifier s'il y a une page suivante
-                if post_per_page > 0 and len(posts_super) > post_per_page:
-                    tag_super['navigation']['next_url'] = "/" + tag_super['tag_url'].strip("/") + "/" + f"contener{page+1}.html"
-                else:
-                    tag_super['navigation']['next_url'] = ""
-
-                tags_list_html = self.get_html(template["tags_list"], post=tag_super, tags=posts_super_filter, blog=self.config)
-
-                if page == 1:
-                    tag_html = self.get_html(template["tag"], post=tag_super, tags={"list": tags_list_html})
-                    self.save(template, header_html + tag_html + footer_html, tag_super['tag_url'], "index.html")
-                else:
-                    self.save(template, tags_list_html, tag_super['tag_url'], file_name)
-                if post_per_page>0:
-                    # del posts_super[:post_per_page]
-                    page += 1
-                else:
-                    break
 
     def year_gen(self, year, posts):
         """Génère une page listant tous les tags avec leur dernier post"""
@@ -372,7 +338,7 @@ class Layout:
             
             # Générer le HTML
             header_html = self.get_html(template["header"], post=year_super, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=year_super, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=year_super, blog=self.config, template=template)
             tags_list_html = self.get_html(template["tags_list"], post=year_super, tags=super_posts, blog=self.config)
             tag_html = self.get_html(template["tag"], post=year_super, tags={"list": tags_list_html})
             
@@ -401,7 +367,7 @@ class Layout:
             home['frontmatter'] = None
 
             header_html = self.get_html(template["header"], post=home, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=home, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=home, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=home, blog=self.config)
             home_html = self.get_html(template["home"], post=home, blog=self.config, newsletter=newsletter_html)
             self.save(template, header_html + home_html + footer_html, "", "index.html")
@@ -410,7 +376,7 @@ class Layout:
     def special_pages(self, post, path, file_name="index.html"):
         for template in self.templates:
             header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=post, blog=self.config)
+            footer_html = self.get_html(template["footer"], post=post, blog=self.config, template=template)
             article_html = self.get_html(template["article"], post=post, blog=self.config)
             page_html = self.get_html(template["single"], post=post, blog=self.config, article=article_html)
             self.save(template, header_html + page_html + footer_html, path, file_name)
@@ -441,7 +407,7 @@ class Layout:
 
     def normal_pages(self, post, template, path, file_name="index.html"):
         header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
-        footer_html = self.get_html(template["footer"], post=post, blog=self.config)
+        footer_html = self.get_html(template["footer"], post=post, blog=self.config, template=template)
         self.save(template, header_html + post['content'] + footer_html, path, file_name)
 
     def menu_gen(self):
