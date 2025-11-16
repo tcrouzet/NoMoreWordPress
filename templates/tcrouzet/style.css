@@ -189,34 +189,6 @@ blockquote{
 }
 blockquote p{margin:1rem;font-style:italic}
 
-/* figure{
-  display: block;
-  margin: 1.6rem auto;
-  max-width: var(--max-width-wide);
-  text-align: center;
-}
-figure img{
-  border:1px solid #ccc;
-  width: 100%;
-  height: auto;
-}
-figure img[src$=".png"],
-figure img[src$=".gif"],
-figure img.portrait{
-  max-width: var(--max-width);
-}
-
-figcaption{
-  font-weight: normal;
-  text-align: right;
-  padding-right: 0.5em;
-  font-size: 0.6em;
-  margin-top: -0.5rem;
-  line-height: normal;
-} */
-/* figcaption.legend-center{text-align: center;padding: 0} */
-
-
 figure {
   display: block;
   margin: 1.6rem auto;
