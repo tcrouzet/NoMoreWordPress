@@ -312,6 +312,8 @@ main[itemtype$="CollectionPage"] h2{
 main[itemtype$="CollectionPage"] h3{
   display: inline;
   font-size: 1.2rem;
+  margin-left: 0.5rem;
+  font-variant: small-caps;
 }
 
 /* Books */
