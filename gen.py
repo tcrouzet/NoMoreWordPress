@@ -267,7 +267,7 @@ sitemap.save_index('sitemap')
 print("Gen ended")
 
 #EXPORT
-if version>0 and db.new_posts + db.updated_posts > 0:
+if version>0 and (db.new_posts + db.updated_posts > 0 or  config['build'] == 2):
     for template in config['templates']:
 
         sync = template['sync'][0]
