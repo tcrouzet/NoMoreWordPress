@@ -453,12 +453,6 @@ class Db:
         
         c.execute(query, params)
         return c.fetchall()
-
-    # def get_posts_by_year(self, year, exclude_tags=None):
-    #     where = f"strftime('%Y', datetime(pub_date, 'unixepoch')) = '{year}' AND type=0 "
-    #     if exclude_tags:
-    #          where += "AND id NOT IN (SELECT posts.id FROM posts JOIN json_each(posts.tags) ON json_each.value IN " + str(exclude_tags) + ")"
-    #     return self.get_posts(where)
     
     def get_years(self):
         c = self.conn.cursor()
@@ -498,25 +492,6 @@ class Db:
         post = c.fetchone()
         return post
 
-
-    # def get_posts_by_tag(self, tag_slug, limit=None):
-    #     c = self.conn.cursor()
-        
-    #     limit_clause = f"LIMIT {limit}" if limit else ""
-        
-    #     # Version simplifiée : juste les posts avec ce tag
-    #     query = f'''
-    #         SELECT DISTINCT p.*
-    #         FROM posts p
-    #         INNER JOIN connectors c ON p.id = c.con_post_id
-    #         INNER JOIN tags t ON c.con_tag_id = t.tag_id
-    #         WHERE t.tag_slug = ?
-    #         ORDER BY p.pub_date DESC
-    #         {limit_clause}
-    #     '''
-        
-    #     c.execute(query, (tag_slug,))
-    #     return c.fetchall()
 
     def get_posts_by_tag(self, tag_slug, limit=None):
         """
@@ -1150,6 +1125,7 @@ class Db:
         """
         pub_date = 0        
         title = None
+        title_just_found = False
         tags = []
         tagslist = []
         thumb_path = None
@@ -1158,6 +1134,8 @@ class Db:
         frontmatter_lines = []
         content = None
         content_lines = []
+        thumb_found = False
+        first_image = True
 
         if path_md.startswith('books'):
             post_type = 2
@@ -1172,11 +1150,12 @@ class Db:
             
             in_frontmatter = False
             title_found = False
-            first_image_removed = False
             
             i = 0
             while i < len(lines):
                 line = lines[i]
+                # Espace fine
+                line = line.replace('\u00A0', '\u202F')
                 
                 # Détection frontmatter (première ligne)
                 if i == 0 and line.strip().startswith('---'):
@@ -1195,9 +1174,9 @@ class Db:
                     continue
                 
                 # Extraction du titre
-                if line.startswith('# ') and not title_found:
+                if line.startswith('# ') and title == None:
                     title = line.strip('# ').strip()
-                    title_found = True
+                    title_just_found = True
                     i += 1
                     # Ignorer les lignes vides après le titre
                     while i < len(lines) and lines[i].strip() == '':
@@ -1214,31 +1193,41 @@ class Db:
                         i += 1
                         continue
                 
-                # Extraction du premier thumb (et suppression du contenu)
-                if '![' in line and thumb_path is None:
+                # Extraction du thumb
+                if '![' in line and not thumb_found:
                     match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
                     if match:
-                        thumb_legend = match.group(1)
-                        thumb_path = match.group(2)
                         # Supprimer la première image du contenu si juste après le titre
-                        if not first_image_removed and title_found:
-                            first_image_removed = True
+                        if first_image and title_just_found:
+                            thumb_legend = match.group(1)
+                            thumb_path = match.group(2)
+                            thumb_found = True
+                            title_just_found = False
+                            # Supprime l'image
                             i += 1
                             # Ignorer les lignes vides après l'image
                             while i < len(lines) and lines[i].strip() == '':
                                 i += 1
                             continue
+                        else:
+                            temp_thumb_legend = match.group(1)
+                            if temp_thumb_legend.endswith(" thumb"):
+                                thumb_legend = temp_thumb_legend.replace(" thumb","")
+                                thumb_path = match.group(2)
+                                line = line.replace(" thumb","")
+                                thumb_found = True
+                            elif first_image:
+                                thumb_legend = temp_thumb_legend
+                                thumb_path = match.group(2)
+                                first_image = False
+
                 
                 # Ajouter la ligne au contenu
                 content_lines.append(line)
                 i += 1
-            
-            # Supprimer la ligne de tags à la fin si elle existe
-            # if content_lines and content_lines[-1].strip():
-            #     last_line_parts = content_lines[-1].strip().split()
-            #     if all(part.startswith('#') for part in last_line_parts):
-            #         content_lines.pop()
-            
+                if title:
+                    title_just_found = False 
+                        
             # Construire le contenu final puis convertir en HTML
             content = ''.join(content_lines).strip()
             content = self.normalise_md(content)
