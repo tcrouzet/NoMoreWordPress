@@ -297,6 +297,30 @@ class Db:
         except Exception as e:
             return False
 
+
+    def un_updated(self, post_id):
+        try:
+            query = '''UPDATE posts SET updated = True WHERE id = ?;'''
+            c = self.conn.cursor()
+
+            c.execute(query, (post_id,))
+            self.conn.commit()
+            self.new_posts +=1
+            return True
+        except Exception as e:
+            return False
+
+    def un_updated_by_path(self, md_path):
+        try:
+            query = '''UPDATE posts SET updated = True WHERE md_pah = ?;'''
+            c = self.conn.cursor()
+
+            c.execute(query, (md_path,))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            return False
+
     def updated_tag(self, tag):
         try:
             query = '''UPDATE tags SET tag_updated = False WHERE tag_id = ?;'''

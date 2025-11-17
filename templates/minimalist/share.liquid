@@ -2,15 +2,10 @@
 {% assign post_age_days = now | minus: post.pub_date | divided_by: 86400 %}
 {% assign comments_open = post_age_days < template.comments %}
 
-<section>
+<div>
   <input type="checkbox" id="com-{{ post.id }}" class="com-toggle" hidden>
   <label for="com-{{ post.id }}" title="Commenter">Commenter</label>
-    
-  {% if post.github %}
-    <a href="{{ post.github }}" download title="Télécharger">Télécharger</a>
-  {% endif %}
-  
-  <a href="/page/lectures/" title="Sites amis">Sites amis</a>
+  <a href="/page/abonnement-par-mail/">S’abonner</a>
   
   <div class="comments">
 
@@ -19,9 +14,13 @@
     <form method="POST" action="https://formspree.io/f/mgebvkwn">
       <input type="hidden" name="postUrl" value="{{ post.url }}">
       <input type="hidden" name="postTitle" value="{{ post.title }}">
-      <input aria-label="Email" autocomplete="on" name="email" type="email" placeholder="Votre email" required>
-      <input aria-label="Nom" autocomplete="on" name="nom" type="text" placeholder="Votre nom" required>  
-      <textarea aria-label="Message" name="message" placeholder="Votre commentaire" required></textarea>
+
+      <label>Votre email
+      <input aria-label="Email" autocomplete="on" name="email" type="email" required></label>
+      <label>Votre nom
+      <input aria-label="Nom" autocomplete="on" name="nom" type="text" required></label>
+      <label>Votre commentaire
+      <textarea aria-label="Message" name="message" required></textarea></label>
 
       <fieldset>
         <legend>Visibilité</legend>
@@ -36,8 +35,9 @@
         </label>
         {% endif %}
       </fieldset>
+          
       <button type="submit">Envoyer</button>
     </form>
 
   </div>
-</section>
+</div>

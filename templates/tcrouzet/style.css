@@ -1,7 +1,6 @@
 ::before,::after{box-sizing:border-box}
 html{
   -webkit-text-size-adjust:100%;
-  tab-size:4;
   box-sizing: border-box;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
@@ -9,7 +8,7 @@ html{
 body{margin:0}
 button,input,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}
 button,select{text-transform:none}
-button,[type='button'],[type='submit']{appearance:button}
+/* button,[type='button'],[type='submit']{appearance:button} */
 
 :root {
   --font-headings: Charter, Georgia, serif;
@@ -55,9 +54,9 @@ header {
   align-items: baseline;
   display: flex;
   gap: 0.8rem;
-  z-index: 99;
   padding: 0.5rem var(--page-gutter);
   background-color: var(--color-light);
+  line-height: 1.7rem;
 }
 
 header > a[aria-label="Menu"]::after {
@@ -87,17 +86,10 @@ header > a[aria-label="Recherche"]::after {
 main{margin-top: var(--top-height)}
 
 article header{
-  display: block; 
+  all: revert; 
+  padding: 0.5rem var(--page-gutter);
+  background-color: var(--color-light);
   text-align:center;
-  z-index: 0;
-  position: unset;
-}
-
-main[itemtype$="CollectionPage"] article img.poster-img-book-small{
-  width: 100%;
-  height: auto;
-  aspect-ratio: 3/4.5;
-  border: 1pt solid var(--color-medium);
 }
 
 h1{

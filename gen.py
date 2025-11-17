@@ -39,6 +39,10 @@ layout.web = web
 sitemap = tools.sitemap.Sitemap(config, web)
 feed = tools.feed.Feed(config, web)
 
+# testing
+# db.un_updated_by_path("2025/11/social-et-toxique.md")
+# db.un_updated(462)
+
 if config['build'] > 0:
 
     print(f"Updating data status: {config['build']}")
