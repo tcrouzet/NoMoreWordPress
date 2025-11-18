@@ -1,24 +1,16 @@
-::before,::after{box-sizing:border-box}
-html{
-  -webkit-text-size-adjust:100%;
-  box-sizing: border-box;
-  text-rendering: optimizeLegibility;
-  scroll-behavior: smooth;
-}
-body{margin:0}
+/* ::before,::after{box-sizing:border-box}
 button,input,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}
-button,select{text-transform:none}
+button,select{text-transform:none} */
 /* button,[type='button'],[type='submit']{appearance:button} */
 
 :root {
   --font-headings: Charter, Georgia, serif;
   --font-normal: system-ui, sans-serif;
-  --color-bg: #FFF;
-  --color-contrast: #1A1C18;
-  --color-medium: #aaa;
-  --color-light: #fafafa;
-  --color-link: #e30613;
-  --color-link-text: #700000;
+  --color-bg: #fdf6e3; /* Base3 ancien #FFF */
+  --color-contrast: #002b36; /* Base03 ancien 1A1C18 */
+  --color-medium: #839496; /* Base0 ancien aaa */
+  --color-light: #eee8d5; /* Base2 fancien afafa */
+  --color-link: #cb4b16; /* Orange ancien e30613 */
   --font-size: 1.18rem;
   --line-height: calc(1ex/0.32);
   --font-size-h1: 2.7rem;
@@ -30,11 +22,15 @@ button,select{text-transform:none}
 }
 
 html {
+  -webkit-text-size-adjust:100%;
+  box-sizing: border-box;
+  text-rendering: optimizeLegibility;
   font-family: var(--font-normal);
   line-height: var(--line-height);
 }
 
 body {
+  margin: 0;
   color: var(--color-contrast);
   background-color: var(--color-bg);
 }
@@ -162,15 +158,7 @@ ol{list-style-type:decimal}
 li p{margin:0;padding:0}
 
 article [itemprop="articleBody"] a{
-  color: var(--color-link-text);
-}
-
-article [itemprop="articleBody"] a::after {
-  content: "⧉";
-  font-size: 0.8em;
   color: var(--color-link);
-  position: relative;
-  top: -0.5em;
 }
 
 blockquote{
@@ -544,4 +532,15 @@ text-align: center;
   iframe{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
   div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);}
+}
+
+/* Dark solarised */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #002b36;
+    --color-contrast: #eee8d5;
+    --color-medium: #859496;
+    --color-light: #073642;
+    --color-link: #cb4b16;
+  }
 }
