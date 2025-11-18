@@ -18,8 +18,10 @@ class SyncFiles:
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
+        self.temp_dir = os.path.join(self.parent_dir, "_temp")
         
-        self.previous_state_path = os.path.join(self.parent_dir, 'state_file.json')
+        self.state_file = "gmi_state.json"
+        self.previous_state_path = os.path.join(self.temp_dir, self.state_file)
         self.previous_state = tools.load_json(self.previous_state_path)
         self.previous_state = {k: float(v) for k, v in self.previous_state.items()}
 
@@ -27,7 +29,7 @@ class SyncFiles:
         # exit()
 
         self.current_state = self.get_file_state(source_directory)
-        tools.save_json("test.json", self.current_state)
+        tools.save_json( os.path.join(self.temp_dir,"gmi_current_state.json"), self.current_state)
 
         # Identifier les fichiers modifiés avec tolérance
         changed_files = [file for file in self.current_state 
@@ -49,7 +51,7 @@ class SyncFiles:
             dirs[:] = [d for d in dirs if not d.startswith('.')]
 
             for file in files:
-                if file.startswith('.') or file == 'state_file.json':
+                if file.startswith('.') or file == self.state_file:
                     continue
                 filepath = os.path.join(root, file)
                 state[filepath] = os.path.getmtime(filepath)
