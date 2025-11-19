@@ -5,8 +5,8 @@ import shutil
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse
-import tools.frontmatter as ft
-import tools.tools as tools
+import frontmatter as ft
+import tools
 
 
 class Web:

@@ -1,6 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-import tools.tools as tools
+import tools
 
 class Sitemap:
 

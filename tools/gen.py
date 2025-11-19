@@ -5,24 +5,24 @@ import os, sys
 from datetime import datetime
 # from sqlite3 import Row
 
-import tools.tools
-import tools.db
-import tools.layout
-import tools.web
-import tools.logs
-import tools.sitemap
-import tools.feed
+import tools
+import db
+import layout
+import web
+import logs
+import sitemap
+import feed
 
 #Force updating home screen
 new_home_template = True
 force = False
 
-sys.stdout = tools.logs.DualOutput("_log.txt")
+sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
 os.system('clear')
 
-config = tools.tools.site_yml('site.yml')
+config = tools.site_yml('site.yml')
 
 # Parcourir et filtrer les templates
 filtered_templates = []
@@ -32,12 +32,12 @@ for template in config['templates']:
 config['templates'] = filtered_templates
 
 version = int(config['version'])
-db = tools.db.Db(config)
-web = tools.web.Web(config, db)
-layout = tools.layout.Layout(config, web)
+db = db.Db(config)
+web = web.Web(config, db)
+layout = layout.Layout(config, web)
 layout.web = web
-sitemap = tools.sitemap.Sitemap(config, web)
-feed = tools.feed.Feed(config, web)
+sitemap = sitemap.Sitemap(config, web)
+feed = feed.Feed(config, web)
 
 # testing
 # db.un_updated_by_path("2025/11/social-et-toxique.md")
@@ -58,7 +58,7 @@ if config['build'] > 0:
     posts = db.get_posts_updated()
     total = len(posts)
     if total >0:
-        pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
+        pbar = logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
         for post in posts:
 
             navigation = web.navigation(post)
@@ -76,7 +76,7 @@ else:
     posts = db.get_posts_updated()
 total = len(posts)
 if total >0:
-    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
+    pbar = logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
         layout.single_gen( post )
         db.updated(post)
@@ -87,7 +87,7 @@ if total >0:
 if db.new_posts > 0 or config['build'] == 2:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts_and_pages()
-    pbar = tools.logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
+    pbar = logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
         sitemap.add_post( post )
         pbar.update(1)
@@ -141,7 +141,7 @@ if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2:
         last_digest = db.get_posts_by_tag("digest", 1)
         layout.home_gen( blog_posts[0], last_carnet[0], last_bike[0], last_digest[0] )
 
-        sitemap.add_post({"url": "index.html", "pub_update_str": tools.tools.now_datetime_str(), "thumb": None }, blog_posts[0])
+        sitemap.add_post({"url": "index.html", "pub_update_str": tools.now_datetime_str(), "thumb": None }, blog_posts[0])
 
         print("Home done")
 
@@ -278,7 +278,7 @@ if version>0 and (db.new_posts + db.updated_posts > 0 or  config['build'] == 2):
         sync['export'] = template['export']
 
         if sync['name'] == "aws":
-            import tools.sync_aws as aws
+            import sync_aws as aws
             run_aws = aws.SyncAWS(sync)
             run_aws.sync()
 
@@ -293,7 +293,7 @@ if version>0 and (db.new_posts + db.updated_posts > 0 or  config['build'] == 2):
             subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
             subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
 
-    tools.tools.run_script('tools/sync_md.py')
-    tools.tools.run_script('tools/sync_gmi.py')
+    tools.run_script('tools/sync_md.py')
+    tools.run_script('tools/sync_gmi.py')
 else:
     print("No export")

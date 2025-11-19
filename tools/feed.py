@@ -2,7 +2,7 @@ from feedgen.feed import FeedGenerator
 import re, os
 from html import unescape
 from bs4 import BeautifulSoup
-import tools.tools as tools
+import tools
 
 class Feed:
 

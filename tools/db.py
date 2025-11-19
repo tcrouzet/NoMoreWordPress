@@ -7,9 +7,9 @@ from bs4 import BeautifulSoup
 from datetime import date
 from urllib.parse import urlparse
 import markdown
-import tools.frontmatter as ft
-import tools.tools as tools
-import tools.logs as logs
+import frontmatter as ft
+import tools
+import logs as logs
 
 
 class DateTimeEncoder(json.JSONEncoder):

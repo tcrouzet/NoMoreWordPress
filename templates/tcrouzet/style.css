@@ -228,6 +228,8 @@ iframe{
   margin:auto;
   padding:1rem 0;
   display: block;
+  max-width: var(--max-width);
+  width: 100%;
 }
 
 code{
@@ -529,7 +531,6 @@ text-align: center;
   #menu div{display: block}
   #menu ul li {display: block}
   #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
-  iframe{width: 100%}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
   div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);}
 }

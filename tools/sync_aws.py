@@ -2,7 +2,7 @@ import json, os
 import subprocess
 import boto3
 from datetime import datetime, timezone
-import tools.tools as tools
+import tools
 
 class SyncAWS:
 

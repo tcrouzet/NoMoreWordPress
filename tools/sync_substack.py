@@ -1,10 +1,9 @@
 import sys, re, os
 from playwright.sync_api import sync_playwright
-import markdown
-import tools.tools
-import tools.db
-import tools.web
-import tools.logs
+import tools
+import db
+import web
+import logs
 
 import requests
 from PIL import Image
@@ -12,7 +11,7 @@ from io import BytesIO
 import tempfile
 import base64
 
-sys.stdout = tools.logs.DualOutput("_log.txt")
+sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
 
@@ -43,8 +42,8 @@ class Webot:
 
     def substack(self, post):
 
-        web = tools.web.Web(config, self.db)
-        post = web.supercharge_post(self.template, post)
+        lweb = web.Web(config, self.db)
+        post = lweb.supercharge_post(self.template, post)
 
         html = f'<img src="{post["thumb"]["url"]}" alt="{post["thumb"]["legend"]}" />{post['content']}'
         html = html.replace('src="/',f'src="{self.template['domain']}')
@@ -168,9 +167,9 @@ class Webot:
         return html
 
 
-config = tools.tools.site_yml('site.yml')
+config = tools.site_yml('site.yml')
 template = next((item for item in config['templates'] if item['name'] == 'tcrouzet'), None)
-db = tools.db.Db(config)
+db = db.Db(config)
 mode = "FR"
 # mode = "BIKE"
 # mode = "PHONE"
