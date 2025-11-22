@@ -170,41 +170,14 @@ class Webot:
 config = tools.site_yml('site.yml')
 template = next((item for item in config['templates'] if item['name'] == 'tcrouzet'), None)
 db = db.Db(config)
-mode = "FR"
-# mode = "BIKE"
-# mode = "PHONE"
 
-if mode == "FR":
-    last = db.get_last_published_post()
-    print(last['path_md'])
-    bot = Webot(config, db, template=template, substack_url=config['substack_fr'])
-    bot.substack(last)
-
-elif mode == "BIKE":
-    last = db.get_last_published_post()
-    print(last['path_md'])
-    path = os.path.join( config['export_github_md'], last['path_md'])
-
-    bot = Webot(config, config['substack_727'])
-    bot.substack(path)
-
-elif mode == "DIGEST":
-    path = tools.tools.find_latest_file("/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/")
-    bot = Webot(config, config['substack_fr'])
-    bot.substack(path)
-
-elif mode == "DIGEST_US":
-    path = tools.tools.find_latest_file("/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzetUS/Digest/")
-    bot = Webot(config, config['substack_us'])
-    bot.substack(path)
-
-elif mode == "PHONE":
-    path = "/Users/thierrycrouzet/Documents/ObsidianLocal/text/Phones/001.md"
-    bot = Webot(config, config['substack_fr'])
-    bot.substack(path)
-
+last = db.get_last_published_post()
+print(last['path_md'])
+if '"us"' in last["tags"]:
+    substack_url=config['substack_us']
+elif '"velo"' in last["tags"]:
+    substack_url=config['substack_727']
 else:
-    path = tools.tools.find_latest_file(config['vault_us'])
-    print(path)
-    bot = Webot(config, config['substack_us'])
-    bot.substack(path)
+    substack_url=config['substack_fr']
+bot = Webot(config, db, template=template, substack_url=substack_url)
+bot.substack(last)

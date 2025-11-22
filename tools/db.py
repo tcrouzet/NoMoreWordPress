@@ -1220,7 +1220,8 @@ class Db:
                 
                 # Extraction du thumb
                 if '![' in line and not thumb_found:
-                    match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
+                    # match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
+                    match = re.search(r'(?:\[)?!\[(.*?)\]\((.*?)\)(?:\]\((.*?)\))?', line)
                     if match:
                         # Supprimer la première image du contenu si juste après le titre
                         if first_image and title_just_found:

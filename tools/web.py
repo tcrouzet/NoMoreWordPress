@@ -390,13 +390,18 @@ class Web:
 
                         new_div.append(new_img)
 
-                        if myclasslegend and False:
-                            new_legend = soup.new_tag('figcaption', **{'class': f'legend {myclasslegend}'})
-                        else:
-                            new_legend = soup.new_tag('figcaption')
+                        new_legend = soup.new_tag('figcaption')
                         new_legend.string = alt_text
                         new_div.append(new_legend)
-                        p.replace_with(new_div)
+
+                        a = p.find('a')
+                        if a:
+                            a['target'] = '_blank'
+                            a.clear() 
+                            a.append(new_div)
+                            p.replace_with(a)
+                        else:
+                            p.replace_with(new_div)
 
                     elif img_data["format"].startswith("audio/"):
 

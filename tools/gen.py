@@ -170,7 +170,7 @@ if db.new_tags > 0 or config['build'] == 2 or force:
         # Ceux utilisés
         tags = db.get_tags_used(exclude_slugs=exclude)
     total = len(tags)
-    pbar = tools.logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
+    pbar = logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
         tag=dict(tag)
         sitemap.add_post(tag)
