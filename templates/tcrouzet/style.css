@@ -312,6 +312,10 @@ main[itemtype$="AboutPage"]{
   text-align: center;
 }
 
+main[itemtype$="AboutPage"] section{
+  max-width: var(--max-width-wide);
+}
+
 main[itemtype$="AboutPage"] section h2{
   font-variant: small-caps;
   font-weight: normal;

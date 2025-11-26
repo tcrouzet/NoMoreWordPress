@@ -386,10 +386,17 @@ class Db:
         c.execute(query, params)
         return c.fetchall()
 
-
-    def get_post_by_id(self, id):
-        return self.get_posts(f"id = {id}")
-
+    def get_post_by_id(self, post_id):
+            """
+            Récupère un post unique par son ID.
+            Retourne le tuple de données du post ou None si non trouvé.
+            """
+            results = self.get_posts(f"id = {post_id}")
+            
+            if results:
+                return results[0]
+            else:
+                return None
 
     def get_posts_updated(self):
         return self.get_posts("updated")

@@ -1,6 +1,6 @@
 import yaml
 import hashlib
-import os
+import os, sys
 import subprocess
 import json
 import re
@@ -131,3 +131,34 @@ def output_dir():
     os.makedirs(output_dir, exist_ok=True)
 
     return output_dir
+
+
+def get_args_dict():
+    """
+    Analyse les arguments de ligne de commande (hors nom du script) 
+    et retourne un dictionnaire de type {cle: valeur} 
+    pour toutes les chaînes contenant un signe =.
+    """
+    args_dict = {}
+    
+    # sys.argv[1:] exclut le nom du script (sys.argv[0])
+    for arg in sys.argv[1:]:
+        # Vérifie si l'argument contient le séparateur clé=valeur
+        if '=' in arg:
+            try:
+                # Sépare la chaîne au premier signe '='
+                key, value = arg.split('=', 1)
+                
+                # Supprime les espaces autour de la clé et de la valeur (optionnel mais recommandé)
+                key = key.strip()
+                value = value.strip()
+                
+                if key:  # S'assure que la clé n'est pas vide
+                    args_dict[key] = value
+                
+            except ValueError:
+                print(f"⚠️ Erreur d'analyse de l'argument: {arg}")
+        else:
+            args_dict[arg.strip()] = True
+            
+    return args_dict

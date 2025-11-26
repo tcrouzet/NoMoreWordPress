@@ -153,7 +153,6 @@ class Webot:
                 except Exception as e:
                     print(f"Erreur lors de la conversion de l'image {img_path}: {e}")
     
-
     def embed_local_images(self, html, markdown_path):
         """
         Remplace les chemins d'images par des données base64 incorporées
@@ -171,7 +170,11 @@ config = tools.site_yml('site.yml')
 template = next((item for item in config['templates'] if item['name'] == 'tcrouzet'), None)
 db = db.Db(config)
 
-last = db.get_last_published_post()
+args = tools.get_args_dict()
+if 'id' in args and int(args['id'])>0:
+    last = db.get_post_by_id( args['id'] )
+else:
+    last = db.get_last_published_post()
 print(last['path_md'])
 if '"us"' in last["tags"]:
     substack_url=config['substack_us']
