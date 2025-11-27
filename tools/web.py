@@ -598,6 +598,12 @@ class Web:
                 else:
                     tag['thumb'] = None
 
+            # Tag CSS
+            tag['css'] = ""
+            if 'dir' in template:
+                css_path = os.path.join(template['dir'],f"style_{tag['tag_slug']}.css")
+                tag['css'] = tools.get_css(css_path)
+
             return tag
 
         except Exception as e:

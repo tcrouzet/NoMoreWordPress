@@ -7,6 +7,7 @@ import re
 import locale
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo  # Python 3.9+
+import csscompressor
 
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
@@ -162,3 +163,11 @@ def get_args_dict():
             args_dict[arg.strip()] = True
             
     return args_dict
+
+def get_css(css_path):
+    content = ""
+    if os.path.exists(css_path):
+        with open(css_path, "r", encoding="utf-8") as file:
+            content = file.read()
+            content = csscompressor.compress(content)
+    return content

@@ -1,6 +1,6 @@
 from liquid import Liquid
 
-import os, json
+import os
 import shutil
 import time
 import htmlmin
@@ -9,6 +9,7 @@ import jsmin
 import hashlib
 import importlib.util
 import re
+import tools
 
 def make_liquid_loader(base_dir):
     def make(fname):
@@ -199,11 +200,8 @@ class Layout:
 
     def inlinecss(self, base_dir):
         css_path = os.path.join(base_dir, "style.css")
-        content = ""
-        with open(css_path, "r", encoding="utf-8") as file:
-            content = file.read()
-            content = csscompressor.compress(content)
-        return content
+        return tools.get_css(css_path)
+
 
     def inlinejs(self, base_dir):
         content = ""

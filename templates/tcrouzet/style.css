@@ -79,7 +79,9 @@ header > a[aria-label="Recherche"]::after {
 }
 
 /* Article */
-main{margin-top: var(--top-height)}
+main{
+  margin-top: var(--top-height);
+}
 
 article header{
   all: revert; 

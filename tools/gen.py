@@ -158,14 +158,11 @@ if  db.new_posts + db.updated_posts > 0 or config['build'] > 1:
 
 
 #TAGS
-if db.new_tags > 0 or config['build'] > 1:
-
-    # exclude = tuple(config['pages'])
-    exclude = tuple(["page","blog"])
+exclude = tuple(["page","blog"])
+if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
 
     if config['build'] > 1:
         # Tous les tags
-        sitemap.open("sitemap-tags")
         tags = db.get_tags(exclude_slugs=exclude)
     else:
         # Ceux utilisés
@@ -174,7 +171,6 @@ if db.new_tags > 0 or config['build'] > 1:
     pbar = logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
         tag=dict(tag)
-        sitemap.add_post(tag)
         tag_posts = db.get_posts_by_tag(tag['tag_slug'])
         if len(tag_posts)==0:
             continue
@@ -194,9 +190,14 @@ if db.new_tags > 0 or config['build'] > 1:
         db.updated_tag(tag)
         pbar.update(1)
     pbar.close()
-    if config['build'] > 1:
-        # Tous les tags
-        sitemap.save()
+
+if db.new_tags > 0 or config['build'] > 1:
+    sitemap.open("sitemap-tags")
+    tags = db.get_tags(exclude_slugs=exclude)
+    for tag in tags:
+        tag=dict(tag)
+        sitemap.add_post(tag)
+    sitemap.save()
 
 
 #YEARS
