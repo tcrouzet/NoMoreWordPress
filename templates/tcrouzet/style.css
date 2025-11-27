@@ -179,7 +179,7 @@ figure {
 }
 
 figure img {
-  border: 1px solid #ccc;
+  border: 1px solid var(----color-medium);
   width: 100%;
   height: auto;
 }
