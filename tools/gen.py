@@ -84,7 +84,7 @@ if total >0:
     pbar.close()
 
 #SITEMAP POSTS
-if db.new_posts > 0 or config['build'] == 2:
+if db.new_posts > 0 or config['build'] > 1:
     sitemap.open("sitemap-posts")
     posts = db.get_all_posts_and_pages()
     pbar = logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
@@ -96,10 +96,11 @@ if db.new_posts > 0 or config['build'] == 2:
     print("Sitemap posts done")
 
 
-sitemap.open("sitemap-main")
+if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
 
-#SERIES
-if db.new_tags + db.updated_tags > 0 or config['build'] == 2:
+    sitemap.open("sitemap-main")
+
+    #SERIES
     exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
     tags = db.get_tags_with_lastpost(exclude_slugs)
     series = {
@@ -115,15 +116,14 @@ if db.new_tags + db.updated_tags > 0 or config['build'] == 2:
     print("Series done")
 
 
-#BLOG
-if db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
+    #BLOG
     exclude = tuple(config['home_exclude'])
     blog_posts = db.get_posts("type=0", exclude)
     series = {
         "tag_slug": "blog",
         "tag_title": "Digression",
         "description": f"Tous les articles de {config['title']}",
-        "tag_url": "/blog",
+        "tag_url": "blog/",
         "is_tag": True,
         "frontmatter": None
     }
@@ -132,8 +132,7 @@ if db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2 or force:
     feed.builder(blog_posts,"blog", "Derniers articles de Thierry Crouzet")
     print(f"Blog done {len(blog_posts)}")
 
-#HOME
-if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2:
+    #HOME
     if posts:
         print("Starting home")
         last_carnet = db.get_posts_by_tag("carnets", 1)
@@ -145,19 +144,21 @@ if  db.new_posts >0 or db.updated_posts > 0 or config['build'] == 2:
 
         print("Home done")
 
-sitemap.add_page("archives/index.html")
-sitemap.save()
+    sitemap.add_page("archives/index.html")
+    sitemap.add_page("menu.html")
+    sitemap.add_page("search.html")
+    sitemap.save()
 
 
 #MAIN FEED
-if  db.new_posts + db.updated_posts > 0 or config['build'] == 2:
+if  db.new_posts + db.updated_posts > 0 or config['build'] > 1:
     posts = db.get_blog_posts()
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
     print("Main feed done")
 
 
 #TAGS
-if db.new_tags > 0 or config['build'] == 2 or force:
+if db.new_tags > 0 or config['build'] > 1:
 
     # exclude = tuple(config['pages'])
     exclude = tuple(["page","blog"])
@@ -199,7 +200,7 @@ if db.new_tags > 0 or config['build'] == 2 or force:
 
 
 #YEARS
-if db.new_posts > 0 or config['build'] == 2:
+if db.new_posts > 0 or config['build']> 1:
 
     print("Year gen")
     sitemap.open("sitemap-years")
@@ -242,7 +243,7 @@ if db.new_posts > 0 or config['build'] == 2:
 
 
 #ARCHIVES
-if db.new_posts > 0 or config['build'] == 2:
+if db.new_posts > 0 or config['build'] > 1:
 
     posts_archive = ""
     exclude = ("invisible")
@@ -266,7 +267,8 @@ layout.e404_gen()
 
 
 #END SITEMAP
-sitemap.save_index('sitemap')
+if config['build']>1:
+    sitemap.save_index('sitemap')
 
 print("Gen ended")
 

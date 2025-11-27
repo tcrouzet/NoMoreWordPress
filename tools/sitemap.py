@@ -41,13 +41,9 @@ class Sitemap:
             self.count[template['name']] = 0
  
 
-    def save(self, ucount=None):
+    def save(self):
 
         for template in self.config['templates']:
-
-            if ucount:
-                if self.count[template['name']] != ucount:
-                    return True
 
             self._indent(self.urlset[template['name']])
             tree = ET.ElementTree(self.urlset[template['name']])
@@ -133,21 +129,14 @@ class Sitemap:
 
     def add_page(self, url, date=None):
         
-        for template in self.config['templates']:
-
-            if date == None:
-                date = tools.now_datetime_str()
-            self.lastmod[template['name']] = max(self.lastmod[template['name']], date)
-            self.add_post({"url": url, "pub_update_str": date })
+        if date == None:
+            date = tools.now_datetime_str()
+        self.add_post({"url": url, "pub_update_str": date })
 
 
-    def save_index(self, sitemap_name, icount = None):
+    def save_index(self, sitemap_name):
 
         for template in self.config['templates']:
-
-            if icount:
-                if len(self.sitemap_index) != icount:
-                    return False
 
             output = os.path.join(template['export'], f"sitemap/{sitemap_name}.xml")
             index_element = ET.Element('sitemapindex', xmlns='http://www.sitemaps.org/schemas/sitemap/0.9')
