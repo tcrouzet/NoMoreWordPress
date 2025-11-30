@@ -227,7 +227,6 @@ class Db:
             else:
                 return {"new": 0, "update": 0, "id": None}
 
-
     def insert_tag(self, post_id, tagslist, tag_update):
         """
         Insère ou met à jour les tags et crée les liaisons avec le post.
@@ -285,7 +284,6 @@ class Db:
         self.conn.commit()
         return stats
 
-
     def updated(self, post):
         try:
             query = '''UPDATE posts SET updated = False WHERE id = ?;'''
@@ -296,7 +294,6 @@ class Db:
             return True
         except Exception as e:
             return False
-
 
     def un_updated(self, post_id):
         try:
