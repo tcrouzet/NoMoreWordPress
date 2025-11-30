@@ -27,7 +27,7 @@ class Webot:
 
         p = sync_playwright().start()
 
-        # Lancer Chrome avec votre profil existant
+        # Lancer Chrome avec profil existant
         self.browser = p.chromium.launch_persistent_context(
             user_data_dir=self.profile,
             headless=False,  # Ouvrir le navigateur en mode visible
@@ -45,12 +45,14 @@ class Webot:
         lweb = web.Web(config, self.db)
         post = lweb.supercharge_post(self.template, post)
 
-        html = f'<img src="{post["thumb"]["url"]}" alt="{post["thumb"]["legend"]}" />{post['content']}'
+        html = post['content']
+        if post["thumb"]["url"] not in html:
+            html = f'<img src="{post["thumb"]["url"]}" alt="{post["thumb"]["legend"]}" />{html}'
+ 
         html = html.replace('src="/',f'src="{self.template['domain']}')
 
         # Naviguer vers Substack
         self.page.goto(f'{self.substack_url}/publish/post/')
-        # self.page.goto('https://727bikepacking.substack.com/publish/post/159771263')
 
         self.page.wait_for_selector('#post-title')
 
