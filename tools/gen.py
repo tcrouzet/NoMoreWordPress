@@ -83,10 +83,10 @@ if total >0:
         pbar.update(1)
     pbar.close()
 
-#SITEMAP POSTS
 if db.new_posts > 0 or config['build'] > 1:
     sitemap.open("sitemap-posts")
-    posts = db.get_all_posts_and_pages()
+    posts = db.get_posts(condition="type<5", exclude_tags=["private","invisible"])
+    # posts = db.get_all_posts_and_pages()
     pbar = logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
         sitemap.add_post( post )
@@ -101,7 +101,7 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
     sitemap.open("sitemap-main")
 
     #SERIES
-    exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite")
+    exclude_slugs = ("invisible","iacontent","book","page","le_jardin_de_leternite","private")
     tags = db.get_tags_with_lastpost(exclude_slugs)
     series = {
         "tag_slug": "series",
@@ -152,13 +152,14 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
 
 #MAIN FEED
 if  db.new_posts + db.updated_posts > 0 or config['build'] > 1:
-    posts = db.get_blog_posts()
+    exclude_slugs = ("invisible","private")
+    posts = db.get_blog_posts( exclude_tags=exclude_slugs)
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
     print("Main feed done")
 
 
 #TAGS
-exclude = tuple(["page","blog"])
+exclude = tuple(["page","blog","private","invisible"])
 if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
 
     if config['build'] > 1:
@@ -171,7 +172,7 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
     pbar = logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
         tag=dict(tag)
-        tag_posts = db.get_posts_by_tag(tag['tag_slug'])
+        tag_posts = db.get_posts_by_tag(tag['tag_slug'], exclude_tags=["private","invisible"])
         if len(tag_posts)==0:
             continue
         layout.tag_gen( tag, tag_posts )
@@ -206,7 +207,7 @@ if db.new_posts > 0 or config['build']> 1:
     print("Year gen")
     sitemap.open("sitemap-years")
     years_archive = ""
-    exclude = ("invisible","book","page")
+    exclude = ("invisible","book","page","private")
     years = db.get_years()
     for iy, year in enumerate(years):
 
@@ -247,7 +248,7 @@ if db.new_posts > 0 or config['build']> 1:
 if db.new_posts > 0 or config['build'] > 1:
 
     posts_archive = ""
-    exclude = ("invisible")
+    exclude = ("invisible","private")
     posts = db.get_blog_posts(exclude)
     for post in posts:
         posts_archive += f'<p><a href="{post['url']}">' + datetime.fromtimestamp(post['pub_date']).strftime('%Y/%m/%d').replace('/0','/') + f' {post['title']}</a></p>'

@@ -521,17 +521,27 @@ class Db:
         return post
 
 
-    def get_posts_by_tag(self, tag_slug, limit=None):
+    def get_posts_by_tag(self, tag_slug, limit=None, exclude_tags=None):
         """
         Retourne tous les posts de blog (type=0) d'un tag spécifique avec les infos de leur premier tag associé.
         
         Args:
             tag_slug: Le slug du tag
             limit: Nombre maximum de résultats (None = pas de limite)
+            exclude_tags: Liste de slugs de tags à exclure
         """
         c = self.conn.cursor()
         
         limit_clause = f"LIMIT {limit}" if limit else ""
+        
+        # Condition d'exclusion de tags
+        exclude_condition = ""
+        params = [tag_slug]
+        
+        if exclude_tags:
+            placeholders = ','.join('?' for _ in exclude_tags)
+            exclude_condition = f"AND p.id NOT IN (SELECT DISTINCT c.con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
+            params.extend(exclude_tags)
         
         query = f'''
             SELECT 
@@ -547,6 +557,7 @@ class Db:
                 INNER JOIN tags t ON c.con_tag_id = t.tag_id 
                 WHERE t.tag_slug = ?
             )
+            {exclude_condition}
             AND (
                 (c.con_tag_id, c.con_post_id) IN (
                     SELECT c2.con_tag_id, c2.con_post_id
@@ -561,7 +572,7 @@ class Db:
             {limit_clause}
         '''
         
-        c.execute(query, (tag_slug,))
+        c.execute(query, params)
         return c.fetchall()
 
     def get_only_posts_by_tag(self, tag_slug, limit=None):

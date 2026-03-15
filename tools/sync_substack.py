@@ -175,6 +175,8 @@ db = db.Db(config)
 args = tools.get_args_dict()
 if 'id' in args and int(args['id'])>0:
     last = db.get_post_by_id( args['id'] )
+elif 'path' in args and len(args['path'])>0:
+    last = db.get_post_by_path(args['path'])
 else:
     last = db.get_last_published_post()
 print(last['path_md'])

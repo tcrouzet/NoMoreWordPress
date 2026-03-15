@@ -349,7 +349,7 @@ class Web:
 
                     if img_data["format"].startswith("image/"):
 
-                        if img_data['width'] < img_data['height'] or img_data['media_size']<100000:
+                        if img_data['width'] <= img_data['height'] or alt_text.endswith(" poster"):
                             myclass = 'portrait'
                             myclasslegend = 'legend-center'
                         else:
@@ -368,6 +368,7 @@ class Web:
                         if img_data['url_small']:
                             srcset_parts.append(f"{img_data['url_small']} {template['image_min_size']}w")
 
+                        alt_text = alt_text.removesuffix(" poster").strip()
                         new_div = soup.new_tag('figure')
                         img_attrs = {
                             'src': img_data['url'],
