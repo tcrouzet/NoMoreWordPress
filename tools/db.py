@@ -1099,7 +1099,7 @@ class Db:
     def to_html(self, content):
         content = markdown.markdown(
             content, 
-            extensions=['fenced_code', 'pymdownx.mark'],
+            extensions=['fenced_code', 'pymdownx.mark', 'pymdownx.strikethrough'],
             extension_configs={
                 'fenced_code': {
                     'lang_prefix': ''  # Supprime le préfixe de langage
