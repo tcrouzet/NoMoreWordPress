@@ -874,6 +874,11 @@ class Db:
         markdown_text = markdown_text.replace("*","")
         return markdown_text
 
+    def strip_comments(self, markdown_text):
+        """Supprime les commentaires au format %%texte%%"""
+        markdown_text = re.sub(r'%%.*?%%', '', markdown_text, flags=re.DOTALL)
+        return markdown_text
+
     def resume_paragraph(self, paragraph):
         # Longueur maximale du résumé
         max_length = 160
@@ -1099,7 +1104,7 @@ class Db:
     def to_html(self, content):
         content = markdown.markdown(
             content, 
-            extensions=['fenced_code', 'pymdownx.mark', 'pymdownx.strikethrough'],
+            extensions=['fenced_code', 'pymdownx.mark', 'pymdownx.tilde'],
             extension_configs={
                 'fenced_code': {
                     'lang_prefix': ''  # Supprime le préfixe de langage
@@ -1271,6 +1276,7 @@ class Db:
                         
             # Construire le contenu final puis convertir en HTML
             content = ''.join(content_lines).strip()
+            content = self.strip_comments(content)
             content = self.normalise_md(content)
             content = self.to_html(content)
 
