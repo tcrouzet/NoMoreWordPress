@@ -5,9 +5,9 @@ import subprocess
 import json
 import re
 import locale
+import csscompressor
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo  # Python 3.9+
-import csscompressor
 
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
