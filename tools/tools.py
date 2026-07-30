@@ -11,13 +11,18 @@ from zoneinfo import ZoneInfo  # Python 3.9+
 
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
-def site_yml(path):
-    with open(path, 'r') as file:
-        return yaml.safe_load(file)
-    
-def run_script(script_name):
+def site_yml(site):
+    path = os.path.join("./sites", f"{site}.yml")
     try:
-        subprocess.run(['python3', script_name], check=True)
+        with open(path, 'r') as file:
+            return yaml.safe_load(file)
+    except:
+        print(f"No {path}")
+        exit()
+    
+def run_script(script_name, *args):
+    try:
+        subprocess.run(['python3', script_name, *map(str, args)], check=True)
         return True
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while running {script_name}: {e}")

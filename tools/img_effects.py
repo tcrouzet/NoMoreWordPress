@@ -413,7 +413,7 @@ class ImgEffects:
 if __name__ == '__main__':
     # os.system('clear')
     import tools
-    config = tools.site_yml('site.yml')
+    config = tools.site_yml('tcrouzet')
     img = ImgEffects(config)
 
     source = os.path.join(img.temp_dir,'test2.webp')

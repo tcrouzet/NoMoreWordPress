@@ -12,7 +12,11 @@ from PIL import Image
 sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-config = tools.site_yml('site.yml')
+if len(sys.argv) < 2 or not sys.argv[1].strip():
+    exit('Usage: python3 ./tools/sync_md.py "nom_du_site"')
+
+site = sys.argv[1].strip()
+config = tools.site_yml(site)
 
 def sync_files(src, dst):
 

@@ -3,3 +3,4 @@ _*
 .pylintrc
 venv/
 site.yml
+sites/

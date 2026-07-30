@@ -14,7 +14,7 @@ sys.stderr = sys.stdout
 
 os.system('clear')
 
-config = tools.tools.site_yml('site.yml')
+config = tools.tools.site_yml('tcrouzet')
 
 db = tools.db.Db(config)
 web = tools.web.Web(config, db)

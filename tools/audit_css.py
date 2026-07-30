@@ -37,7 +37,7 @@ sys.stderr = sys.stdout
 
 os.system('clear')
 
-config = tools.site_yml('./site.yml')
+config = tools.site_yml('tcrouzet')
 
 HTML_ROOT = Path(config['export'])
 CSS_FILE = Path(os.path.join(HTML_ROOT, "style.css"))

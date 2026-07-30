@@ -22,7 +22,11 @@ sys.stderr = sys.stdout
 
 os.system('clear')
 
-config = tools.site_yml('site.yml')
+if len(sys.argv) < 2 or not sys.argv[1].strip():
+    exit('Usage: python3 ./tools/gen.py "nom_du_site"')
+
+site = sys.argv[1].strip()
+config = tools.site_yml(site)
 
 # Parcourir et filtrer les templates
 filtered_templates = []
@@ -297,7 +301,7 @@ if version>0 and (db.new_posts + db.updated_posts > 0 or  config['build'] == 2):
             subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
             subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
 
-    tools.run_script('tools/sync_md.py')
-    tools.run_script('tools/sync_gmi.py')
+    tools.run_script('tools/sync_md.py', site)
+    tools.run_script('tools/sync_gmi.py', site)
 else:
     print("No export")

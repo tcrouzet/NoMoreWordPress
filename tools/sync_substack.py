@@ -168,7 +168,7 @@ class Webot:
         return html
 
 
-config = tools.site_yml('site.yml')
+config = tools.site_yml('tcrouzet')
 template = next((item for item in config['templates'] if item['name'] == 'tcrouzet'), None)
 db = db.Db(config)
 

@@ -12,7 +12,7 @@ import tools
 
 os.system('clear')
 
-config = tools.site_yml('site.yml')
+config = tools.site_yml('tcrouzet')
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))

@@ -16,7 +16,11 @@ import subprocess
 sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-config = tools.site_yml('site.yml')
+if len(sys.argv) < 2 or not sys.argv[1].strip():
+    exit('Usage: python3 ./tools/sync_gmi.py "nom_du_site"')
+
+site = sys.argv[1].strip()
+config = tools.site_yml(site)
 
 def mount_synology_volume():
     server_address = "smb://NasZone._smb._tcp.local/Web"
@@ -390,4 +394,3 @@ sync = sync_files.SyncFiles(config['gemini_export'],'/Volumes/docker/gemini/cont
 
 # gh = github.MyGitHub(config, "tcrouzet", config['gemini_export'], "sourcehut")
 # gh.push()
-

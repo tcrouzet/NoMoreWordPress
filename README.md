@@ -17,5 +17,12 @@ Tous les liens internes commes les liens images sont relatifs (et actifs).
 
 ### gen.py
 
-### sync.py
+Passer le nom du site en premier argument. Le fichier de configuration
+`sites/<site>.yml` sera alors chargé :
 
+```sh
+python3 ./tools/gen.py "tcrouzet"
+python3 ./tools/gen.py "727"
+```
+
+### sync.py
