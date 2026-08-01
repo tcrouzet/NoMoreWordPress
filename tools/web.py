@@ -44,6 +44,10 @@ class Web:
             post=dict(post)
             if not media_src_file:
                 return None
+            if media_src_file.startswith((
+                'http://', 'https://', '//', 'data:'
+            )):
+                return None
             base_dir_name =  post['path_md']
             dirname = os.path.dirname(base_dir_name)
             return os.path.join( self.config['vault'], dirname, media_src_file )
@@ -102,6 +106,8 @@ class Web:
             return None
 
         media_source_path = self.media_source_path( post, media_src_file )
+        if media_source_path is None:
+            return None
         url_media_relatif = self.url_image_relatif( media_src_file, post)
 
         images = {
@@ -443,8 +449,8 @@ class Web:
 
             tagslist = json.loads(post['tagslist'])
 
-            if not 'tagslist':
-                return None
+            if not tagslist:
+                return {}
             
             main_tag = tagslist[0]
 
@@ -535,8 +541,26 @@ class Web:
             else:
                 post['navigation'] = None 
 
+            if "tagslist" in post and isinstance(post['tagslist'], str):
+                post['tagslist'] = json.loads(post['tagslist'])
+
             if "frontmatter" in post and isinstance(post['frontmatter'], str):
                 post['frontmatter'] = json.loads(post['frontmatter'])
+
+            post['pub_date_label'] = tools.timestamp_date_label(post['pub_date'])
+            post['event_date_label'] = ''
+            if post.get('frontmatter') and post['frontmatter'].get('date'):
+                post['event_date_label'] = tools.event_date_label(
+                    post['frontmatter']['date']
+                )
+            tag_slugs = {
+                tag.get('tag_slug') for tag in (post.get('tagslist') or [])
+            }
+            post['display_date_label'] = ''
+            if 'grands_departs' in tag_slugs and post['event_date_label']:
+                post['display_date_label'] = post['event_date_label']
+            elif 'reco' in tag_slugs:
+                post['display_date_label'] = post['pub_date_label']
 
             return post
         

@@ -22,6 +22,13 @@ if len(sys.argv) < 2 or not sys.argv[1].strip():
 site = sys.argv[1].strip()
 config = tools.site_yml(site)
 
+if not config.get('export_github_md') or not config.get('gemini_export'):
+    print(
+        f"GMI sync disabled for {site}: "
+        "export_github_md and gemini_export are not configured."
+    )
+    sys.exit(0)
+
 def mount_synology_volume():
     server_address = "smb://NasZone._smb._tcp.local/Web"
     try:

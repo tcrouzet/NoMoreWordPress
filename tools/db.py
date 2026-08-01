@@ -2,6 +2,8 @@ import sqlite3
 import os
 import re
 import json
+import html
+import shlex
 import datetime
 from bs4 import BeautifulSoup
 from datetime import date
@@ -14,7 +16,7 @@ import logs as logs
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, (date, datetime)):
+        if isinstance(obj, (date, datetime.datetime)):
             return obj.isoformat()
         return super().default(obj)
 
@@ -23,6 +25,12 @@ class Db:
 
     def __init__(self, config):
         self.config = config
+        self.site = config.get('site', 'tcrouzet')
+        active_templates = [
+            template for template in config.get('templates', [])
+            if not template.get('skip', False)
+        ]
+        self.poster = int(active_templates[0].get('poster', 1)) if active_templates else 1
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
@@ -37,6 +45,7 @@ class Db:
 
         self.new_posts = 0
         self.updated_posts = 0
+        self.deleted_posts = 0
         self.new_tags = 0
         self.updated_tags = 0
         self.used_years = set()
@@ -45,20 +54,41 @@ class Db:
         return "test db ok"
 
     def create_tables(self, reset=False):
-        self.create_table_posts(reset)
-        self.create_images_cache(reset)
-        self.create_table_tags(reset)
-        self.create_table_connectors(reset)
+        self.create_table_posts()
+        self.create_images_cache()
+        self.create_table_tags()
+        self.create_table_connectors()
+
+        if reset:
+            self.reset_site()
+
+    def reset_site(self):
+        """Supprime les données du site courant sans toucher aux autres sites."""
+        print(f"Reset posts for site {self.site}")
+        c = self.conn.cursor()
+        c.execute(
+            '''DELETE FROM connectors
+               WHERE con_post_id IN (SELECT id FROM posts WHERE site = ?)''',
+            (self.site,)
+        )
+        c.execute('DELETE FROM posts WHERE site = ?', (self.site,))
+        c.execute(
+            '''DELETE FROM tags
+               WHERE NOT EXISTS (
+                   SELECT 1 FROM connectors WHERE con_tag_id = tags.tag_id
+               )'''
+        )
+        self.conn.commit()
 
     def create_table_posts(self, reset=False):
         c = self.conn.cursor()
 
         if reset:
-            print("Reset table posts")
-            c.execute('DROP TABLE IF EXISTS posts')
+            print(f"Reset posts for site {self.site}")
 
-        c.execute(f'''CREATE TABLE IF NOT EXISTS posts (
+        posts_schema = '''CREATE TABLE {table_name} (
             id INTEGER PRIMARY KEY,
+            site TEXT NOT NULL DEFAULT 'tcrouzet',
             source_path TEXT,
             title TEXT,
             path_md TEXT UNIQUE,
@@ -66,7 +96,7 @@ class Db:
             pub_update INTEGER,
             thumb_path TEXT DEFAULT '',
             thumb_legend TEXT DEFAULT '',
-            type INTEGER CHECK(type IN (0, 1, 2)),  -- 0 pour post, 1 pour page, 2 pour books
+            type INTEGER CHECK(type IN (0, 1, 2, 4)),  -- 0 post, 1 page, 2 livre, 4 route
             tags TEXT DEFAULT '', -- dic
             url TEXT,
             content TEXT,
@@ -80,12 +110,68 @@ class Db:
             navigation TEXT,  -- dict json
             comments TEXT,
             updated BOOLEAN DEFAULT TRUE
-        );''')
+        )'''
+
+        table_sql = c.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'posts'"
+        ).fetchone()
+
+        if table_sql:
+            columns = {
+                row['name'] for row in c.execute('PRAGMA table_info(posts)').fetchall()
+            }
+            schema_sql = table_sql['sql']
+            migration_needed = (
+                'site' not in columns
+                or 'type IN (0, 1, 2, 4)' not in schema_sql
+                or 'path_md TEXT UNIQUE' not in schema_sql
+            )
+
+            if migration_needed:
+                print("Migration table posts: ajout site et type route")
+                c.execute('ALTER TABLE posts RENAME TO posts_legacy')
+                c.execute(posts_schema.format(table_name='posts'))
+
+                legacy_columns = {
+                    row['name']
+                    for row in c.execute('PRAGMA table_info(posts_legacy)').fetchall()
+                }
+                post_columns = [
+                    row['name'] for row in c.execute('PRAGMA table_info(posts)').fetchall()
+                    if row['name'] != 'site' or 'site' in legacy_columns
+                ]
+                select_columns = list(post_columns)
+
+                if 'site' not in legacy_columns:
+                    post_columns.insert(1, 'site')
+                    select_columns.insert(1, "'tcrouzet'")
+
+                c.execute(
+                    f'''INSERT INTO posts ({", ".join(post_columns)})
+                        SELECT {", ".join(select_columns)}
+                        FROM posts_legacy'''
+                )
+                c.execute('DROP TABLE posts_legacy')
+        else:
+            c.execute(posts_schema.format(table_name='posts'))
 
         # Accélère recherche par path_md
-        c.execute('''CREATE INDEX  IF NOT EXISTS idx_posts_path ON posts(path_md)''')
+        c.execute('''CREATE INDEX IF NOT EXISTS idx_posts_path ON posts(path_md)''')
 
         self.conn.commit()
+
+        if reset:
+            tables = {
+                row['name']
+                for row in c.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                ).fetchall()
+            }
+            if {'connectors', 'tags'}.issubset(tables):
+                self.reset_site()
+            else:
+                c.execute('DELETE FROM posts WHERE site = ?', (self.site,))
+                self.conn.commit()
 
 
     def create_images_cache(self, reset=False):
@@ -113,15 +199,17 @@ class Db:
 
         c.execute('''CREATE TABLE IF NOT EXISTS tags (
             tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tag_slug TEXT UNIQUE NOT NULL,
+            site TEXT NOT NULL,
+            tag_slug TEXT NOT NULL,
             tag_title TEXT NOT NULL,
             tag_url TEXT,
             tag_update INTEGER DEFAULT 0,
-            tag_updated BOOLEAN DEFAULT TRUE
+            tag_updated BOOLEAN DEFAULT TRUE,
+            UNIQUE(site, tag_slug)
         )''')
         
         # Index pour recherche rapide par slug
-        c.execute('CREATE INDEX IF NOT EXISTS idx_tags_slug ON tags(tag_slug)')
+        c.execute('CREATE INDEX IF NOT EXISTS idx_tags_site_slug ON tags(site, tag_slug)')
         
         self.conn.commit()
 
@@ -150,17 +238,22 @@ class Db:
 
     def existing_post(self, path_md):
         c = self.conn.cursor()
-        c.execute('SELECT id, pub_update FROM posts WHERE path_md = ?', (path_md,))
+        c.execute(
+            'SELECT id, pub_update FROM posts WHERE site = ? AND path_md = ?',
+            (self.site, path_md)
+        )
         existing_post = c.fetchone()
         return existing_post
 
     def insert_post(self, post, existing_post = None):
 
+        post['site'] = self.site
+
         if 'tags' in post and isinstance(post['tags'], list):
             post['tags'] = json.dumps(post['tags'])
         
         if 'frontmatter' in post and post['frontmatter']:
-            post['frontmatter'] = json.dumps(post['frontmatter'])
+            post['frontmatter'] = json.dumps(post['frontmatter'], cls=DateTimeEncoder)
 
         if "tagslist" in post:
             post['tagslist'] = json.dumps(post['tagslist'])
@@ -175,6 +268,7 @@ class Db:
             post['id'] = existing_post['id']
 
             query = '''UPDATE posts SET
+                        site = :site,
                         source_path = :source_path,
                         title = :title,
                         pub_date = :pub_date,
@@ -195,7 +289,7 @@ class Db:
                         datelink = :datelink,
                         comments = :comments,
                         updated = TRUE
-                    WHERE id = :id;'''
+                    WHERE id = :id AND site = :site;'''
             c.execute(query, post)
             self.conn.commit()
 
@@ -210,8 +304,8 @@ class Db:
             # New post
 
             query = '''INSERT INTO posts 
-                    (source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  pub_date_str,  pub_update_str,  tagslist,  github,  datelink, comments)
-             VALUES (:source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink, :comments);
+                    (site,  source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  pub_date_str,  pub_update_str,  tagslist,  github,  datelink, comments)
+             VALUES (:site, :source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink, :comments);
             '''
             c.execute(query, post)
             self.conn.commit()
@@ -232,20 +326,42 @@ class Db:
         Insère ou met à jour les tags et crée les liaisons avec le post.
         Retourne {'new': int, 'updated': int, 'linked': int}
         """
-        if not tagslist:
-            return {'new': 0, 'updated': 0, 'linked': 0}
-
         if isinstance(tagslist, str):
             tagslist = json.loads(tagslist)
                 
         c = self.conn.cursor()
         stats = {'new': 0, 'updated': 0, 'linked': 0}
+
+        belongs_to_site = c.execute(
+            'SELECT 1 FROM posts WHERE id = ? AND site = ?',
+            (post_id, self.site)
+        ).fetchone()
+        if not belongs_to_site:
+            return stats
+
+        # Le Markdown est la source de vérité : ses anciennes associations
+        # doivent disparaître avant d'enregistrer la nouvelle liste.
+        c.execute('DELETE FROM connectors WHERE con_post_id = ?', (post_id,))
+
+        if not tagslist:
+            c.execute(
+                '''DELETE FROM tags WHERE site = ? AND NOT EXISTS (
+                       SELECT 1 FROM connectors WHERE con_tag_id = tags.tag_id
+                   )''',
+                (self.site,)
+            )
+            self.conn.commit()
+            return stats
         
         for tagdict in tagslist:
             tagdict['tag_update'] = tag_update
+            tagdict['site'] = self.site
             
             # Vérifier si le tag existe
-            c.execute('SELECT tag_id, tag_update FROM tags WHERE tag_slug = ?', (tagdict['tag_slug'],))
+            c.execute(
+                'SELECT tag_id, tag_update FROM tags WHERE site = ? AND tag_slug = ?',
+                (self.site, tagdict['tag_slug'])
+            )
             existing_tag = c.fetchone()
             
             if existing_tag and tag_update > existing_tag['tag_update']:
@@ -255,7 +371,7 @@ class Db:
                             tag_update = :tag_update,
                             tag_url = :tag_url,
                             tag_updated = TRUE
-                        WHERE tag_id = :tag_id'''
+                        WHERE tag_id = :tag_id AND site = :site'''
                 
                 tagdict['tag_id'] = existing_tag['tag_id']
                 c.execute(query, tagdict)
@@ -269,8 +385,8 @@ class Db:
             else:
                 # INSERT nouveau tag
                 query = '''INSERT INTO tags 
-                        (tag_title, tag_update, tag_slug, tag_url)
-                        VALUES (:tag_title, :tag_update, :tag_slug, :tag_url)'''
+                        (site, tag_title, tag_update, tag_slug, tag_url)
+                        VALUES (:site, :tag_title, :tag_update, :tag_slug, :tag_url)'''
                 c.execute(query, tagdict)
                 tag_id = c.lastrowid
                 stats['new'] += 1
@@ -284,12 +400,34 @@ class Db:
         self.conn.commit()
         return stats
 
+    def sync_config_tags(self):
+        """Synchronise titres et URL des tags du site avec le YML courant."""
+        c = self.conn.cursor()
+        rows = c.execute(
+            'SELECT tag_id, tag_slug, tag_title, tag_url FROM tags WHERE site = ?',
+            (self.site,)
+        ).fetchall()
+        changed = 0
+        for row in rows:
+            expected = self.tag_2_dict(row['tag_slug'])
+            if row['tag_title'] == expected['tag_title'] and row['tag_url'] == expected['tag_url']:
+                continue
+            c.execute(
+                '''UPDATE tags SET tag_title = ?, tag_url = ?, tag_updated = TRUE
+                   WHERE tag_id = ? AND site = ?''',
+                (expected['tag_title'], expected['tag_url'], row['tag_id'], self.site)
+            )
+            changed += 1
+        self.conn.commit()
+        self.updated_tags += changed
+        return changed
+
     def updated(self, post):
         try:
-            query = '''UPDATE posts SET updated = False WHERE id = ?;'''
+            query = '''UPDATE posts SET updated = False WHERE id = ? AND site = ?;'''
             c = self.conn.cursor()
 
-            c.execute(query, (post['id'],))
+            c.execute(query, (post['id'], self.site))
             self.conn.commit()
             return True
         except Exception as e:
@@ -297,10 +435,10 @@ class Db:
 
     def un_updated(self, post_id):
         try:
-            query = '''UPDATE posts SET updated = True WHERE id = ?;'''
+            query = '''UPDATE posts SET updated = True WHERE id = ? AND site = ?;'''
             c = self.conn.cursor()
 
-            c.execute(query, (post_id,))
+            c.execute(query, (post_id, self.site))
             self.conn.commit()
             self.new_posts +=1
             return True
@@ -309,10 +447,10 @@ class Db:
 
     def un_updated_by_path(self, md_path):
         try:
-            query = '''UPDATE posts SET updated = True WHERE md_pah = ?;'''
+            query = '''UPDATE posts SET updated = True WHERE path_md = ? AND site = ?;'''
             c = self.conn.cursor()
 
-            c.execute(query, (md_path,))
+            c.execute(query, (md_path, self.site))
             self.conn.commit()
             return True
         except Exception as e:
@@ -320,10 +458,18 @@ class Db:
 
     def updated_tag(self, tag):
         try:
-            query = '''UPDATE tags SET tag_updated = False WHERE tag_id = ?;'''
+            query = '''UPDATE tags
+                       SET tag_updated = False
+                       WHERE tag_id = ?
+                         AND EXISTS (
+                             SELECT 1
+                             FROM connectors c
+                             INNER JOIN posts p ON p.id = c.con_post_id
+                             WHERE c.con_tag_id = tags.tag_id AND p.site = ?
+                         );'''
             c = self.conn.cursor()
 
-            c.execute(query, (tag['tag_id'],))
+            c.execute(query, (tag['tag_id'], self.site))
             self.conn.commit()
             return True
         except Exception as e:
@@ -333,12 +479,98 @@ class Db:
     def delete_post(self, post):
         c = self.conn.cursor()
 
-        query = '''DELETE FROM posts WHERE id = ?;'''
-        c.execute(query, (post['id'],))
+        query = '''DELETE FROM posts WHERE id = ? AND site = ?;'''
+        c.execute(query, (post['id'], self.site))
         if c.rowcount > 0:
             return True
         else:
             return False
+
+    def remove_exported_post(self, post):
+        """Supprime le fichier HTML généré pour un post disparu du vault."""
+        url = (post['url'] or '').strip()
+        if not url:
+            return
+
+        for template in self.config['templates']:
+            export_root = os.path.abspath(template['export'])
+            relative_url = url.lstrip('/')
+            if relative_url.endswith('.html'):
+                target = os.path.abspath(os.path.join(export_root, relative_url))
+            else:
+                target = os.path.abspath(
+                    os.path.join(export_root, relative_url, 'index.html')
+                )
+
+            if os.path.commonpath((export_root, target)) != export_root:
+                print(f"Refuse deleting outside export: {target}")
+                continue
+
+            if os.path.isfile(target):
+                os.remove(target)
+                print(f"Deleted export: {target}")
+
+                directory = os.path.dirname(target)
+                while directory != export_root:
+                    try:
+                        os.rmdir(directory)
+                    except OSError:
+                        break
+                    directory = os.path.dirname(directory)
+
+    def delete_missing_posts(self, present_paths):
+        """Supprime les posts du site courant dont le Markdown n'existe plus."""
+        c = self.conn.cursor()
+        stored_posts = c.execute(
+            'SELECT id, path_md, url FROM posts WHERE site = ?',
+            (self.site,)
+        ).fetchall()
+        missing_posts = [
+            post for post in stored_posts if post['path_md'] not in present_paths
+        ]
+
+        if not missing_posts:
+            return 0
+
+        affected_tag_ids = set()
+        for post in missing_posts:
+            tag_rows = c.execute(
+                'SELECT con_tag_id FROM connectors WHERE con_post_id = ?',
+                (post['id'],)
+            ).fetchall()
+            affected_tag_ids.update(row['con_tag_id'] for row in tag_rows)
+
+            c.execute(
+                'DELETE FROM connectors WHERE con_post_id = ?',
+                (post['id'],)
+            )
+            c.execute(
+                'DELETE FROM posts WHERE id = ? AND site = ?',
+                (post['id'], self.site)
+            )
+            self.remove_exported_post(post)
+            print(f"Deleted from database: {post['path_md']}")
+
+        if affected_tag_ids:
+            placeholders = ','.join('?' for _ in affected_tag_ids)
+            c.execute(
+                f'''UPDATE tags SET tag_updated = TRUE
+                    WHERE tag_id IN ({placeholders})''',
+                tuple(affected_tag_ids)
+            )
+
+        c.execute(
+            '''DELETE FROM tags
+               WHERE NOT EXISTS (
+                   SELECT 1 FROM connectors WHERE con_tag_id = tags.tag_id
+               )'''
+        )
+        self.conn.commit()
+
+        deleted_count = len(missing_posts)
+        self.deleted_posts += deleted_count
+        self.updated_tags += len(affected_tag_ids)
+        return deleted_count
 
     def db_commit(self):
         self.conn.commit()
@@ -360,27 +592,23 @@ class Db:
         c = self.conn.cursor()
         
         # Construire la clause WHERE
-        where_clause = ""
-        params = ()
+        where_clause = "WHERE site = ?"
+        params = [self.site]
         
         if condition:
-            where_clause = f"WHERE {condition}"
+            where_clause += f" AND ({condition})"
         
         # Ajouter l'exclusion de tags
         if exclude_tags:
             placeholders = ','.join('?' for _ in exclude_tags)
             exclude_condition = f"id NOT IN (SELECT DISTINCT con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
             
-            if where_clause:
-                where_clause += f" AND {exclude_condition}"
-            else:
-                where_clause = f"WHERE {exclude_condition}"
-            
-            params = tuple(exclude_tags)
+            where_clause += f" AND {exclude_condition}"
+            params.extend(exclude_tags)
         
         query = f"SELECT *, (COUNT(*) OVER ()) - ROW_NUMBER() OVER (ORDER BY pub_date DESC) + 1 AS ordre FROM posts {where_clause} ORDER BY pub_date DESC"
         
-        c.execute(query, params)
+        c.execute(query, tuple(params))
         return c.fetchall()
 
     def get_post_by_id(self, post_id):
@@ -412,13 +640,13 @@ class Db:
         """
         c = self.conn.cursor()
         
-        where_clause = "WHERE p.type = 0"
-        params = ()
+        where_clause = "WHERE p.site = ? AND p.type = 0"
+        params = [self.site]
         
         if exclude_tags:
             placeholders = ','.join('?' for _ in exclude_tags)
             where_clause += f" AND p.id NOT IN (SELECT DISTINCT c.con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
-            params = tuple(exclude_tags)
+            params.extend(exclude_tags)
         
         query = f'''
             SELECT 
@@ -429,18 +657,20 @@ class Db:
             LEFT JOIN connectors c ON p.id = c.con_post_id
             LEFT JOIN tags t ON c.con_tag_id = t.tag_id
             {where_clause}
-            AND (c.con_tag_id, c.con_post_id) IN (
-                SELECT c2.con_tag_id, c2.con_post_id
-                FROM connectors c2
-                WHERE c2.con_post_id = p.id
-                ORDER BY c2.con_tag_id
-                LIMIT 1
-            ) OR c.con_tag_id IS NULL
+            AND (
+                (c.con_tag_id, c.con_post_id) IN (
+                    SELECT c2.con_tag_id, c2.con_post_id
+                    FROM connectors c2
+                    WHERE c2.con_post_id = p.id
+                    ORDER BY c2.con_tag_id
+                    LIMIT 1
+                ) OR c.con_tag_id IS NULL
+            )
             GROUP BY p.id
             ORDER BY p.pub_date DESC
         '''
         
-        c.execute(query, params)
+        c.execute(query, tuple(params))
         return c.fetchall()
 
 
@@ -451,13 +681,13 @@ class Db:
         """
         c = self.conn.cursor()
         
-        where_clause = f"WHERE strftime('%Y', datetime(p.pub_date, 'unixepoch')) = ? AND p.type = 0"
-        params = (year,)
+        where_clause = "WHERE p.site = ? AND strftime('%Y', datetime(p.pub_date, 'unixepoch')) = ? AND p.type = 0"
+        params = [self.site, year]
         
         if exclude_tags:
             placeholders = ','.join('?' for _ in exclude_tags)
             where_clause += f" AND p.id NOT IN (SELECT DISTINCT c.con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
-            params = (year,) + tuple(exclude_tags)
+            params.extend(exclude_tags)
         
         query = f'''
             SELECT 
@@ -468,18 +698,20 @@ class Db:
             LEFT JOIN connectors c ON p.id = c.con_post_id
             LEFT JOIN tags t ON c.con_tag_id = t.tag_id
             {where_clause}
-            AND (c.con_tag_id, c.con_post_id) IN (
-                SELECT c2.con_tag_id, c2.con_post_id
-                FROM connectors c2
-                WHERE c2.con_post_id = p.id
-                ORDER BY c2.con_tag_id
-                LIMIT 1
-            ) OR c.con_tag_id IS NULL
+            AND (
+                (c.con_tag_id, c.con_post_id) IN (
+                    SELECT c2.con_tag_id, c2.con_post_id
+                    FROM connectors c2
+                    WHERE c2.con_post_id = p.id
+                    ORDER BY c2.con_tag_id
+                    LIMIT 1
+                ) OR c.con_tag_id IS NULL
+            )
             GROUP BY p.id
             ORDER BY p.pub_date DESC
         '''
         
-        c.execute(query, params)
+        c.execute(query, tuple(params))
         return c.fetchall()
     
     def get_years(self):
@@ -487,10 +719,10 @@ class Db:
 
         query = '''
         SELECT DISTINCT strftime('%Y', datetime(pub_date, 'unixepoch')) AS year
-        FROM posts WHERE type = 0
+        FROM posts WHERE site = ? AND type = 0
         ORDER BY year DESC
         '''
-        c.execute(query)
+        c.execute(query, (self.site,))
         years = c.fetchall()
 
         # years = [year[0] for year in years]
@@ -504,9 +736,9 @@ class Db:
         c = self.conn.cursor()
         query = f'''
         SELECT * FROM posts
-        WHERE path_md = ? LIMIT 1
+        WHERE site = ? AND path_md = ? LIMIT 1
         '''
-        c.execute(query, (path,))
+        c.execute(query, (self.site, path))
         post = c.fetchone()
         return post
 
@@ -514,9 +746,9 @@ class Db:
         c = self.conn.cursor()
         query = f'''
         SELECT * FROM posts
-        WHERE title = ? LIMIT 1
+        WHERE site = ? AND title = ? LIMIT 1
         '''
-        c.execute(query, (title,))
+        c.execute(query, (self.site, title))
         post = c.fetchone()
         return post
 
@@ -536,7 +768,7 @@ class Db:
         
         # Condition d'exclusion de tags
         exclude_condition = ""
-        params = [tag_slug]
+        params = [self.site, tag_slug]
         
         if exclude_tags:
             placeholders = ','.join('?' for _ in exclude_tags)
@@ -551,7 +783,7 @@ class Db:
             FROM posts p
             LEFT JOIN connectors c ON p.id = c.con_post_id
             LEFT JOIN tags t ON c.con_tag_id = t.tag_id
-            WHERE p.id IN (
+            WHERE p.site = ? AND p.id IN (
                 SELECT DISTINCT c.con_post_id 
                 FROM connectors c 
                 INNER JOIN tags t ON c.con_tag_id = t.tag_id 
@@ -577,7 +809,7 @@ class Db:
 
     def get_only_posts_by_tag(self, tag_slug, limit=None):
         """
-        Retourne tous les posts de blog (type=0) d'un tag spécifique.
+        Retourne tous les contenus d'un tag spécifique.
         
         Args:
             tag_slug: Le slug du tag
@@ -592,22 +824,23 @@ class Db:
             FROM posts p
             INNER JOIN connectors c ON p.id = c.con_post_id
             INNER JOIN tags t ON c.con_tag_id = t.tag_id
-            WHERE p.type = 0 AND t.tag_slug = ?
+            WHERE p.site = ? AND t.tag_slug = ?
             ORDER BY p.pub_date DESC
             {limit_clause}
         '''
         
-        c.execute(query, (tag_slug,))
+        c.execute(query, (self.site, tag_slug))
         return c.fetchall()
 
     def get_last_published_post(self):
         c = self.conn.cursor()
         query = '''
         SELECT * FROM posts
+        WHERE site = ?
         ORDER BY pub_date DESC
         LIMIT 1
         '''
-        c.execute(query)
+        c.execute(query, (self.site,))
         post = c.fetchone()
         return post
 
@@ -629,29 +862,34 @@ class Db:
         """
         c = self.conn.cursor()
         
-        # Construire la clause WHERE complète
-        where_clause = where
-        params = ()
+        conditions = [
+            '''EXISTS (
+                SELECT 1
+                FROM connectors c
+                INNER JOIN posts p ON p.id = c.con_post_id
+                WHERE c.con_tag_id = t.tag_id AND p.site = ?
+            )'''
+        ]
+        params = [self.site]
+
+        if where:
+            conditions.append(re.sub(r'^\s*WHERE\s+', '', where, flags=re.IGNORECASE))
         
         if exclude_slugs:
             placeholders = ','.join('?' for _ in exclude_slugs)
-            exclude_condition = f"tag_slug NOT IN ({placeholders})"
-            
-            if where_clause:
-                where_clause += f" AND {exclude_condition}"
-            else:
-                where_clause = f"WHERE {exclude_condition}"
-            
-            params = tuple(exclude_slugs)
+            conditions.append(f"t.tag_slug NOT IN ({placeholders})")
+            params.extend(exclude_slugs)
+
+        where_clause = "WHERE " + " AND ".join(conditions)
         
         query = f'''
-            SELECT *, TRUE AS is_tag
-            FROM tags
+            SELECT t.*, TRUE AS is_tag
+            FROM tags t
             {where_clause}
             ORDER BY {order}
         '''
         
-        c.execute(query, params)
+        c.execute(query, tuple(params))
         tags = c.fetchall()
         return tags
 
@@ -676,6 +914,9 @@ class Db:
             post_id: ID du post à mettre à jour
             fields_dict: Dictionnaire {nom_colonne: valeur}
         """
+        if not fields_dict:
+            return True
+
         try:
             c = self.conn.cursor()
             
@@ -693,10 +934,11 @@ class Db:
                 set_clauses.append(f"{field_name} = ?")
                 processed_values.append(processed_value)
             
-            # Ajouter l'ID à la fin pour le WHERE
+            # Ajouter l'ID et le site à la fin pour le WHERE
             processed_values.append(post_id)
+            processed_values.append(self.site)
 
-            query = f"UPDATE posts SET {', '.join(set_clauses)} WHERE id = ?"
+            query = f"UPDATE posts SET {', '.join(set_clauses)} WHERE id = ? AND site = ?"
             
             c.execute(query, tuple(processed_values))
             self.conn.commit()
@@ -764,12 +1006,12 @@ class Db:
         c = self.conn.cursor()
         
         where_clause = ""
-        params = ()
+        params = [self.site, self.site]
         
         if exclude_tags:
             placeholders = ','.join('?' for _ in exclude_tags)
             where_clause = f"AND t.tag_slug NOT IN ({placeholders})"
-            params = tuple(exclude_tags)
+            params.extend(exclude_tags)
         
         query = f'''
             SELECT 
@@ -779,18 +1021,18 @@ class Db:
             FROM tags t
             INNER JOIN connectors c ON t.tag_id = c.con_tag_id
             INNER JOIN posts p ON c.con_post_id = p.id
-            WHERE p.pub_date = (
+            WHERE p.site = ? AND p.pub_date = (
                 SELECT MAX(p2.pub_date)
                 FROM posts p2
                 INNER JOIN connectors c2 ON p2.id = c2.con_post_id
-                WHERE c2.con_tag_id = t.tag_id
+                WHERE c2.con_tag_id = t.tag_id AND p2.site = ?
             )
             {where_clause}
             GROUP BY t.tag_id
             ORDER BY p.pub_date DESC
         '''
         
-        c.execute(query, params)
+        c.execute(query, tuple(params))
         return c.fetchall()
 
     def list_posts(self, condition=None):
@@ -935,6 +1177,9 @@ class Db:
 
 
     def get_github_url(self, url):
+        github_raw = self.config.get('github_raw')
+        if not github_raw:
+            return ""
         if not url:
             return ""
         if not url.endswith('/'):
@@ -946,7 +1191,7 @@ class Db:
         if parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
             parts.pop(2)
         parts[-1] += '.md'
-        return self.config['github_raw'] + '/'.join(parts)
+        return github_raw.rstrip('/') + '/' + '/'.join(parts)
 
     def date_html(self, pub_date) ->str:
         current_time = tools.timestamp_to_paris_datetime(pub_date)
@@ -1035,7 +1280,9 @@ class Db:
         else:
 
             #PAGES
-            url = "/" + os.path.dirname(path_md) + "/" + file_name_without_extension + "/"
+            directory = os.path.dirname(path_md).strip("/")
+            url_parts = [part for part in (directory, file_name_without_extension) if part]
+            url = "/" + "/".join(url_parts) + "/"
 
         return url
     
@@ -1113,6 +1360,79 @@ class Db:
         )
         return content
 
+    def route_include_to_html(self, content, frontmatter=None):
+        """
+        Convertit les cartouches courts et les anciens includes `route.html`.
+        Les paramètres de l'include sont prioritaires sur les clés `r_*`
+        du frontmatter.
+        """
+        pattern = re.compile(
+            r'''{%\s*(?:
+                include\s+route\.html\b(?P<legacy>.*?)
+                |
+                (?P<short>
+                    (?:
+                        (?:distance|dev|portage|altitude|asphalte|single)
+                        \s*=\s*(?:"[^"]*"|'[^']*')\s*
+                    )+
+                )
+            )%}''',
+            flags=re.DOTALL | re.VERBOSE
+        )
+        frontmatter = frontmatter or {}
+        icon_base = '/assets/img/route/'
+        fields = (
+            ('distance', 'r_distance', 'Distance', 'route-distance.svg'),
+            ('dev', 'r_dev', 'Dénivelé', 'route-dev.svg'),
+            ('portage', 'r_portage', 'Portage', 'route-portage.svg'),
+            ('altitude', 'r_altitude', 'Altitude max', 'route-altitude.svg'),
+            ('asphalte', 'r_asphalte', 'Asphalte', 'route-asphalte.svg'),
+            ('single', 'r_single', 'Singles', 'route-single.svg'),
+        )
+
+        def render(match):
+            values = {}
+            arguments = (
+                match.group('legacy')
+                if match.group('legacy') is not None
+                else match.group('short')
+            )
+            try:
+                for argument in shlex.split(arguments):
+                    if '=' in argument:
+                        key, value = argument.split('=', 1)
+                        values[key.strip()] = value.strip()
+            except ValueError as error:
+                print(f"Include route.html invalide: {error}")
+                return match.group(0)
+
+            stats = []
+            for key, fallback_key, label, icon_file in fields:
+                value = values.get(key) or frontmatter.get(fallback_key)
+                if value in (None, ''):
+                    continue
+                stats.append(
+                    '<div class="route-stat">'
+                    f'<img class="route-stat-icon" src="{icon_base}{icon_file}" '
+                    'alt="" loading="lazy" decoding="async">'
+                    '<span class="route-stat-copy">'
+                    f'<span>{html.escape(label)}</span>'
+                    f'<strong>{html.escape(str(value))}</strong>'
+                    '</span>'
+                    '</div>'
+                )
+
+            if not stats:
+                return ''
+
+            return (
+                '<section class="route-summary" aria-label="Caractéristiques de la route">'
+                + ''.join(stats)
+                + '</section>'
+            )
+
+        return pattern.sub(render, content)
+
     def normalise_md(self, content):
         """
         Normalise la hiérarchie des titres Markdown pour éviter les sauts de niveaux.
@@ -1182,9 +1502,14 @@ class Db:
         thumb_found = False
         first_image = True
 
-        if path_md.startswith('books'):
+        if path_md.startswith('routes'):
+            post_type = 4
+        elif path_md.startswith('books'):
             post_type = 2
-        elif any(path_md.startswith(prefix) for prefix in self.config['pages']):
+        elif (
+            os.path.dirname(path_md) == ''
+            or any(path_md.startswith(prefix) for prefix in self.config['pages'])
+        ):
             post_type = 1
         else:
             post_type = 0
@@ -1228,10 +1553,13 @@ class Db:
                         i += 1
                     continue
                 
-                # Extraction des tags (ligne avec plusieurs #tags)
-                if line.startswith('#') and ' ' in line:
+                # Extraction des tags, y compris un tag date seul.
+                if line.startswith('#'):
                     potential_tags = line.strip().split()
-                    if all(tag.startswith('#') for tag in potential_tags):
+                    if potential_tags and all(
+                        tag.startswith('#') and len(tag) > 1
+                        for tag in potential_tags
+                    ):
                         tags = [tag[1:] for tag in potential_tags if tag.startswith('#')]
                         tags, pub_date = self.filter_tags(tags)
                         # Ne pas ajouter cette ligne au contenu
@@ -1249,12 +1577,11 @@ class Db:
                             thumb_path = match.group(2)
                             thumb_found = True
                             title_just_found = False
-                            # Supprime l'image
-                            i += 1
-                            # Ignorer les lignes vides après l'image
-                            while i < len(lines) and lines[i].strip() == '':
+                            if self.poster == 1:
                                 i += 1
-                            continue
+                                while i < len(lines) and lines[i].strip() == '':
+                                    i += 1
+                                continue
                         else:
                             temp_thumb_legend = match.group(1)
                             if temp_thumb_legend.endswith(" thumb"):
@@ -1262,10 +1589,17 @@ class Db:
                                 thumb_path = match.group(2)
                                 line = line.replace(" thumb","")
                                 thumb_found = True
+                                if self.poster == 1:
+                                    i += 1
+                                    continue
                             elif first_image:
                                 thumb_legend = temp_thumb_legend
                                 thumb_path = match.group(2)
+                                thumb_found = True
                                 first_image = False
+                                if self.poster == 1:
+                                    i += 1
+                                    continue
 
                 
                 # Ajouter la ligne au contenu
@@ -1277,10 +1611,19 @@ class Db:
             # Construire le contenu final puis convertir en HTML
             content = ''.join(content_lines).strip()
             content = self.strip_comments(content)
+            content = self.route_include_to_html(content, frontmatter)
             content = self.normalise_md(content)
             content = self.to_html(content)
 
             content = self.link_manager(content, path_md, pub_date, post_type)
+
+            if (
+                not thumb_path
+                and frontmatter
+                and frontmatter.get('background')
+            ):
+                thumb_path = frontmatter['background']
+                thumb_legend = title
 
             # Extraire la description (premier paragraphe non vide)
             description = ""
@@ -1293,6 +1636,9 @@ class Db:
             if thumb_path and not thumb_legend:
                 thumb_legend = title
             
+            if path_md in ('home.md', 'footer.md') and pub_date == 0:
+                pub_date = pub_update
+
             pub_date_str = tools.format_timestamp_to_paris_time(pub_date)
             pub_update_str = tools.format_timestamp_to_paris_time(pub_update)
 
@@ -1349,10 +1695,14 @@ class Db:
 
     def db_builder(self, root_dir, reset=False):
 
+        if not os.path.isdir(root_dir):
+            raise FileNotFoundError(f"Vault directory not found: {root_dir}")
+
         self.create_tables(reset)
 
         total = self.count_md_files(root_dir)
         pbar = logs.DualOutput.dual_tqdm(total=total, desc='Markdonw:')
+        present_paths = set()
 
         for root, dirs, files in os.walk(root_dir):
             # Exlude images dirs
@@ -1361,7 +1711,8 @@ class Db:
             for file in files:
                 if file.endswith('.md'):
                     md_source_path = os.path.join(root, file)
-                    path_md = os.path.join(root.replace(root_dir,"").strip("/"), file)
+                    path_md = os.path.relpath(md_source_path, root_dir)
+                    present_paths.add(path_md)
                     pub_update = round(os.path.getmtime(md_source_path))
 
                     existiting_post = self.existing_post(path_md)
@@ -1385,9 +1736,19 @@ class Db:
 
                 pbar.update(1)
 
+        self.delete_missing_posts(present_paths)
+        self.sync_config_tags()
+        self.conn.execute(
+            '''DELETE FROM tags WHERE site = ? AND NOT EXISTS (
+                   SELECT 1 FROM connectors WHERE con_tag_id = tags.tag_id
+               )''',
+            (self.site,)
+        )
+        self.conn.commit()
         pbar.close()
 
         print(self.new_posts, "new posts")
         print(self.updated_posts, "updated posts")
+        print(self.deleted_posts, "deleted posts")
         print(self.new_tags, "new tags")
         print(self.updated_tags, "updated tags")

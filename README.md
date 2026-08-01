@@ -23,6 +23,8 @@ Passer le nom du site en premier argument. Le fichier de configuration
 ```sh
 python3 ./tools/gen.py "tcrouzet"
 python3 ./tools/gen.py "727"
+./gen.sh tcrouzet
+./gen.sh 727
 ```
 
 ### sync.py

@@ -1,0 +1,48 @@
+{% if post.path_md == "home.md" %}
+<section class="home-hero editorial-hero{% if post.thumb %} has-background{% endif %}"{% if post.thumb %} style="background-image:url('{{ post.thumb.url }}')"{% endif %}>
+  <div class="masthead-overlay"></div>
+  <h1 class="visually-hidden">{{ post.title }}</h1>
+  <img class="home-logo" src="/assets/img/727logo_blanc.svg" alt="727 Bikepacking">
+</section>
+<div class="home-editorial">{{ post.content }}</div>
+{% else %}
+<section class="home-hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Bikepacking · Méditerranée</p>
+    <h1><span>7</span><span>2</span><span>7</span></h1>
+    <p class="hero-tagline">Des routes pour traverser les paysages, pas pour les consommer.</p>
+    <div class="hero-actions">
+      <a class="button button-light" href="/tag/routes/">Découvrir les routes →</a>
+      <a class="text-link" href="/page/a-propos/">Comprendre le projet</a>
+    </div>
+  </div>
+  <div class="hero-panel" aria-label="L’esprit 727">
+    <p class="compass">↗</p>
+    <p>Rouler.<br>Dormir dehors.<br>Recommencer.</p>
+    <small>43° N — Routes libres</small>
+  </div>
+</section>
+
+<section class="manifesto">
+  <p class="section-index">01 / Le projet</p>
+  <div>
+    <h2>Le détour est<br>le vrai chemin.</h2>
+    <p>727 rassemble des itinéraires bikepacking exigeants et ouverts. Des traces à adapter, des territoires à respecter et suffisamment d’inconnu pour que le voyage reste une aventure.</p>
+    <a class="arrow-link" href="/page/a-propos/">Notre approche <span>→</span></a>
+  </div>
+</section>
+
+<section class="latest">
+  <p class="section-index">02 / Carnet de terrain</p>
+  <article>
+    <p class="eyebrow">Dernière publication</p>
+    <h2><a href="{{ post.digressions.url }}">{{ post.digressions.title }}</a></h2>
+    <a class="arrow-link" href="{{ post.digressions.url }}">Lire le récit <span>→</span></a>
+  </article>
+</section>
+
+<section class="home-cta">
+  <p>Une trace n’est<br>qu’un commencement.</p>
+  <a class="round-link" href="/tag/routes/" aria-label="Voir toutes les routes">→</a>
+</section>
+{% endif %}

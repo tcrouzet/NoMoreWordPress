@@ -1,0 +1,42 @@
+{% assign title = post.frontmatter.metatitle | default: post.title | default: blog.title %}
+{% assign description = post.frontmatter.metadescription | default: post.description | default: blog.description %}
+{% if post.thumb.jpeg %}
+  {% assign thumb_url = template.domain | append: post.thumb.jpeg %}
+{% else %}
+  {% assign thumb_url = '' %}
+{% endif %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <meta name="description" content="{{ description }}">
+  <meta name="author" content="{{ blog.author }}">
+  <meta name="theme-color" content="#db4b2f">
+  <link rel="canonical" href="{{ post.canonical }}">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="{{ blog.title }}" href="/feeds/feed.xml">
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:url" content="{{ post.canonical }}">
+  <meta property="og:type" content="{% if post.type == 0 %}article{% else %}website{% endif %}">
+  <meta property="og:site_name" content="{{ blog.title }}">
+  {% if thumb_url %}<meta property="og:image" content="{{ thumb_url }}">{% endif %}
+  <style>{{ template.inlinecss }}</style>
+  {% if template.inlinejs %}<script>{{ template.inlinejs }}</script>{% endif %}
+</head>
+<body class="{% if post.type == 4 %}route-page{% elsif post.is_home %}home-page{% else %}content-page{% endif %}">
+<a class="skip-link" href="#content">Aller au contenu</a>
+<header class="site-header{% if post.is_home %} home-header{% endif %}">
+  {% unless post.is_home %}
+  <a class="brand" href="/" aria-label="727 Bikepacking — Accueil">
+    <img src="/assets/img/727logo_horizontal_noir.svg" alt="727 Bikepacking">
+  </a>
+  {% endunless %}
+  <nav class="site-nav" aria-label="Navigation principale">
+    {% for item in blog.header_menu %}<a href="{{ item.url }}">{{ item.title }}</a>{% endfor %}
+    <a class="nav-menu" href="#footer-navigation">Menu</a>
+  </nav>
+</header>
+<main id="content">

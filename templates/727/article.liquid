@@ -1,0 +1,64 @@
+{% if post.type == 4 %}
+<article class="route" itemscope itemtype="https://schema.org/TouristTrip">
+  <header class="route-hero">
+    <p class="eyebrow">Route bikepacking</p>
+    <h1 itemprop="name">{{ post.title }}</h1>
+    {% if post.frontmatter.baseline %}<p class="route-lead">{{ post.frontmatter.baseline }}</p>{% endif %}
+
+    <dl class="route-facts">
+      {% if post.frontmatter.distance %}<div><dt>Distance</dt><dd>{{ post.frontmatter.distance }}</dd></div>{% endif %}
+      {% if post.frontmatter.denivele %}<div><dt>Dénivelé</dt><dd>{{ post.frontmatter.denivele }}</dd></div>{% endif %}
+      {% if post.frontmatter.duree %}<div><dt>Durée</dt><dd>{{ post.frontmatter.duree }}</dd></div>{% endif %}
+      {% if post.frontmatter.difficulte %}<div><dt>Niveau</dt><dd>{{ post.frontmatter.difficulte }}</dd></div>{% endif %}
+    </dl>
+
+    {% if post.thumb %}
+    <figure class="hero-media">
+      <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}"
+           src="{{ post.thumb.url }}" alt="{{ post.thumb.legend }}"
+           fetchpriority="high" decoding="async"
+           srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 300w,{% endif %}{% if post.thumb.url_medium %}{{ post.thumb.url_medium }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w"
+           sizes="100vw">
+      {% if post.thumb.legend %}<figcaption>{{ post.thumb.legend }}</figcaption>{% endif %}
+    </figure>
+    {% endif %}
+  </header>
+
+  <div class="route-layout">
+    <aside class="route-aside">
+      <p class="aside-number">727</p>
+      {% if post.frontmatter.depart %}<p><span>Départ</span>{{ post.frontmatter.depart }}</p>{% endif %}
+      {% if post.frontmatter.arrivee %}<p><span>Arrivée</span>{{ post.frontmatter.arrivee }}</p>{% endif %}
+      {% if post.frontmatter.terrain %}<p><span>Terrain</span>{{ post.frontmatter.terrain }}</p>{% endif %}
+      {% if post.frontmatter.gpx %}<a class="button" href="{{ post.frontmatter.gpx }}">Télécharger le GPX ↓</a>{% endif %}
+    </aside>
+    <div class="prose" itemprop="description">{{ post.content }}</div>
+  </div>
+</article>
+{% else %}
+<article class="story" itemscope itemtype="{% if post.type == 2 %}https://schema.org/Book{% elsif post.type == 1 %}https://schema.org/WebPage{% else %}https://schema.org/BlogPosting{% endif %}">
+  {% assign hero_image = post.thumb.url | default: post.frontmatter.background %}
+  <header class="story-masthead{% if hero_image %} has-background{% endif %}"{% if hero_image %} style="background-image:url('{{ hero_image }}')"{% endif %}>
+    <div class="masthead-overlay"></div>
+    <div class="masthead-content">
+      {% if post.display_date_label %}
+      <p class="event-date">{{ post.display_date_label }}</p>
+      {% endif %}
+      <h1 itemprop="headline">{{ post.title }}</h1>
+      {% if post.frontmatter.date %}
+      <p class="event-countdown" data-countdown="{{ post.frontmatter.date }}" aria-live="polite">
+        <span>Calcul du compte à rebours…</span>
+      </p>
+      {% endif %}
+      {% if post.frontmatter.header_button and post.frontmatter.header_link != empty %}
+      <div class="masthead-actions">
+        <a class="hero-button" href="{% if post.frontmatter.header_link == '#' %}#article-start{% else %}{{ post.frontmatter.header_link }}{% endif %}">
+          {{ post.frontmatter.header_button }}
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  <div id="article-start" class="prose" itemprop="articleBody">{{ post.content }}</div>
+</article>
+{% endif %}

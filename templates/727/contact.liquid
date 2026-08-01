@@ -1,0 +1,22 @@
+<section class="contact-block" id="{{ blog.contact.section | default: 'contact' }}">
+  {% if blog.contact.text %}<p>{{ blog.contact.text }}</p>{% endif %}
+  <form action="{{ blog.contact.action }}" method="post">
+    <div class="contact-fields">
+      <label>
+        <span>{{ blog.contact.name | default: 'Nom' }}</span>
+        <input name="name" type="text" required autocomplete="name">
+      </label>
+      <label>
+        <span>{{ blog.contact.email | default: 'Email' }}</span>
+        <input name="email" type="email" required autocomplete="email">
+      </label>
+    </div>
+    <label>
+      <span>{{ blog.contact.message | default: 'Message' }}</span>
+      <textarea name="message" required rows="7"></textarea>
+    </label>
+    <input type="hidden" name="_subject" value="{{ blog.contact.subject | default: 'Contact 727' }}">
+    <input class="contact-trap" type="text" name="_gotcha" tabindex="-1" autocomplete="off">
+    <button class="button" type="submit">{{ blog.contact.submit | default: 'Envoyer' }}</button>
+  </form>
+</section>

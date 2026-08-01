@@ -1,4 +1,5 @@
 from liquid import Liquid
+from bs4 import BeautifulSoup
 
 import os
 import shutil
@@ -7,8 +8,10 @@ import htmlmin
 import csscompressor
 import jsmin
 import hashlib
+import html
 import importlib.util
 import re
+import shlex
 import tools
 
 def make_liquid_loader(base_dir):
@@ -73,11 +76,14 @@ class Layout:
                 "search": lambda m=make: m("search"),
                 "share": lambda m=make: m("share"),
                 "newsletter": lambda m=make: m("newsletter"),
+                "contact": lambda m=make: m("contact"),
             })
 
         self.templates_count = 0
+        self.new_assets = []
+        force_assets = int(self.config.get('build', 0)) >= 2
         for template in self.templates:
-            self.new_assets = self.copy_assets(template)
+            self.new_assets.extend(self.copy_assets(template, force=force_assets))
             self.templates_count += 1
 
         print(f"{self.templates_count} template(s) loaded.")
@@ -143,7 +149,7 @@ class Layout:
         return pattern.sub(repl, html)
 
 
-    def copy_assets(self, template):
+    def copy_assets(self, template, force=False):
 
             os.makedirs(template['export'], exist_ok=True)
             copied_files = []
@@ -157,23 +163,25 @@ class Layout:
                 
                 if os.path.isdir(source_item):
                     # Directory
-                    copied_files.extend(self.copy_directory(source_item, destination_item))
+                    copied_files.extend(
+                        self.copy_directory(source_item, destination_item, force=force)
+                    )
                 else:
                     ## File
-                    if self.copy_file(source_item, destination_item):
+                    if self.copy_file(source_item, destination_item, force=force):
                         copied_files.append(destination_item)
 
             #print(copied_files)
             return copied_files
 
-    def copy_file(self, source, target):
+    def copy_file(self, source, target, force=False):
         """
         Copie un fichier uniquement s'il est plus récent ou différent.
         Applique la minification pour .html et .css.
         Retourne True si le fichier a été copié, False sinon.
         """
         # Vérifier si le fichier destination existe et est plus récent que la source
-        if os.path.exists(target):
+        if not force and os.path.exists(target):
             source_mtime = os.path.getmtime(source)
             target_mtime = os.path.getmtime(target)
             if target_mtime >= source_mtime:
@@ -212,7 +220,7 @@ class Layout:
                 content = jsmin.jsmin(content)
         return content
 
-    def copy_directory(self, source_dir, dest_dir):
+    def copy_directory(self, source_dir, dest_dir, force=False):
             """
             Copie récursivement un dossier en ne copiant que les fichiers plus récents.
             Retourne la liste des fichiers copiés.
@@ -229,10 +237,30 @@ class Layout:
                 for file in files:
                     source_file = os.path.join(root, file)
                     dest_file = os.path.join(dest_root, file)
-                    if self.copy_file(source_file, dest_file):
+                    if self.copy_file(source_file, dest_file, force=force):
                         copied_files.append(dest_file)
             
             return copied_files
+
+    def clean_stale_tag_exports(self, tags):
+        """Supprime uniquement les anciens /tag/<slug>/ lors d'un build complet."""
+        current_slugs = {
+            tag['tag_slug'] for tag in tags
+            if (tag['tag_url'] or '').strip('/').startswith('tag/')
+        }
+        for template in self.templates:
+            tag_root = os.path.abspath(os.path.join(template['export'], 'tag'))
+            if not os.path.isdir(tag_root):
+                continue
+            for name in os.listdir(tag_root):
+                target = os.path.abspath(os.path.join(tag_root, name))
+                if (
+                    name not in current_slugs
+                    and os.path.isdir(target)
+                    and os.path.commonpath((tag_root, target)) == tag_root
+                ):
+                    shutil.rmtree(target)
+                    print(f"Deleted stale tag export: {target}")
 
     def file_hash(self,file_path):
         hasher = hashlib.sha256()
@@ -247,9 +275,12 @@ class Layout:
         for template in self.templates:
             
             supercharged = self.web.supercharge_post(template, post)
+            supercharged['content'] = self.content_blocks(
+                template, supercharged.get('content', '')
+            )
 
             header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=supercharged, blog=self.config, template=template)
+            footer_html = self.footer_html(template, supercharged)
             share_html = self.get_html(template["share"], post=supercharged, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
             article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html, template=template)
@@ -277,7 +308,7 @@ class Layout:
             
             # Générer le HTML
             header_html = self.get_html(template["header"], post=new_series, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=new_series, blog=self.config, template=template)
+            footer_html = self.footer_html(template, new_series)
             tags_list_html = self.get_html(template["tags_list"], post=new_series, tags=tags_super, blog=self.config)
             tag_html = self.get_html(template["tag"], post=new_series, tags={"list": tags_list_html})
             
@@ -294,7 +325,7 @@ class Layout:
             tag_super = self.web.supercharge_tag(template, tag, posts_super[0])
 
             header_html = self.get_html(template["header"], post=tag_super, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=tag_super, blog=self.config, template=template)
+            footer_html = self.footer_html(template, tag_super)
 
             post_per_page = template["post_per_page"]
 
@@ -336,36 +367,140 @@ class Layout:
             
             # Générer le HTML
             header_html = self.get_html(template["header"], post=year_super, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=year_super, blog=self.config, template=template)
+            footer_html = self.footer_html(template, year_super)
             tags_list_html = self.get_html(template["tags_list"], post=year_super, tags=super_posts, blog=self.config)
             tag_html = self.get_html(template["tag"], post=year_super, tags={"list": tags_list_html})
             
             # Sauvegarder
             self.save(template, header_html + tag_html + footer_html, year_super['tag_url'], "index.html")
 
-    def home_gen(self, last_post, last_carnet, last_bike, last_digest):
+    def home_blocks(self, template, content):
+        content = self.content_blocks(template, content)
+        buttons_pattern = re.compile(
+            r'<p>\s*(?P<buttons>(?:{%\s*bouton\s*=\s*.*?%}\s*)+)</p>',
+            flags=re.DOTALL | re.IGNORECASE
+        )
+        button_pattern = re.compile(
+            r'{%\s*bouton\s*=\s*(.*?)\s*%}',
+            flags=re.DOTALL | re.IGNORECASE
+        )
+
+        def buttons(match):
+            links = []
+            for button_match in button_pattern.finditer(match.group('buttons')):
+                value = button_match.group(1).strip()
+                link = BeautifulSoup(value, 'html.parser').find('a', href=True)
+                if link:
+                    label = link.get_text(strip=True)
+                    url = link['href'].strip()
+                else:
+                    markdown_link = re.fullmatch(r'\[([^]]+)]\(([^)]+)\)', value)
+                    if not markdown_link:
+                        continue
+                    label, url = (
+                        markdown_link.group(1).strip(),
+                        markdown_link.group(2).strip()
+                    )
+                if not label or not url:
+                    continue
+                links.append(
+                    f'<a class="home-choice-button" href="{html.escape(url, quote=True)}">'
+                    f'{html.escape(label)}</a>'
+                )
+            if not links:
+                return ''
+            return '<nav class="home-choice-buttons" aria-label="Types de parcours">' + ''.join(links) + '</nav>'
+
+        content = buttons_pattern.sub(buttons, content)
+        cards_pattern = re.compile(
+            r'<p>\s*{%\s*cards\s+(.*?)%}\s*</p>',
+            flags=re.DOTALL
+        )
+
+        def cards(match):
+            arguments = {}
+            try:
+                for argument in shlex.split(match.group(1)):
+                    if '=' in argument:
+                        key, value = argument.split('=', 1)
+                        arguments[key.strip()] = value.strip()
+            except ValueError as error:
+                print(f"Invalid home cards block: {error}")
+                return match.group(0)
+
+            tag_slug = arguments.get('tag')
+            if not tag_slug:
+                return match.group(0)
+            try:
+                limit = max(1, int(arguments.get('limit', 3)))
+            except ValueError:
+                limit = 3
+
+            posts = self.web.db.get_posts_by_tag(tag_slug, limit=limit)
+            if not posts:
+                return ''
+            tag = self.web.db.tag_2_dict(tag_slug)
+            cards_html = self.get_html(
+                template["tags_list"], post=tag,
+                tags=self.web.supercharge_posts(template, posts),
+                blog=self.config
+            )
+            return f'<div class="home-card-grid card-grid">{cards_html}</div>'
+
+        content = cards_pattern.sub(cards, content)
+        newsletter_pattern = re.compile(
+            r'<p>\s*{%\s*newsletter\s*%}\s*</p>'
+        )
+        newsletter_html = self.get_html(
+            template["newsletter"], blog=self.config
+        )
+        content = newsletter_pattern.sub(newsletter_html, content)
+
+        soup = BeautifulSoup(content, 'html.parser')
+        for block in soup.find_all(['h2', 'blockquote']):
+            figure = block.find_previous_sibling()
+            if not figure or figure.name != 'figure':
+                continue
+            image = figure.find('img')
+            if not image or not image.get('src'):
+                continue
+            window = soup.new_tag('div')
+            window['class'] = ['home-parallax-window']
+            if block.name == 'blockquote':
+                window['class'].append('home-parallax-before-quote')
+            window['style'] = f"background-image:url('{image['src']}')"
+            window['role'] = 'img'
+            if image.get('alt'):
+                window['aria-label'] = image['alt']
+            figure.replace_with(window)
+
+        return str(soup)
+
+    def home_gen(self, last_post=None, featured_posts=None, home_post=None):
+        featured_posts = featured_posts or {}
         for template in self.templates:
 
-            home = {}
-            home['digressions'] = self.web.supercharge_post(template, last_post)
-            home['carnet'] = last_carnet
-            home['bike'] = last_bike
-            home['digest'] = last_digest
-            
-            home['canonical'] = template['domain']
-            home['description'] = self.config['description']
-            home['title'] = self.config['home_title']
-            home['pub_update_str'] = home['digressions']['pub_update_str']
-            home['pub_update'] = home['digressions']['pub_update']
+            if home_post:
+                home = self.web.supercharge_post(template, home_post)
+                home['content'] = self.home_blocks(template, home['content'])
+            else:
+                home = {}
+                home['digressions'] = self.web.supercharge_post(template, last_post)
+                home.update(featured_posts)
+                home['title'] = self.config['home_title']
+                home['pub_update_str'] = home['digressions']['pub_update_str']
+                home['pub_update'] = home['digressions']['pub_update']
+                home['thumb'] = home['digressions']['thumb']
+                home['thumb_path'] = home['digressions']['thumb_path']
+                home['thumb_legend'] = home['digressions']['thumb_legend']
+                home['frontmatter'] = None
 
-            home['thumb'] = home['digressions']['thumb']
-            home['thumb_path'] = home['digressions']['thumb_path']
-            home['thumb_legend'] = home['digressions']['thumb_legend']
+            home['canonical'] = template['domain']
+            home['description'] = home.get('description') or self.config['description']
             home['is_home'] = True
-            home['frontmatter'] = None
 
             header_html = self.get_html(template["header"], post=home, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=home, blog=self.config, template=template)
+            footer_html = self.footer_html(template, home)
             newsletter_html = self.get_html(template["newsletter"], post=home, blog=self.config)
             home_html = self.get_html(template["home"], post=home, blog=self.config, newsletter=newsletter_html)
             self.save(template, header_html + home_html + footer_html, "", "index.html")
@@ -374,7 +509,7 @@ class Layout:
     def special_pages(self, post, path, file_name="index.html"):
         for template in self.templates:
             header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
-            footer_html = self.get_html(template["footer"], post=post, blog=self.config, template=template)
+            footer_html = self.footer_html(template, post)
             article_html = self.get_html(template["article"], post=post, blog=self.config)
             page_html = self.get_html(template["single"], post=post, blog=self.config, article=article_html)
             self.save(template, header_html + page_html + footer_html, path, file_name)
@@ -403,9 +538,49 @@ class Layout:
             ctx.update(extra_ctx)
         return tpl.render(**ctx)
 
+    def content_blocks(self, template, content):
+        """Développe les shortcodes communs à tous les contenus éditoriaux."""
+        if not content:
+            return content
+        contact_pattern = re.compile(
+            r'<p>\s*{%\s*contact\s*%}\s*</p>|{%\s*contact\s*%}',
+            flags=re.IGNORECASE
+        )
+        contact_html = self.get_html(template["contact"], blog=self.config)
+        content = contact_pattern.sub(lambda _match: contact_html, content)
+
+        soup = BeautifulSoup(content, 'html.parser')
+        for quote in soup.find_all('blockquote'):
+            figure = quote.find_previous_sibling()
+            if not figure or figure.name != 'figure':
+                continue
+            image = figure.find('img')
+            if not image or not image.get('src'):
+                continue
+            window = soup.new_tag('div')
+            window['class'] = [
+                'home-parallax-window', 'home-parallax-before-quote'
+            ]
+            window['style'] = f"background-image:url('{image['src']}')"
+            window['role'] = 'img'
+            if image.get('alt'):
+                window['aria-label'] = image['alt']
+            figure.replace_with(window)
+
+        return str(soup)
+
+    def footer_html(self, template, post):
+        footer_content = self.content_blocks(
+            template, self.config.get('footer_content', '')
+        )
+        return self.get_html(
+            template["footer"], post=post, blog=self.config,
+            template=template, footer_content=footer_content
+        )
+
     def normal_pages(self, post, template, path, file_name="index.html"):
         header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
-        footer_html = self.get_html(template["footer"], post=post, blog=self.config, template=template)
+        footer_html = self.footer_html(template, post)
         self.save(template, header_html + post['content'] + footer_html, path, file_name)
 
     def menu_gen(self):
@@ -443,4 +618,3 @@ class Layout:
         with open(file_path, 'w', encoding="utf-8") as file:
             file.write(html)
             return True
-        

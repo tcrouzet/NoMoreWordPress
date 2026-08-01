@@ -15,7 +15,9 @@ def site_yml(site):
     path = os.path.join("./sites", f"{site}.yml")
     try:
         with open(path, 'r') as file:
-            return yaml.safe_load(file)
+            config = yaml.safe_load(file)
+            config['site'] = site
+            return config
     except:
         print(f"No {path}")
         exit()
@@ -127,6 +129,30 @@ def month_year(timestamp: int) -> str:
 
     dt_paris = timestamp_to_paris_datetime(timestamp)
     return dt_paris.strftime('%B %Y')    
+
+def french_date_label(value) -> str:
+    months = (
+        'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+        'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+    )
+    return f"{value.day} {months[value.month - 1]} {value.year}"
+
+def event_date_label(value) -> str:
+    """Formate une date ISO de frontmatter en français."""
+    if not value:
+        return ""
+    if isinstance(value, datetime):
+        event_date = value
+    else:
+        raw = str(value).strip().strip("'\"‘’")
+        try:
+            event_date = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        except ValueError:
+            return ""
+    return french_date_label(event_date)
+
+def timestamp_date_label(timestamp: int) -> str:
+    return french_date_label(timestamp_to_paris_datetime(timestamp))
 
 def output_dir():
     output_dir = "_output"

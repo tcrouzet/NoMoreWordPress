@@ -18,6 +18,10 @@ if len(sys.argv) < 2 or not sys.argv[1].strip():
 site = sys.argv[1].strip()
 config = tools.site_yml(site)
 
+if not config.get('export_github_md'):
+    print(f"MD sync disabled for {site}: export_github_md is not configured.")
+    sys.exit(0)
+
 def sync_files(src, dst):
 
     print(f"Syncing {src} to {dst}")

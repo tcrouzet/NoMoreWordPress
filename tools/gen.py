@@ -3,6 +3,7 @@
 
 import os, sys
 from datetime import datetime
+from bs4 import BeautifulSoup
 # from sqlite3 import Row
 
 import tools
@@ -12,6 +13,7 @@ import web
 import logs
 import sitemap
 import feed
+import static_sync
 
 #Force updating home screen
 new_home_template = True
@@ -27,6 +29,7 @@ if len(sys.argv) < 2 or not sys.argv[1].strip():
 
 site = sys.argv[1].strip()
 config = tools.site_yml(site)
+config['site'] = site
 
 # Parcourir et filtrer les templates
 filtered_templates = []
@@ -40,6 +43,7 @@ db = db.Db(config)
 web = web.Web(config, db)
 layout = layout.Layout(config, web)
 layout.web = web
+template_changed = bool(layout.new_assets)
 sitemap = sitemap.Sitemap(config, web)
 feed = feed.Feed(config, web)
 
@@ -72,9 +76,26 @@ if config['build'] > 0:
             pbar.update(1)
         pbar.close()
 
+# Le menu du pied est entièrement défini par footer.md dans le vault.
+footer_post = db.get_post_by_path('footer.md')
+config['footer_content'] = footer_post['content'] if footer_post else ''
+config['header_menu'] = []
+if config['footer_content']:
+    footer_soup = BeautifulSoup(config['footer_content'], 'html.parser')
+    for link in footer_soup.find_all('a', href=True):
+        href = link['href'].strip()
+        if href and not href.startswith(('/', '#', 'http://', 'https://', 'mailto:', 'tel:')):
+            link['href'] = '/' + href
+    config['footer_content'] = str(footer_soup)
+    config['header_menu'] = [
+        {'title': link.get_text(strip=True), 'url': link.get('href')}
+        for link in footer_soup.find_all('a', href=True)
+        if link.get_text(strip=True)
+    ]
+
 #POSTS
 print("Post generation")
-if config['build'] == 2:
+if config['build'] == 2 or template_changed:
     posts = db.get_posts()
 else:
     posts = db.get_posts_updated()
@@ -82,17 +103,20 @@ total = len(posts)
 if total >0:
     pbar = logs.DualOutput.dual_tqdm(total=total, desc='Posts:')
     for post in posts:
-        layout.single_gen( post )
+        if post['path_md'] not in ('home.md', 'footer.md'):
+            layout.single_gen(post)
         db.updated(post)
         pbar.update(1)
     pbar.close()
 
-if db.new_posts > 0 or config['build'] > 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or config['build'] > 1:
     sitemap.open("sitemap-posts")
     posts = db.get_posts(condition="type<5", exclude_tags=["private","invisible"])
     # posts = db.get_all_posts_and_pages()
     pbar = logs.DualOutput.dual_tqdm(total=len(posts), desc='Sitemap-posts:')
     for post in posts:
+        if post['path_md'] in ('home.md', 'footer.md'):
+            continue
         sitemap.add_post( post )
         pbar.update(1)
     sitemap.save()
@@ -100,7 +124,16 @@ if db.new_posts > 0 or config['build'] > 1:
     print("Sitemap posts done")
 
 
-if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
+if (
+    db.new_posts
+    + db.updated_posts
+    + db.deleted_posts
+    + db.new_tags
+    + db.updated_tags > 0
+    or template_changed
+    or new_home_template
+    or config['build'] > 1
+):
 
     sitemap.open("sitemap-main")
 
@@ -123,28 +156,39 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
     #BLOG
     exclude = tuple(config['home_exclude'])
     blog_posts = db.get_posts("type=0", exclude)
-    series = {
-        "tag_slug": "blog",
-        "tag_title": "Digression",
-        "description": f"Tous les articles de {config['title']}",
-        "tag_url": "blog/",
+    blog_tag = db.tag_2_dict("blog")
+    blog_tag.update({
+        "description": config.get('tags', {}).get('blog', {}).get(
+            'description', f"Tous les articles de {config['title']}"
+        ),
         "is_tag": True,
         "frontmatter": None
-    }
-    layout.tag_gen( series, blog_posts )
-    sitemap.add_post( series, blog_posts[0] )
-    feed.builder(blog_posts,"blog", "Derniers articles de Thierry Crouzet")
+    })
+    layout.tag_gen(blog_tag, blog_posts)
+    sitemap.add_post(blog_tag, blog_posts[0])
+    feed.builder(
+        blog_posts,
+        blog_tag['tag_url'].strip('/'),
+        f"Derniers articles de {config['title']}"
+    )
     print(f"Blog done {len(blog_posts)}")
 
     #HOME
-    if posts:
+    home_post = db.get_post_by_path('home.md')
+    if home_post or blog_posts:
         print("Starting home")
-        last_carnet = db.get_posts_by_tag("carnets", 1)
-        last_bike = db.get_posts_by_tag("velo", 1)
-        last_digest = db.get_posts_by_tag("digest", 1)
-        layout.home_gen( blog_posts[0], last_carnet[0], last_bike[0], last_digest[0] )
+        home_posts = {}
+        for section, tag_slug in config.get('home_tags', {}).items():
+            tagged_posts = db.get_posts_by_tag(tag_slug, 1)
+            if tagged_posts:
+                home_posts[section] = tagged_posts[0]
+        last_post = blog_posts[0] if blog_posts else None
+        layout.home_gen(last_post, home_posts, home_post)
 
-        sitemap.add_post({"url": "index.html", "pub_update_str": tools.now_datetime_str(), "thumb": None }, blog_posts[0])
+        sitemap.add_post(
+            {"url": "index.html", "pub_update_str": tools.now_datetime_str(), "thumb": None},
+            home_post or last_post
+        )
 
         print("Home done")
 
@@ -155,7 +199,7 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
 
 
 #MAIN FEED
-if  db.new_posts + db.updated_posts > 0 or config['build'] > 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or config['build'] > 1:
     exclude_slugs = ("invisible","private")
     posts = db.get_blog_posts( exclude_tags=exclude_slugs)
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
@@ -164,7 +208,7 @@ if  db.new_posts + db.updated_posts > 0 or config['build'] > 1:
 
 #TAGS
 exclude = tuple(["page","blog","private","invisible"])
-if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
+if db.new_tags + db.updated_tags > 0 or template_changed or config['build'] > 1:
 
     if config['build'] > 1:
         # Tous les tags
@@ -172,6 +216,8 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
     else:
         # Ceux utilisés
         tags = db.get_tags_used(exclude_slugs=exclude)
+    if config['build'] > 1:
+        layout.clean_stale_tag_exports(tags)
     total = len(tags)
     pbar = logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
     for tag in tags:
@@ -196,7 +242,7 @@ if db.new_tags + db.updated_tags > 0 or config['build'] > 1:
         pbar.update(1)
     pbar.close()
 
-if db.new_tags > 0 or config['build'] > 1:
+if db.new_tags + db.updated_tags > 0 or template_changed or config['build'] > 1:
     sitemap.open("sitemap-tags")
     tags = db.get_tags(exclude_slugs=exclude)
     for tag in tags:
@@ -206,7 +252,7 @@ if db.new_tags > 0 or config['build'] > 1:
 
 
 #YEARS
-if db.new_posts > 0 or config['build']> 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or config['build']> 1:
 
     print("Year gen")
     sitemap.open("sitemap-years")
@@ -249,7 +295,7 @@ if db.new_posts > 0 or config['build']> 1:
 
 
 #ARCHIVES
-if db.new_posts > 0 or config['build'] > 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or config['build'] > 1:
 
     posts_archive = ""
     exclude = ("invisible","private")
@@ -278,8 +324,17 @@ if config['build']>1:
 
 print("Gen ended")
 
+#STATIC FILES
+updated_static_files = static_sync.StaticSync(config).run()
+
 #EXPORT
-if version>0 and (db.new_posts + db.updated_posts > 0 or  config['build'] == 2):
+if version>0 and (
+    db.new_posts
+    + db.updated_posts
+    + db.deleted_posts
+    + updated_static_files > 0
+    or config['build'] == 2
+):
     for template in config['templates']:
 
         sync = template['sync'][0]
@@ -301,7 +356,10 @@ if version>0 and (db.new_posts + db.updated_posts > 0 or  config['build'] == 2):
             subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
             subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
 
-    tools.run_script('tools/sync_md.py', site)
-    tools.run_script('tools/sync_gmi.py', site)
+    if config.get('export_github_md'):
+        tools.run_script('tools/sync_md.py', site)
+
+    if config.get('export_github_md') and config.get('gemini_export'):
+        tools.run_script('tools/sync_gmi.py', site)
 else:
     print("No export")

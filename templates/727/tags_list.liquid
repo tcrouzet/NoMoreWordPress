@@ -1,0 +1,22 @@
+{% for tag_post in tags %}
+<article class="route-card">
+  <a href="{{ tag_post.url }}">
+    {% if tag_post.thumb %}
+    <figure>
+      <img width="{{ tag_post.thumb.width }}" height="{{ tag_post.thumb.height }}"
+           src="{% if tag_post.thumb.url_medium %}{{ tag_post.thumb.url_medium }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
+           alt="{{ tag_post.thumb.legend }}" loading="lazy" decoding="async">
+    </figure>
+    {% endif %}
+    <div class="card-copy">
+      {% if post.tag_slug == "blog" or post.tag_slug == "reco" %}
+      <p class="eyebrow">{{ tag_post.pub_date_label }}</p>
+      {% elsif post.tag_slug == "grands_departs" and tag_post.event_date_label %}
+      <p class="eyebrow">{{ tag_post.event_date_label }}</p>
+      {% endif %}
+      <h2>{{ tag_post.title }}</h2>
+      {% if tag_post.frontmatter.distance %}<p class="card-meta">{{ tag_post.frontmatter.distance }} · {{ tag_post.frontmatter.denivele }}</p>{% endif %}
+    </div>
+  </a>
+</article>
+{% endfor %}

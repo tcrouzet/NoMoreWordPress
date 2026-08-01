@@ -1,0 +1,18 @@
+</main>
+<footer class="site-footer">
+  <div class="footer-identity">
+    <a class="footer-brand" href="/" aria-label="727 Bikepacking — Accueil">
+      <img src="/assets/img/727logo_blanc.svg" alt="727 Bikepacking">
+    </a>
+    <a class="footer-subscribe" href="https://727bikepacking.substack.com/subscribe">S’abonner</a>
+    <button class="footer-subscribe footer-share" type="button">Partager</button>
+  </div>
+  <nav id="footer-navigation" aria-label="Pied de page">
+    {{ footer_content }}
+  </nav>
+  <small>
+    {% if blog.author_url %}<a href="{{ blog.author_url }}">(cc) {{ blog.author }} - {{ 'now' | date: '%Y' }}</a>{% else %}(cc) {{ blog.author }} - {{ 'now' | date: '%Y' }}{% endif %}
+  </small>
+</footer>
+</body>
+</html>
