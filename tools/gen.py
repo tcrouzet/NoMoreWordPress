@@ -32,6 +32,10 @@ config = tools.site_yml(site)
 config['site'] = site
 full_build = int(config.get('build', 0)) >= 2
 
+if config.get('diaporamas'):
+    if not tools.run_script('tools/diaporama.py', site):
+        exit('Échec de la génération des diaporamas')
+
 # Parcourir et filtrer les templates
 filtered_templates = []
 for template in config['templates']:
@@ -329,13 +333,16 @@ print("Gen ended")
 updated_static_files = static_sync.StaticSync(config).run()
 
 #EXPORT
-if version>0 and (
+site_changed = (
     db.new_posts
     + db.updated_posts
     + db.deleted_posts
     + updated_static_files > 0
+    or template_changed
     or full_build
-):
+)
+
+if version > 0 and site_changed:
     for template in config['templates']:
 
         sync = template['sync'][0]
@@ -347,15 +354,8 @@ if version>0 and (
             run_aws.sync()
 
         elif sync['name'] == "github":
-
-            import subprocess
-
-            dossier = template['export']
-            current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            subprocess.run(["git", "add", "."], cwd=dossier)
-            subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
-            subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
+            import publish_git
+            publish_git.publish_export(template['export'])
 
     if config.get('export_github_md'):
         tools.run_script('tools/sync_md.py', site)

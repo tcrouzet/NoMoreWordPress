@@ -517,7 +517,6 @@ class Web:
             post = dict(post)
 
         if "url" not in post:
-            print(post)
             exit("Ce n'est pas un bon post")
 
         try:
@@ -547,7 +546,11 @@ class Web:
             if "frontmatter" in post and isinstance(post['frontmatter'], str):
                 post['frontmatter'] = json.loads(post['frontmatter'])
 
-            post['pub_date_label'] = tools.timestamp_date_label(post['pub_date'])
+            post['pub_date_label'] = (
+                tools.timestamp_date_label(post['pub_date'])
+                if post.get('pub_date')
+                else ''
+            )
             post['event_date_label'] = ''
             if post.get('frontmatter') and post['frontmatter'].get('date'):
                 post['event_date_label'] = tools.event_date_label(
@@ -556,6 +559,64 @@ class Web:
             tag_slugs = {
                 tag.get('tag_slug') for tag in (post.get('tagslist') or [])
             }
+            post['event_schema'] = None
+            if (
+                post.get('frontmatter')
+                and post['frontmatter'].get('date')
+            ):
+                event_config = self.config.get('events', {})
+                frontmatter = post['frontmatter']
+                event = {
+                    '@context': 'https://schema.org',
+                    '@type': 'Event',
+                    '@id': post['canonical'] + '#event',
+                    'name': frontmatter.get('metatitle') or post['title'],
+                    'description': (
+                        frontmatter.get('metadescription')
+                        or post.get('description')
+                        or post['title']
+                    ),
+                    'url': post['canonical'],
+                    'startDate': frontmatter['date'],
+                    'eventAttendanceMode': (
+                        'https://schema.org/OfflineEventAttendanceMode'
+                    ),
+                    'eventStatus': frontmatter.get(
+                        'event_status', 'https://schema.org/EventScheduled'
+                    ),
+                }
+                if frontmatter.get('end_date'):
+                    event['endDate'] = frontmatter['end_date']
+                if post.get('thumb') and post['thumb'].get('jpeg'):
+                    event['image'] = (
+                        template['domain'].rstrip('/')
+                        + post['thumb']['jpeg']
+                    )
+                if event_config.get('location'):
+                    location = dict(event_config['location'])
+                    location['@type'] = 'Place'
+                    if location.get('address'):
+                        address = dict(location['address'])
+                        address['@type'] = 'PostalAddress'
+                        location['address'] = address
+                    event['location'] = location
+                if event_config.get('organizer'):
+                    event['organizer'] = {
+                        '@type': 'Organization',
+                        **event_config['organizer'],
+                    }
+                offer_url = frontmatter.get('header_link')
+                if offer_url and offer_url != '#':
+                    event['offers'] = {
+                        '@type': 'Offer',
+                        'url': offer_url,
+                        'price': str(event_config.get('price', '')),
+                        'priceCurrency': event_config.get(
+                            'priceCurrency', 'EUR'
+                        ),
+                        'availability': 'https://schema.org/InStock',
+                    }
+                post['event_schema'] = event
             post['display_date_label'] = ''
             if 'grands_departs' in tag_slugs and post['event_date_label']:
                 post['display_date_label'] = post['event_date_label']
@@ -565,7 +626,6 @@ class Web:
             return post
         
         except Exception as e:
-            print(post)
             print(f"supercharge_post {e}")
             return None
 
@@ -610,8 +670,8 @@ class Web:
                 tag['pub_date_str'] = tools.format_timestamp_to_paris_time(tag['pub_date'])
                 tag['pub_update_str'] = tools.format_timestamp_to_paris_time(tag['pub_update'])
 
-                tag["thumb_path"] = first_post['thumb_path'],
-                tag["thumb_legend"] = first_post['thumb_legend'],
+                tag["thumb_path"] = first_post['thumb_path']
+                tag["thumb_legend"] = first_post['thumb_legend']
 
                 media_path = self.media_source_path(first_post, first_post['thumb_path'])
                 tag['thumb'] = self.db.get_image_cache(template['name'], media_path)

@@ -121,7 +121,6 @@ class Sitemap:
                 self.add(template, url, pub_date, thumb)
             
             except Exception as e:
-                print(post)
                 print(f"add_post sitemap {e}")
                 return False
 
@@ -147,7 +146,11 @@ class Sitemap:
             for sitemap in self.sitemap_index[template['name']]:
                 sitemap_elem = ET.SubElement(index_element, 'sitemap')
                 loc = ET.SubElement(sitemap_elem, 'loc')
-                loc.text = template['domain'] + os.path.basename(sitemap)
+                loc.text = (
+                    template['domain'].rstrip('/')
+                    + '/sitemap/'
+                    + os.path.basename(sitemap)
+                )
 
                 lastmod_elem = ET.SubElement(sitemap_elem, 'lastmod')
                 lastmod_elem.text = self.lastmod[template['name']]

@@ -1,0 +1,158 @@
+.slideshow-page { padding-bottom: 0; }
+.slideshow-heading {
+  padding: clamp(2rem, 5vw, 5rem) var(--gutter);
+  color: var(--paper);
+  background: var(--earth);
+}
+.slideshow-heading h1 { margin: 0; }
+.geo-slideshow {
+  width: min(100vw, 120vh);
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  color: var(--paper);
+  background: #000;
+}
+.slideshow-slide {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.slideshow-date {
+  margin: 0;
+  padding: .45rem .75rem;
+  position: absolute;
+  top: .75rem;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  color: var(--paper);
+  background: rgba(0, 0, 0, .72);
+  font: .75rem/1.4 var(--mono);
+  text-align: center;
+  white-space: nowrap;
+}
+.slideshow-date[hidden] { display: none; }
+.slideshow-caption {
+  max-width: calc(100% - 8rem);
+  margin: 0;
+  padding: .45rem .75rem;
+  position: absolute;
+  bottom: .75rem;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  color: var(--paper);
+  background: rgba(0, 0, 0, .72);
+  font: .75rem/1.4 var(--mono);
+  text-align: center;
+}
+.slideshow-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.slideshow-controls button {
+  width: clamp(2.5rem, 5vw, 4.5rem);
+  height: clamp(4rem, 9vw, 7rem);
+  padding: 0;
+  border: 0;
+  color: var(--paper);
+  background: rgba(0, 0, 0, .48);
+  font: 300 clamp(2.5rem, 6vw, 5rem)/1 var(--sans);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.slideshow-controls button:hover { background: rgba(0, 0, 0, .75); }
+.slideshow-map-shell {
+  width: 30%;
+  height: 22%;
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  z-index: 5;
+  overflow: hidden;
+  border: 2px solid var(--paper);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+  cursor: zoom-in;
+}
+.slideshow-map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.slideshow-map .leaflet-pane,
+.slideshow-map .leaflet-tile,
+.slideshow-map .leaflet-marker-icon,
+.slideshow-map .leaflet-marker-shadow,
+.slideshow-map .leaflet-tile-container,
+.slideshow-map .leaflet-pane > svg,
+.slideshow-map .leaflet-pane > canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.slideshow-map .leaflet-tile,
+.slideshow-map .leaflet-marker-icon,
+.slideshow-map .leaflet-marker-shadow {
+  max-width: none !important;
+  max-height: none !important;
+}
+.slideshow-map .leaflet-control-container { position: relative; z-index: 800; }
+.slideshow-map .leaflet-top,
+.slideshow-map .leaflet-bottom { position: absolute; z-index: 1000; pointer-events: none; }
+.slideshow-map .leaflet-top { top: 0; }
+.slideshow-map .leaflet-right { right: 0; }
+.slideshow-map .leaflet-bottom { bottom: 0; }
+.slideshow-map .leaflet-left { left: 0; }
+.slideshow-map .leaflet-control { position: relative; z-index: 800; pointer-events: auto; }
+.slideshow-map .leaflet-map-pane { z-index: 200; }
+.slideshow-map .leaflet-tile-pane { z-index: 200; }
+.slideshow-map .leaflet-overlay-pane { z-index: 400; }
+.slideshow-map .leaflet-shadow-pane { z-index: 500; }
+.slideshow-map .leaflet-marker-pane { z-index: 600; }
+.slideshow-map .leaflet-tooltip-pane { z-index: 650; }
+.slideshow-map .leaflet-popup-pane { z-index: 700; }
+.slideshow-map .leaflet-zoom-box { z-index: 800; }
+.slideshow-map-open {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+  cursor: zoom-in;
+}
+.slideshow-map-shell.expanded {
+  width: auto;
+  height: auto;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border: 0;
+  cursor: zoom-out;
+}
+.slideshow-map-shell.expanded .slideshow-map-open { display: none; }
+.geo-slideshow.map-expanded .slideshow-controls,
+.geo-slideshow.map-expanded .slideshow-caption,
+.geo-slideshow.map-expanded .slideshow-date { visibility: hidden; }
+
+@media (max-width: 760px) {
+  .slideshow-heading { padding-top: 2rem; padding-bottom: 2rem; }
+  .geo-slideshow { width: 100vw; }
+  .slideshow-map-shell { width: 35%; height: 25%; top: .5rem; right: .5rem; }
+  .slideshow-map-shell.expanded { width: auto; height: auto; top: 0; right: 0; bottom: 0; left: 0; }
+  .slideshow-caption { max-width: calc(100% - 5rem); bottom: .5rem; font-size: .65rem; }
+}

@@ -10,6 +10,7 @@ import jsmin
 import hashlib
 import html
 import importlib.util
+import json
 import re
 import shlex
 import tools
@@ -30,8 +31,10 @@ class Layout:
 
     def __init__(self, config, web_instance):
         self.config = config
-        if self.config['version'] == 0:
-            self.config['version'] = time.time()
+        configured_version = int(self.config['version'])
+        self.minify = configured_version > 0
+        if configured_version == 0:
+            self.config['version'] = int(time.time())
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(script_dir) + os.sep
@@ -62,6 +65,7 @@ class Layout:
                 "sizes": template.get('sizes', None),
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 'comments': int(template.get('comments', 0)),
+                'code_blocks': template.get('code_blocks'),
                 "inlinecss": self.inlinecss(base_dir),
                 "inlinejs": self.inlinejs(base_dir),
                 "micro": self._load_micro_executor(base_dir),
@@ -155,7 +159,12 @@ class Layout:
             copied_files = []
 
             for item in os.listdir(template['dir']):
-                if item.endswith('.liquid') or item.endswith('.py') or item.startswith("_"):
+                if (
+                    item == '.DS_Store'
+                    or item.endswith('.liquid')
+                    or item.endswith('.py')
+                    or item.startswith("_")
+                ):
                     continue
 
                 source_item = os.path.join(template['dir'], item)
@@ -189,15 +198,16 @@ class Layout:
                 return False
 
         _, ext = os.path.splitext(source)
-        if ext in [".html", ".css"]:
+        if ext in [".html", ".css", ".js"]:
             with open(source, "r", encoding="utf-8") as file:
                 content = file.read()
-            if ext == ".css":
-                content = csscompressor.compress(content)
-            elif ext == ".js":
-                content = jsmin.jsmin(content)
-            elif ext == ".html":
-                content = htmlmin.minify(content)
+            if self.minify:
+                if ext == ".css":
+                    content = csscompressor.compress(content)
+                elif ext == ".js":
+                    content = jsmin.jsmin(content)
+                elif ext == ".html":
+                    content = htmlmin.minify(content)
 
             with open(target, "w", encoding="utf-8") as file:
                 file.write(content)
@@ -567,6 +577,7 @@ class Layout:
         content = newsletter_pattern.sub(newsletter_html, content)
 
         soup = BeautifulSoup(content, 'html.parser')
+
         for block in soup.find_all(['h2', 'blockquote']):
             figure = block.find_previous_sibling()
             if not figure or figure.name != 'figure':
@@ -578,7 +589,10 @@ class Layout:
             window['class'] = ['home-parallax-window']
             if block.name == 'blockquote':
                 window['class'].append('home-parallax-before-quote')
-            window['style'] = f"background-image:url('{image['src']}')"
+            window['style'] = (
+                f"--parallax-image:url('{image['src']}');"
+                "background-image:var(--parallax-image)"
+            )
             window['role'] = 'img'
             if image.get('alt'):
                 window['aria-label'] = image['alt']
@@ -616,13 +630,34 @@ class Layout:
             self.save(template, header_html + home_html + footer_html, "", "index.html")
 
 
-    def special_pages(self, post, path, file_name="index.html"):
+    def special_pages(self, post, path, file_name="index.html", content_template=None):
         for template in self.templates:
-            header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
-            footer_html = self.footer_html(template, post)
-            article_html = self.get_html(template["article"], post=post, blog=self.config)
-            page_html = self.get_html(template["single"], post=post, blog=self.config, article=article_html)
+            page_post = self.special_page_context(template, post, path, file_name)
+            if content_template:
+                page_post['content'] = self.get_html(
+                    template[content_template], blog=self.config
+                )
+            header_html = self.get_html(template["header"], post=page_post, blog=self.config, template=template)
+            footer_html = self.footer_html(template, page_post)
+            article_html = self.get_html(template["article"], post=page_post, blog=self.config)
+            page_html = self.get_html(template["single"], post=page_post, blog=self.config, article=article_html)
             self.save(template, header_html + page_html + footer_html, path, file_name)
+
+    def special_page_context(self, template, post, path, file_name="index.html"):
+        """Complète les données minimales des pages générées hors base."""
+        page_post = dict(post)
+        relative_path = path.strip('/')
+        if file_name != 'index.html':
+            relative_path = '/'.join(filter(None, (relative_path, file_name)))
+        canonical = template['domain'].rstrip('/') + '/'
+        if relative_path:
+            canonical += relative_path
+            if file_name == 'index.html':
+                canonical += '/'
+        page_post['canonical'] = canonical
+        page_post.setdefault('description', self.config.get('description', ''))
+        page_post.setdefault('is_home', False)
+        return page_post
 
     def e404_gen(self):
         text = '<p>Cette page n’existe plus ou n’a jamais existé.</p>'
@@ -646,7 +681,20 @@ class Layout:
             ctx["blog"] = blog
         if extra_ctx:
             ctx.update(extra_ctx)
-        return tpl.render(**ctx)
+        rendered = tpl.render(**ctx)
+        if post and post.get('event_schema') and '</head>' in rendered:
+            event_json = json.dumps(
+                post['event_schema'],
+                ensure_ascii=False,
+                separators=(',', ':'),
+            ).replace('</', '<\\/')
+            event_script = (
+                '<script type="application/ld+json">'
+                + event_json
+                + '</script>'
+            )
+            rendered = rendered.replace('</head>', event_script + '</head>', 1)
+        return rendered
 
     def content_blocks(self, template, content):
         """Développe les shortcodes communs à tous les contenus éditoriaux."""
@@ -660,6 +708,8 @@ class Layout:
         content = contact_pattern.sub(lambda _match: contact_html, content)
 
         soup = BeautifulSoup(content, 'html.parser')
+        if template.get('code_blocks') == 'testimonials':
+            self.testimonial_blocks(soup)
         for quote in soup.find_all('blockquote'):
             figure = quote.find_previous_sibling()
             if not figure or figure.name != 'figure':
@@ -671,13 +721,63 @@ class Layout:
             window['class'] = [
                 'home-parallax-window', 'home-parallax-before-quote'
             ]
-            window['style'] = f"background-image:url('{image['src']}')"
+            window['style'] = (
+                f"--parallax-image:url('{image['src']}');"
+                "background-image:var(--parallax-image)"
+            )
             window['role'] = 'img'
             if image.get('alt'):
                 window['aria-label'] = image['alt']
             figure.replace_with(window)
 
         return str(soup)
+
+    def testimonial_blocks(self, soup):
+        """Transforme chaque suite de blocs code en cartes de témoignages."""
+        author_pattern = re.compile(
+            r'(?:[»”"]\s*)?([A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-öø-ÿ’\'-]+)\s*$'
+        )
+        candidates = []
+        for container in soup.find_all(['p', 'pre']):
+            code = container.find('code', recursive=False)
+            if code and container.get_text(strip=True) == code.get_text(strip=True):
+                candidates.append(container)
+
+        pending = set(map(id, candidates))
+        for first in candidates:
+            if id(first) not in pending:
+                continue
+            grid = soup.new_tag('div', attrs={'class': 'testimonial-grid'})
+            first.insert_before(grid)
+            current = first
+            while current is not None and id(current) in pending:
+                pending.remove(id(current))
+                code = current.find('code', recursive=False)
+                raw_text = code.get_text('\n', strip=True)
+                author = ''
+                author_match = author_pattern.search(raw_text)
+                if author_match:
+                    author = author_match.group(1)
+                    raw_text = raw_text[:author_match.start()].rstrip()
+                quote_text = raw_text.strip().lstrip('«“"').rstrip('»”"').strip()
+
+                card = soup.new_tag('article', attrs={'class': 'testimonial-card'})
+                paragraph = soup.new_tag('p')
+                paragraph['class'] = ['testimonial-quote']
+                for index, line in enumerate(quote_text.splitlines()):
+                    if index:
+                        paragraph.append(soup.new_tag('br'))
+                    paragraph.append(line.strip())
+                card.append(paragraph)
+                if author:
+                    caption = soup.new_tag('p', attrs={'class': 'testimonial-author'})
+                    caption.string = author
+                    card.append(caption)
+                grid.append(card)
+
+                next_candidate = current.find_next_sibling()
+                current.extract()
+                current = next_candidate
 
     def footer_html(self, template, post):
         footer_content = self.content_blocks(
@@ -688,22 +788,27 @@ class Layout:
             template=template, footer_content=footer_content
         )
 
-    def normal_pages(self, post, template, path, file_name="index.html"):
-        header_html = self.get_html(template["header"], post=post, blog=self.config, template=template)
-        footer_html = self.footer_html(template, post)
-        self.save(template, header_html + post['content'] + footer_html, path, file_name)
-
     def menu_gen(self):
-        for template in self.templates:
-            menu_html = self.get_html(template["menu"])
-            post = {"thumb": None, "title": "", "content": menu_html, "description": "Menu", "frontmatter": None, "type":3}
-            self.normal_pages(post, template, "menu/")
+        post = {
+            "thumb": None,
+            "title": "Menu",
+            "content": "",
+            "description": "Navigation du site",
+            "frontmatter": None,
+            "type": 3
+        }
+        self.special_pages(post, "menu/", content_template="menu")
 
     def search_gen(self):
-        for template in self.templates:
-            search_html = self.get_html(template["search"])
-            post = {"thumb": None, "title": "", "content": search_html, "description": "Recherche", "frontmatter": None, "type":3}
-            self.normal_pages(post, template, "search/")
+        post = {
+            "thumb": None,
+            "title": "Recherche",
+            "content": "",
+            "description": "Rechercher sur le site",
+            "frontmatter": None,
+            "type": 3
+        }
+        self.special_pages(post, "search/", content_template="search")
 
 
     def save(self, template, html, dir_path, file_name="index.html", context=None):
@@ -711,7 +816,7 @@ class Layout:
         # Microcodes avant minification
         html = self._apply_microcodes(template, html, context)
 
-        if self.config["version"]>0:
+        if self.minify:
             html = htmlmin.minify(html, remove_empty_space=True)
 
         dir = os.path.join( template['export'], dir_path.lstrip("/"))

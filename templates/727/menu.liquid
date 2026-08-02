@@ -1,12 +1,7 @@
 <section class="menu-page">
-  <p class="eyebrow">Navigation</p>
-  <h1>Prendre<br>la route.</h1>
   <nav>
-    <a href="/"><span>01</span>Accueil</a>
-    <a href="/tag/routes/"><span>02</span>Routes</a>
-    <a href="/tag/reco/"><span>03</span>Reco</a>
-    <a href="/tag/grand_depart/"><span>04</span>Grand Départ</a>
-    <a href="/page/a-propos/"><span>05</span>Le projet</a>
-    <a href="/search/"><span>06</span>Recherche</a>
+    <a href="/">Accueil</a>
+    {% for item in blog.header_menu %}<a href="{{ item.url }}">{{ item.title }}</a>{% endfor %}
+    <a href="/search/">Recherche</a>
   </nav>
 </section>

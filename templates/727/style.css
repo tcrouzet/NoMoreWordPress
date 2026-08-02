@@ -219,8 +219,8 @@ h4 { font-size: var(--heading-4); }
   padding-left: var(--gutter);
 }
 .home-editorial > h2 {
-  margin-top: clamp(5rem, 12vw, 11rem);
-  margin-bottom: 2rem;
+  margin-top: clamp(2.5rem, 5vw, 5rem);
+  margin-bottom: 1.5rem;
 }
 .home-editorial > p {
   max-width: 70ch;
@@ -261,7 +261,7 @@ h4 { font-size: var(--heading-4); }
 }
 .home-editorial > figure {
   width: 100%;
-  margin: clamp(4rem, 9vw, 9rem) 0;
+  margin: clamp(2.5rem, 5vw, 5rem) 0;
 }
 .home-editorial > figure img {
   width: 100%;
@@ -271,20 +271,40 @@ h4 { font-size: var(--heading-4); }
 .home-parallax-window {
   width: 100%;
   height: 100svh;
-  margin: clamp(4rem, 9vw, 9rem) 0;
+  margin: clamp(2.5rem, 5vw, 5rem) 0;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
 }
+/* Sur iOS, une couche fixe découpée remplace background-attachment: fixed. */
+@supports (-webkit-touch-callout: none) {
+  .home-parallax-window {
+    clip-path: inset(0);
+    isolation: isolate;
+    background-image: none !important;
+    background-attachment: scroll;
+  }
+  .home-parallax-window::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--parallax-image);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+}
 .home-parallax-before-quote { margin-bottom: 0; }
 .home-editorial > .home-parallax-before-quote + blockquote { margin-top: 0; }
 .home-editorial > blockquote {
   max-width: none;
-  margin-top: clamp(4rem, 10vw, 10rem);
-  margin-bottom: clamp(4rem, 10vw, 10rem);
-  padding-top: clamp(4rem, 10vw, 10rem);
-  padding-bottom: clamp(4rem, 10vw, 10rem);
+  margin-top: clamp(2.5rem, 5vw, 5rem);
+  margin-bottom: clamp(2.5rem, 5vw, 5rem);
+  padding-top: clamp(3rem, 6vw, 6rem);
+  padding-bottom: clamp(3rem, 6vw, 6rem);
   color: var(--paper);
   background: var(--moss);
   font: var(--heading-2)/1.05 var(--display);
@@ -296,16 +316,53 @@ h4 { font-size: var(--heading-4); }
 .home-editorial > :is(blockquote, figure, .home-parallax-window):last-child {
   margin-bottom: 0;
 }
+.testimonial-grid {
+  max-width: 70rem;
+  margin: 2.5rem auto clamp(2.5rem, 5vw, 5rem);
+  padding: 0 var(--gutter);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.testimonial-card {
+  margin: 0;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border-top: .3rem solid var(--earth);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+.testimonial-card .testimonial-quote {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.testimonial-card .testimonial-quote::before {
+  content: "«";
+  display: block;
+  margin-bottom: .75rem;
+  color: var(--earth);
+  font: 2.5rem/1 var(--display);
+}
+.testimonial-card .testimonial-author {
+  margin: 0;
+  color: var(--earth);
+  font: 500 .75rem/1 var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 .home-card-grid {
   margin-top: 3rem;
-  margin-bottom: clamp(4rem, 10vw, 9rem);
+  margin-bottom: clamp(2.5rem, 5vw, 5rem);
   border-top: 1px solid var(--line);
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .manifesto,
 .latest {
-  padding: clamp(4rem, 10vw, 10rem) var(--gutter);
+  padding: clamp(2.5rem, 5vw, 5rem) var(--gutter);
   display: grid;
   grid-template-columns: minmax(10rem, 1fr) minmax(0, 3fr);
   gap: 2rem;
@@ -826,21 +883,28 @@ h4 { font-size: var(--heading-4); }
 }
 
 /* Utility pages */
-.menu-page,
-.search-page { min-height: 75vh; padding: clamp(3rem, 8vw, 8rem) var(--gutter); }
-.menu-page nav { max-width: 70rem; margin-top: 4rem; }
+.menu-page {
+  width: 100%;
+  margin: clamp(2.5rem, 5vw, 5rem) auto 0;
+}
+.search-page {
+  width: 100%;
+  margin: clamp(2.5rem, 5vw, 5rem) auto 0;
+}
+.menu-page nav { max-width: 47rem; margin: 0 auto; }
 .menu-page nav a {
   padding: 1rem 0;
   border-top: 1px solid var(--line);
   display: flex;
   gap: 2rem;
+  color: inherit;
   font: clamp(1.6rem, 4vw, 4rem)/1 var(--display);
+  text-decoration: none;
   text-transform: uppercase;
 }
 .menu-page nav a:last-child { border-bottom: 1px solid var(--line); }
-.menu-page nav span { padding-top: .3em; font: .65rem/1 var(--mono); }
 .menu-page nav a:hover { padding-left: 1rem; color: var(--accent); }
-.search-page form { max-width: 70rem; margin-top: 5rem; }
+.search-page form { max-width: 47rem; margin: 0 auto; }
 .search-page label { display: block; margin-bottom: .7rem; font: .7rem/1 var(--mono); text-transform: uppercase; }
 .search-page form div { display: flex; border-bottom: 2px solid var(--ink); }
 .search-page input {
@@ -973,6 +1037,7 @@ h4 { font-size: var(--heading-4); }
   .editorial-hero { min-height: calc(100svh - 4.5rem); }
   .home-logo { width: min(42vw, 12rem); }
   .home-card-grid { grid-template-columns: 1fr; }
+  .testimonial-grid { grid-template-columns: 1fr; }
   .manifesto,
   .latest,
   .route-layout { grid-template-columns: 1fr; }

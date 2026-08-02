@@ -1,0 +1,19 @@
+<article class="slideshow-page" itemscope itemtype="https://schema.org/CollectionPage">
+  <header class="slideshow-heading">
+    <h1 itemprop="headline">{{ post.title }}</h1>
+  </header>
+  <section class="geo-slideshow" data-slideshow="{{ post.frontmatter.diaporama }}" data-version="{{ blog.version }}" aria-label="{{ post.title }}">
+    <div class="slideshow-slide" role="img" aria-label="">
+      <time class="slideshow-date"></time>
+      <p class="slideshow-caption" aria-live="polite"></p>
+    </div>
+    <div class="slideshow-controls">
+      <button type="button" data-slide-previous aria-label="Photo précédente">‹</button>
+      <button type="button" data-slide-next aria-label="Photo suivante">›</button>
+    </div>
+    <div class="slideshow-map-shell">
+      <div class="slideshow-map" aria-label="Carte des photos"></div>
+      <button class="slideshow-map-open" type="button" aria-label="Afficher la carte à la place de l’image"></button>
+    </div>
+  </section>
+</article>
