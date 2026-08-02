@@ -30,6 +30,7 @@ if len(sys.argv) < 2 or not sys.argv[1].strip():
 site = sys.argv[1].strip()
 config = tools.site_yml(site)
 config['site'] = site
+full_build = int(config.get('build', 0)) >= 2
 
 # Parcourir et filtrer les templates
 filtered_templates = []
@@ -95,7 +96,7 @@ if config['footer_content']:
 
 #POSTS
 print("Post generation")
-if config['build'] == 2 or template_changed:
+if full_build or template_changed:
     posts = db.get_posts()
 else:
     posts = db.get_posts_updated()
@@ -109,7 +110,7 @@ if total >0:
         pbar.update(1)
     pbar.close()
 
-if db.new_posts + db.updated_posts + db.deleted_posts > 0 or config['build'] > 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or full_build:
     sitemap.open("sitemap-posts")
     posts = db.get_posts(condition="type<5", exclude_tags=["private","invisible"])
     # posts = db.get_all_posts_and_pages()
@@ -132,7 +133,7 @@ if (
     + db.updated_tags > 0
     or template_changed
     or new_home_template
-    or config['build'] > 1
+    or full_build
 ):
 
     sitemap.open("sitemap-main")
@@ -199,7 +200,7 @@ if (
 
 
 #MAIN FEED
-if db.new_posts + db.updated_posts + db.deleted_posts > 0 or config['build'] > 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or full_build:
     exclude_slugs = ("invisible","private")
     posts = db.get_blog_posts( exclude_tags=exclude_slugs)
     feed.builder(posts,"feed", "Derniers articles de Thierry Crouzet")
@@ -208,15 +209,15 @@ if db.new_posts + db.updated_posts + db.deleted_posts > 0 or config['build'] > 1
 
 #TAGS
 exclude = tuple(["page","blog","private","invisible"])
-if db.new_tags + db.updated_tags > 0 or template_changed or config['build'] > 1:
+if db.new_tags + db.updated_tags > 0 or template_changed or full_build:
 
-    if config['build'] > 1:
+    if full_build:
         # Tous les tags
         tags = db.get_tags(exclude_slugs=exclude)
     else:
         # Ceux utilisés
         tags = db.get_tags_used(exclude_slugs=exclude)
-    if config['build'] > 1:
+    if full_build:
         layout.clean_stale_tag_exports(tags)
     total = len(tags)
     pbar = logs.DualOutput.dual_tqdm(total=total, desc='Tags:')
@@ -242,7 +243,7 @@ if db.new_tags + db.updated_tags > 0 or template_changed or config['build'] > 1:
         pbar.update(1)
     pbar.close()
 
-if db.new_tags + db.updated_tags > 0 or template_changed or config['build'] > 1:
+if db.new_tags + db.updated_tags > 0 or template_changed or full_build:
     sitemap.open("sitemap-tags")
     tags = db.get_tags(exclude_slugs=exclude)
     for tag in tags:
@@ -252,7 +253,7 @@ if db.new_tags + db.updated_tags > 0 or template_changed or config['build'] > 1:
 
 
 #YEARS
-if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or config['build']> 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or full_build:
 
     print("Year gen")
     sitemap.open("sitemap-years")
@@ -295,7 +296,7 @@ if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or
 
 
 #ARCHIVES
-if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or config['build'] > 1:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or full_build:
 
     posts_archive = ""
     exclude = ("invisible","private")
@@ -319,7 +320,7 @@ layout.e404_gen()
 
 
 #END SITEMAP
-if config['build']>1:
+if full_build:
     sitemap.save_index('sitemap')
 
 print("Gen ended")
@@ -333,7 +334,7 @@ if version>0 and (
     + db.updated_posts
     + db.deleted_posts
     + updated_static_files > 0
-    or config['build'] == 2
+    or full_build
 ):
     for template in config['templates']:
 

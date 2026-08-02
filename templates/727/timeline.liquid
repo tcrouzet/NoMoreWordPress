@@ -1,0 +1,15 @@
+<article class="story timeline-story" itemscope itemtype="https://schema.org/AboutPage">
+  {% assign hero_image = post.thumb.url | default: post.frontmatter.background %}
+  <header class="story-masthead{% if hero_image %} has-background{% endif %}"{% if hero_image %} style="background-image:url('{{ hero_image }}')"{% endif %}>
+    <div class="masthead-overlay"></div>
+    <div class="masthead-content">
+      <h1 itemprop="headline">{{ post.title }}</h1>
+      {% if post.frontmatter.header_button and post.frontmatter.header_link != empty %}
+      <div class="masthead-actions">
+        <a class="hero-button" href="{{ post.frontmatter.header_link }}">{{ post.frontmatter.header_button }}</a>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  <div id="article-start" class="timeline-content" itemprop="mainEntity">{{ post.content }}</div>
+</article>

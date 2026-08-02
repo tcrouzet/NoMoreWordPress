@@ -279,15 +279,125 @@ class Layout:
                 template, supercharged.get('content', '')
             )
 
+            article_template = template['article']
+            layout_name = str(
+                (supercharged.get('frontmatter') or {}).get('layout', '')
+            ).strip()
+            if layout_name and re.fullmatch(r'[a-zA-Z0-9_-]+', layout_name):
+                layout_path = os.path.join(template['dir'], f'{layout_name}.liquid')
+                if os.path.isfile(layout_path):
+                    article_template = Liquid(layout_path)
+                    if layout_name == 'timeline':
+                        supercharged['content'] = self.timeline_blocks(
+                            supercharged['content']
+                        )
+
             header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
             footer_html = self.footer_html(template, supercharged)
             share_html = self.get_html(template["share"], post=supercharged, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
-            article_html = self.get_html(template['article'], post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html, template=template)
+            article_html = self.get_html(article_template, post=supercharged, blog=self.config, share=share_html, newsletter=newsletter_html, template=template)
             single_html = self.get_html(template['single'], post=supercharged, blog=self.config, article=article_html)
             self.save(template, header_html + single_html + footer_html, supercharged['url'], "index.html")
             if template['infinite_scroll']:
                 self.save(template, article_html, supercharged['url'], "content.html")
+
+    def timeline_blocks(self, content):
+        """Regroupe titre, date, texte et image en événements de frise."""
+        soup = BeautifulSoup(content or '', 'html.parser')
+        nodes = list(soup.contents)
+        heading_indexes = [
+            index for index, node in enumerate(nodes)
+            if getattr(node, 'name', None) in ('h2', 'h3', 'h4', 'h5', 'h6')
+        ]
+        if not heading_indexes:
+            return content
+
+        intro = ''.join(str(node) for node in nodes[:heading_indexes[0]])
+        events = []
+        outro = ''
+        for event_index, start in enumerate(heading_indexes):
+            end = (
+                heading_indexes[event_index + 1]
+                if event_index + 1 < len(heading_indexes)
+                else len(nodes)
+            )
+            heading = nodes[start]
+            segment = BeautifulSoup(
+                ''.join(str(node) for node in nodes[start + 1:end]),
+                'html.parser'
+            )
+
+            date_html = ''
+            first_element = segment.find(recursive=False)
+            if first_element and first_element.name == 'p':
+                date_html = first_element.decode_contents()
+                first_element.extract()
+
+            image_html = ''
+            image = segment.find('img')
+            if image:
+                image_html = str(image)
+                media = image.find_parent('figure')
+                media = media or image
+                top_level_media = media
+                while top_level_media.parent is not segment:
+                    top_level_media = top_level_media.parent
+                if event_index == len(heading_indexes) - 1:
+                    following = list(top_level_media.next_siblings)
+                    outro = ''.join(str(node) for node in following).strip()
+                    for node in following:
+                        node.extract()
+                top_level_media.extract()
+
+            events.append({
+                'title': heading.decode_contents(),
+                'date': date_html,
+                'body': segment.decode_contents().strip(),
+                'image': image_html,
+                'inverted': event_index % 2 == 1
+            })
+
+        timeline = BeautifulSoup('', 'html.parser')
+        wrapper = timeline.new_tag('div', attrs={'class': 'timeline-layout'})
+        if intro.strip():
+            intro_block = timeline.new_tag('div', attrs={'class': 'timeline-intro'})
+            intro_block.append(BeautifulSoup(intro, 'html.parser'))
+            wrapper.append(intro_block)
+
+        event_list = timeline.new_tag('ol', attrs={'class': 'timeline'})
+        for event in events:
+            classes = ['timeline-event']
+            if event['inverted']:
+                classes.append('timeline-inverted')
+            item = timeline.new_tag('li', attrs={'class': classes})
+
+            marker = timeline.new_tag('div', attrs={'class': 'timeline-image'})
+            if event['image']:
+                marker.append(BeautifulSoup(event['image'], 'html.parser'))
+            item.append(marker)
+
+            panel = timeline.new_tag('div', attrs={'class': 'timeline-panel'})
+            if event['date']:
+                date = timeline.new_tag('p', attrs={'class': 'timeline-date'})
+                date.append(BeautifulSoup(event['date'], 'html.parser'))
+                panel.append(date)
+            title = timeline.new_tag('h2')
+            title.append(BeautifulSoup(event['title'], 'html.parser'))
+            panel.append(title)
+            if event['body']:
+                body = timeline.new_tag('div', attrs={'class': 'timeline-body'})
+                body.append(BeautifulSoup(event['body'], 'html.parser'))
+                panel.append(body)
+            item.append(panel)
+            event_list.append(item)
+
+        wrapper.append(event_list)
+        if outro:
+            outro_block = timeline.new_tag('div', attrs={'class': 'timeline-outro'})
+            outro_block.append(BeautifulSoup(outro, 'html.parser'))
+            wrapper.append(outro_block)
+        return str(wrapper)
 
 
     def tag_gen_serie(self, series, tags):

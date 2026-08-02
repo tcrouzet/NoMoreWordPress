@@ -559,7 +559,7 @@ class Web:
             post['display_date_label'] = ''
             if 'grands_departs' in tag_slugs and post['event_date_label']:
                 post['display_date_label'] = post['event_date_label']
-            elif 'reco' in tag_slugs:
+            elif post.get('type') == 0:
                 post['display_date_label'] = post['pub_date_label']
 
             return post
@@ -645,7 +645,11 @@ class Web:
         else:
             menu.append({"tag_title": tag['tag_title'], "tag_url": tag['tag_slug']})
         if tag['tag_slug'] != "blog":
-            menu.append({"tag_title": "Digressions", "tag_url": "/blog/"})
+            blog_tag = self.db.tag_2_dict("blog")
+            menu.append({
+                "tag_title": blog_tag['tag_title'],
+                "tag_url": blog_tag['tag_url']
+            })
         if tag['tag_slug'] != "series":
             menu.append({"tag_title": "…", "tag_url": "/series/"})
         index = len(menu)
