@@ -48,7 +48,7 @@ db = db.Db(config)
 web = web.Web(config, db)
 layout = layout.Layout(config, web)
 layout.web = web
-template_changed = bool(layout.new_assets)
+assets_changed = bool(layout.new_assets)
 sitemap = sitemap.Sitemap(config, web)
 feed = feed.Feed(config, web)
 
@@ -109,7 +109,7 @@ if config['footer_content']:
 
 #POSTS
 print("Post generation")
-if full_build or template_changed:
+if full_build:
     posts = db.get_posts()
 else:
     posts = db.get_posts_updated()
@@ -144,7 +144,6 @@ if (
     + db.deleted_posts
     + db.new_tags
     + db.updated_tags > 0
-    or template_changed
     or new_home_template
     or full_build
 ):
@@ -222,7 +221,7 @@ if db.new_posts + db.updated_posts + db.deleted_posts > 0 or full_build:
 
 #TAGS
 exclude = tuple(["page","blog","private","invisible"])
-if db.new_tags + db.updated_tags > 0 or template_changed or full_build:
+if db.new_tags + db.updated_tags > 0 or full_build:
 
     if full_build:
         # Tous les tags
@@ -256,7 +255,7 @@ if db.new_tags + db.updated_tags > 0 or template_changed or full_build:
         pbar.update(1)
     pbar.close()
 
-if db.new_tags + db.updated_tags > 0 or template_changed or full_build:
+if db.new_tags + db.updated_tags > 0 or full_build:
     sitemap.open("sitemap-tags")
     tags = db.get_tags(exclude_slugs=exclude)
     for tag in tags:
@@ -266,7 +265,7 @@ if db.new_tags + db.updated_tags > 0 or template_changed or full_build:
 
 
 #YEARS
-if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or full_build:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or full_build:
 
     print("Year gen")
     sitemap.open("sitemap-years")
@@ -309,7 +308,7 @@ if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or
 
 
 #ARCHIVES
-if db.new_posts + db.updated_posts + db.deleted_posts > 0 or template_changed or full_build:
+if db.new_posts + db.updated_posts + db.deleted_posts > 0 or full_build:
 
     posts_archive = ""
     exclude = ("invisible","private")
@@ -347,7 +346,7 @@ site_changed = (
     + db.updated_posts
     + db.deleted_posts
     + updated_static_files > 0
-    or template_changed
+    or assets_changed
     or full_build
 )
 

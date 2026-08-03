@@ -54,7 +54,7 @@ class SyncAWS:
 
         #Filtre
         excluded_files = {".DS_Store"}
-        excluded_extensions = {".jpeg", ".jpg", ".webp", ".gif", ".png", ".json", ".pdf", ".mp3", ".txt"}
+        excluded_extensions = {".jpeg", ".jpg", ".webp", ".gif", ".png", ".json", ".pdf", ".mp3"}
 
         # Filtrer les fichiers
         uploaded_files = [

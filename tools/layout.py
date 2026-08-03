@@ -67,8 +67,16 @@ class Layout:
                 'comments': int(template.get('comments', 0)),
                 'code_blocks': template.get('code_blocks'),
                 'background_images': template.get('background_images'),
-                "inlinecss": self.inlinecss(base_dir),
-                "inlinejs": self.inlinejs(base_dir),
+                "inlinecss": (
+                    self.inlinecss(base_dir)
+                    if template.get('inline_assets', True)
+                    else ""
+                ),
+                "inlinejs": (
+                    self.inlinejs(base_dir)
+                    if template.get('inline_assets', True)
+                    else ""
+                ),
                 "micro": self._load_micro_executor(base_dir),
                 "header": lambda m=make: m("header"),
                 "footer": lambda m=make: m("footer"),
@@ -709,6 +717,14 @@ class Layout:
                 if image.get('alt'):
                     window['aria-label'] = image['alt']
                 figure.replace_with(window)
+
+        for figure in soup.find_all('figure'):
+            parent = figure.parent
+            if parent and parent.name == 'a':
+                classes = list(parent.get('class', []))
+                if 'linked-figure' not in classes:
+                    classes.append('linked-figure')
+                parent['class'] = classes
 
         return str(soup)
 

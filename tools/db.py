@@ -1517,6 +1517,14 @@ class Db:
         try:
             with open(path, 'r', encoding='utf-8') as file:
                 lines = file.readlines()
+
+            explicit_thumb_pattern = re.compile(
+                r'!\[[^\]]*\s+thumb\]\([^)]+\)'
+            )
+            explicit_thumb_present = any(
+                explicit_thumb_pattern.search(source_line)
+                for source_line in lines
+            )
             
             in_frontmatter = False
             title_found = False
@@ -1567,7 +1575,13 @@ class Db:
                         continue
                 
                 # Extraction du thumb
-                if '![' in line and not thumb_found:
+                if (
+                    '![' in line
+                    and (
+                        not thumb_found
+                        or explicit_thumb_pattern.search(line)
+                    )
+                ):
                     # match = re.search(r'!\[(.*?)\]\((.*?)\)', line)
                     match = re.search(r'(?:\[)?!\[(.*?)\]\((.*?)\)(?:\]\((.*?)\))?', line)
                     if match:
@@ -1575,6 +1589,7 @@ class Db:
                         if (
                             first_image
                             and title_just_found
+                            and not explicit_thumb_present
                             and not match.group(1).endswith(" background")
                         ):
                             thumb_legend = match.group(1)
@@ -1598,7 +1613,7 @@ class Db:
                                 if self.poster == 1:
                                     i += 1
                                     continue
-                            elif first_image:
+                            elif first_image and not explicit_thumb_present:
                                 thumb_legend = temp_thumb_legend
                                 thumb_path = match.group(2)
                                 thumb_found = True

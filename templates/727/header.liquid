@@ -2,7 +2,7 @@
 {% assign description = post.frontmatter.metadescription | default: post.description | default: blog.description %}
 {% assign canonical = post.canonical | default: template.domain %}
 {% if post.thumb.jpeg %}
-  {% assign thumb_url = template.domain | append: post.thumb.jpeg %}
+  {% set thumb_url = template.domain.rstrip('/') + post.thumb.jpeg %}
 {% else %}
   {% assign thumb_url = '' %}
 {% endif %}
@@ -73,8 +73,8 @@
     "image": {{ thumb_url | tojson }}{% endif %}
   }
   </script>
-  <style>{{ template.inlinecss }}</style>
-  {% if template.inlinejs %}<script>{{ template.inlinejs }}</script>{% endif %}
+  <link rel="stylesheet" href="/style.css?ver={{ blog.version }}">
+  <script src="/toggle.js?ver={{ blog.version }}" defer></script>
 </head>
 <body class="{% if post.type == 4 %}route-page{% elsif post.is_home %}home-page{% else %}content-page{% endif %}">
 <a class="skip-link" href="#content">Aller au contenu</a>
