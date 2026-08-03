@@ -2,5 +2,5 @@ _*
 .DS_Store
 .pylintrc
 venv/
-site.yml
-sites/
+tcrouzet.yml
+727.yml
