@@ -66,6 +66,7 @@ class Layout:
                 "jpeg_thumb": bool(template.get('jpeg_thumb', False)),
                 'comments': int(template.get('comments', 0)),
                 'code_blocks': template.get('code_blocks'),
+                'background_images': template.get('background_images'),
                 "inlinecss": self.inlinecss(base_dir),
                 "inlinejs": self.inlinejs(base_dir),
                 "micro": self._load_micro_executor(base_dir),
@@ -578,26 +579,6 @@ class Layout:
 
         soup = BeautifulSoup(content, 'html.parser')
 
-        for block in soup.find_all(['h2', 'blockquote']):
-            figure = block.find_previous_sibling()
-            if not figure or figure.name != 'figure':
-                continue
-            image = figure.find('img')
-            if not image or not image.get('src'):
-                continue
-            window = soup.new_tag('div')
-            window['class'] = ['home-parallax-window']
-            if block.name == 'blockquote':
-                window['class'].append('home-parallax-before-quote')
-            window['style'] = (
-                f"--parallax-image:url('{image['src']}');"
-                "background-image:var(--parallax-image)"
-            )
-            window['role'] = 'img'
-            if image.get('alt'):
-                window['aria-label'] = image['alt']
-            figure.replace_with(window)
-
         return str(soup)
 
     def home_gen(self, last_post=None, featured_posts=None, home_post=None):
@@ -710,25 +691,24 @@ class Layout:
         soup = BeautifulSoup(content, 'html.parser')
         if template.get('code_blocks') == 'testimonials':
             self.testimonial_blocks(soup)
-        for quote in soup.find_all('blockquote'):
-            figure = quote.find_previous_sibling()
-            if not figure or figure.name != 'figure':
-                continue
-            image = figure.find('img')
-            if not image or not image.get('src'):
-                continue
-            window = soup.new_tag('div')
-            window['class'] = [
-                'home-parallax-window', 'home-parallax-before-quote'
-            ]
-            window['style'] = (
-                f"--parallax-image:url('{image['src']}');"
-                "background-image:var(--parallax-image)"
-            )
-            window['role'] = 'img'
-            if image.get('alt'):
-                window['aria-label'] = image['alt']
-            figure.replace_with(window)
+        if template.get('background_images') == 'parallax':
+            for figure in soup.select('figure.background-figure'):
+                image = figure.find('img')
+                if not image or not image.get('src'):
+                    continue
+                window = soup.new_tag('div')
+                window['class'] = ['home-parallax-window']
+                next_block = figure.find_next_sibling()
+                if next_block and next_block.name == 'blockquote':
+                    window['class'].append('home-parallax-before-quote')
+                window['style'] = (
+                    f"--parallax-image:url('{image['src']}');"
+                    "background-image:var(--parallax-image)"
+                )
+                window['role'] = 'img'
+                if image.get('alt'):
+                    window['aria-label'] = image['alt']
+                figure.replace_with(window)
 
         return str(soup)
 

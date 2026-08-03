@@ -85,7 +85,7 @@
   </a>
   {% endunless %}
   <nav class="site-nav" aria-label="Navigation principale">
-    {% for item in blog.header_menu limit: 7 %}<a href="{{ item.url }}">{{ item.title }}</a>{% endfor %}
+    {% for item in blog.header_menu %}<a href="{{ item.url }}">{{ item.title }}</a>{% endfor %}
     <a class="nav-menu" href="#footer-navigation">Menu</a>
   </nav>
 </header>

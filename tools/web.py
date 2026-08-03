@@ -352,6 +352,7 @@ class Web:
                 if img_data:
 
                     alt_text = img.get('alt','')
+                    is_background = alt_text.endswith(' background')
 
                     if img_data["format"].startswith("image/"):
 
@@ -374,8 +375,20 @@ class Web:
                         if img_data['url_small']:
                             srcset_parts.append(f"{img_data['url_small']} {template['image_min_size']}w")
 
-                        alt_text = alt_text.removesuffix(" poster").strip()
+                        alt_text = (
+                            alt_text
+                            .removesuffix(" background")
+                            .removesuffix(" poster")
+                            .strip()
+                        )
                         new_div = soup.new_tag('figure')
+                        figure_classes = []
+                        if img_data['height'] > img_data['width']:
+                            figure_classes.append('portrait-figure')
+                        if is_background:
+                            figure_classes.append('background-figure')
+                        if figure_classes:
+                            new_div['class'] = figure_classes
                         img_attrs = {
                             'src': img_data['url'],
                             'alt': alt_text,

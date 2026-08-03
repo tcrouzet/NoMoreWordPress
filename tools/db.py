@@ -1572,7 +1572,11 @@ class Db:
                     match = re.search(r'(?:\[)?!\[(.*?)\]\((.*?)\)(?:\]\((.*?)\))?', line)
                     if match:
                         # Supprimer la première image du contenu si juste après le titre
-                        if first_image and title_just_found:
+                        if (
+                            first_image
+                            and title_just_found
+                            and not match.group(1).endswith(" background")
+                        ):
                             thumb_legend = match.group(1)
                             thumb_path = match.group(2)
                             thumb_found = True
@@ -1584,7 +1588,9 @@ class Db:
                                 continue
                         else:
                             temp_thumb_legend = match.group(1)
-                            if temp_thumb_legend.endswith(" thumb"):
+                            if temp_thumb_legend.endswith(" background"):
+                                first_image = False
+                            elif temp_thumb_legend.endswith(" thumb"):
                                 thumb_legend = temp_thumb_legend.replace(" thumb","")
                                 thumb_path = match.group(2)
                                 line = line.replace(" thumb","")

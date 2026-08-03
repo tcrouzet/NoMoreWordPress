@@ -91,12 +91,21 @@ if config['footer_content']:
         href = link['href'].strip()
         if href and not href.startswith(('/', '#', 'http://', 'https://', 'mailto:', 'tel:')):
             link['href'] = '/' + href
-    config['footer_content'] = str(footer_soup)
+    header_links = footer_soup.find_all('a', href=True)
+    if config.get('header_menu_filter') == 'bold':
+        header_links = [
+            link for link in header_links
+            if link.find_parent(['strong', 'b']) or link.find(['strong', 'b'])
+        ]
     config['header_menu'] = [
         {'title': link.get_text(strip=True), 'url': link.get('href')}
-        for link in footer_soup.find_all('a', href=True)
+        for link in header_links
         if link.get_text(strip=True)
     ]
+    if config.get('header_menu_filter') == 'bold':
+        for emphasis in footer_soup.find_all(['strong', 'b']):
+            emphasis.unwrap()
+    config['footer_content'] = str(footer_soup)
 
 #POSTS
 print("Post generation")

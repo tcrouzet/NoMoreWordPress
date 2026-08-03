@@ -263,6 +263,20 @@ h4 { font-size: var(--heading-4); }
   width: 100%;
   margin: clamp(2.5rem, 5vw, 5rem) 0;
 }
+.home-editorial > figure.portrait-figure {
+  width: fit-content;
+  max-width: min(calc(100% - 2 * var(--gutter)), 47rem);
+  margin-right: auto;
+  margin-left: auto;
+}
+.home-editorial > figure.portrait-figure img {
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100svh - 4rem);
+  margin-right: auto;
+  margin-left: auto;
+  object-fit: contain;
+}
 .home-editorial > figure img {
   width: 100%;
   max-height: 90vh;
@@ -653,6 +667,20 @@ h4 { font-size: var(--heading-4); }
 }
 .prose blockquote p { font: inherit; line-height: inherit; }
 .prose figure { max-width: 72rem; margin: 3rem auto; }
+.prose > figure.portrait-figure {
+  width: fit-content;
+  max-width: 47rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+.prose > figure.portrait-figure img {
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100svh - 4rem);
+  margin-right: auto;
+  margin-left: auto;
+  object-fit: contain;
+}
 .prose > :is(blockquote, figure):last-child { margin-bottom: 0 !important; }
 .prose figure img { width: 100%; height: auto; }
 .prose figcaption { margin-top: .5rem; text-align: right; font: .65rem/1.4 var(--mono); }
