@@ -86,7 +86,7 @@ class Db:
         if reset:
             print(f"Reset posts for site {self.site}")
 
-        posts_schema = '''CREATE TABLE {table_name} (
+        posts_schema = '''CREATE TABLE IF NOT EXISTS {table_name} (
             id INTEGER PRIMARY KEY,
             site TEXT NOT NULL DEFAULT 'tcrouzet',
             source_path TEXT,
@@ -112,48 +112,7 @@ class Db:
             updated BOOLEAN DEFAULT TRUE
         )'''
 
-        table_sql = c.execute(
-            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'posts'"
-        ).fetchone()
-
-        if table_sql:
-            columns = {
-                row['name'] for row in c.execute('PRAGMA table_info(posts)').fetchall()
-            }
-            schema_sql = table_sql['sql']
-            migration_needed = (
-                'site' not in columns
-                or 'type IN (0, 1, 2, 4)' not in schema_sql
-                or 'path_md TEXT UNIQUE' not in schema_sql
-            )
-
-            if migration_needed:
-                print("Migration table posts: ajout site et type route")
-                c.execute('ALTER TABLE posts RENAME TO posts_legacy')
-                c.execute(posts_schema.format(table_name='posts'))
-
-                legacy_columns = {
-                    row['name']
-                    for row in c.execute('PRAGMA table_info(posts_legacy)').fetchall()
-                }
-                post_columns = [
-                    row['name'] for row in c.execute('PRAGMA table_info(posts)').fetchall()
-                    if row['name'] != 'site' or 'site' in legacy_columns
-                ]
-                select_columns = list(post_columns)
-
-                if 'site' not in legacy_columns:
-                    post_columns.insert(1, 'site')
-                    select_columns.insert(1, "'tcrouzet'")
-
-                c.execute(
-                    f'''INSERT INTO posts ({", ".join(post_columns)})
-                        SELECT {", ".join(select_columns)}
-                        FROM posts_legacy'''
-                )
-                c.execute('DROP TABLE posts_legacy')
-        else:
-            c.execute(posts_schema.format(table_name='posts'))
+        c.execute(posts_schema.format(table_name='posts'))
 
         # Accélère recherche par path_md
         c.execute('''CREATE INDEX IF NOT EXISTS idx_posts_path ON posts(path_md)''')
