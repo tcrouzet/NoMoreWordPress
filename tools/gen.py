@@ -55,6 +55,7 @@ feed = feed.Feed(config, web)
 # testing
 # db.un_updated_by_path("2025/11/social-et-toxique.md")
 # db.un_updated(462)
+# db.un_update_books()
 
 if config['build'] > 0:
 
@@ -199,15 +200,13 @@ if (
         layout.home_gen(last_post, home_posts, home_post)
 
         sitemap.add_post(
-            {"url": "index.html", "pub_update_str": tools.now_datetime_str(), "thumb": None},
+            {"url": "/", "pub_update_str": tools.now_datetime_str(), "thumb": None},
             home_post or last_post
         )
 
         print("Home done")
 
-    sitemap.add_page("archives/index.html")
-    sitemap.add_page("menu.html")
-    sitemap.add_page("search.html")
+    sitemap.add_page("/archives/")
     sitemap.save()
 
 
@@ -330,6 +329,9 @@ layout.search_gen()
 #ERROR
 layout.e404_gen()
 
+#REDIRECTS
+updated_redirects = layout.redirects_gen(config.get('redirects', {}))
+
 
 #END SITEMAP
 if full_build:
@@ -346,6 +348,7 @@ site_changed = (
     + db.updated_posts
     + db.deleted_posts
     + updated_static_files > 0
+    or updated_redirects > 0
     or assets_changed
     or full_build
 )

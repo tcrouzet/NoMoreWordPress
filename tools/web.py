@@ -1,5 +1,5 @@
 import os, re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from PIL import Image
 import shutil
 from bs4 import BeautifulSoup
@@ -7,6 +7,28 @@ import json
 from urllib.parse import urlparse
 import frontmatter as ft
 import tools
+
+
+def is_upcoming_event(frontmatter):
+    """Retourne vrai tant que la date de fin, ou de début, n'est pas passée."""
+    value = frontmatter.get('end_date') or frontmatter.get('date')
+    if not value:
+        return False
+    if isinstance(value, datetime):
+        event_end = value
+        date_only = False
+    else:
+        raw = str(value).strip().strip("'\"‘’")
+        date_only = bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', raw))
+        try:
+            event_end = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        except ValueError:
+            return False
+    if event_end.tzinfo is None:
+        event_end = event_end.replace(tzinfo=timezone.utc)
+    if date_only:
+        event_end += timedelta(days=1)
+    return event_end > datetime.now(timezone.utc)
 
 
 class Web:
@@ -573,16 +595,23 @@ class Web:
                 tag.get('tag_slug') for tag in (post.get('tagslist') or [])
             }
             post['event_schema'] = None
+            event_config = self.config.get('events')
             if (
+                event_config
+                and
                 post.get('frontmatter')
                 and post['frontmatter'].get('date')
+                and is_upcoming_event(post['frontmatter'])
             ):
-                event_config = self.config.get('events', {})
                 frontmatter = post['frontmatter']
                 event = {
                     '@context': 'https://schema.org',
                     '@type': 'Event',
                     '@id': post['canonical'] + '#event',
+                    'mainEntityOfPage': {
+                        '@type': 'WebPage',
+                        '@id': post['canonical'] + '#primary',
+                    },
                     'name': frontmatter.get('metatitle') or post['title'],
                     'description': (
                         frontmatter.get('metadescription')

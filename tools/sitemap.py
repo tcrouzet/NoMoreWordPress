@@ -1,5 +1,7 @@
 import os
+import re
 import xml.etree.ElementTree as ET
+from urllib.parse import urlsplit
 import tools
 
 class Sitemap:
@@ -55,12 +57,34 @@ class Sitemap:
             self.sitemap_index[template['name']].append(self.output[template['name']])
 
 
+    def canonical_url(self, template, url_loc):
+        """Retourne une URL absolue propre destinée aux sitemaps."""
+        value = str(url_loc or '').strip()
+        if value.startswith(('http://', 'https://')):
+            parsed = urlsplit(value)
+            domain = f"{parsed.scheme}://{parsed.netloc}"
+            path = parsed.path or '/'
+        else:
+            domain = template['domain'].rstrip('/')
+            path = value.split('?', 1)[0].split('#', 1)[0] or '/'
+        path = '/' + path.lstrip('/')
+        path = re.sub(r'/+', '/', path)
+        if path == '/index.html':
+            path = '/'
+        elif path.endswith('/index.html'):
+            path = path[:-len('index.html')]
+        elif not path.endswith('/') and not os.path.splitext(path)[1]:
+            path += '/'
+        return domain + path
+
     def add(self, template, url_loc, lastmod=None, image_url=None):
-        if ".html" not in url_loc:
-            url_loc = url_loc.rstrip("/")+ "/index.html"
-        url_loc = template['domain'] + url_loc
+        url_loc = self.canonical_url(template, url_loc)
         if image_url:
-            image_url = template['domain'] + image_url.strip("/")
+            image_url = (
+                template['domain'].rstrip('/')
+                + '/'
+                + image_url.lstrip('/')
+            )
         url = ET.SubElement(self.urlset[template['name']], 'url')
         loc = ET.SubElement(url, 'loc')
         loc.text = url_loc

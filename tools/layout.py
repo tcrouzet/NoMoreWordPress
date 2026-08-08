@@ -505,42 +505,6 @@ class Layout:
 
     def home_blocks(self, template, content):
         content = self.content_blocks(template, content)
-        buttons_pattern = re.compile(
-            r'<p>\s*(?P<buttons>(?:{%\s*bouton\s*=\s*.*?%}\s*)+)</p>',
-            flags=re.DOTALL | re.IGNORECASE
-        )
-        button_pattern = re.compile(
-            r'{%\s*bouton\s*=\s*(.*?)\s*%}',
-            flags=re.DOTALL | re.IGNORECASE
-        )
-
-        def buttons(match):
-            links = []
-            for button_match in button_pattern.finditer(match.group('buttons')):
-                value = button_match.group(1).strip()
-                link = BeautifulSoup(value, 'html.parser').find('a', href=True)
-                if link:
-                    label = link.get_text(strip=True)
-                    url = link['href'].strip()
-                else:
-                    markdown_link = re.fullmatch(r'\[([^]]+)]\(([^)]+)\)', value)
-                    if not markdown_link:
-                        continue
-                    label, url = (
-                        markdown_link.group(1).strip(),
-                        markdown_link.group(2).strip()
-                    )
-                if not label or not url:
-                    continue
-                links.append(
-                    f'<a class="home-choice-button" href="{html.escape(url, quote=True)}">'
-                    f'{html.escape(label)}</a>'
-                )
-            if not links:
-                return ''
-            return '<nav class="home-choice-buttons" aria-label="Types de parcours">' + ''.join(links) + '</nav>'
-
-        content = buttons_pattern.sub(buttons, content)
         cards_pattern = re.compile(
             r'<p>\s*{%\s*cards\s+(.*?)%}\s*</p>',
             flags=re.DOTALL
@@ -588,6 +552,71 @@ class Layout:
         soup = BeautifulSoup(content, 'html.parser')
 
         return str(soup)
+
+    def button_blocks(self, content):
+        """Développe les boutons dans tous les contenus éditoriaux."""
+        buttons_pattern = re.compile(
+            r'<p>\s*(?P<buttons>(?:{%\s*bouton\s*=\s*.*?%}\s*)+)</p>',
+            flags=re.DOTALL | re.IGNORECASE
+        )
+        button_pattern = re.compile(
+            r'{%\s*bouton\s*=\s*(.*?)\s*%}',
+            flags=re.DOTALL | re.IGNORECASE
+        )
+
+        def button_data(value):
+            value = value.strip()
+            link = BeautifulSoup(value, 'html.parser').find('a', href=True)
+            if link:
+                label = link.get_text(strip=True)
+                url = link['href'].strip()
+            else:
+                markdown_link = re.fullmatch(r'\[([^]]+)]\(([^)]+)\)', value)
+                if not markdown_link:
+                    return None
+                label, url = (
+                    markdown_link.group(1).strip(),
+                    markdown_link.group(2).strip()
+                )
+            return (label, url) if label and url else None
+
+        def buttons(match):
+            links = []
+            for button_match in button_pattern.finditer(match.group('buttons')):
+                data = button_data(button_match.group(1))
+                if not data:
+                    continue
+                label, url = data
+                links.append(
+                    f'<a class="home-choice-button" href="{html.escape(url, quote=True)}">'
+                    f'{html.escape(label)}</a>'
+                )
+            if not links:
+                return ''
+            return '<nav class="home-choice-buttons" aria-label="Liens">' + ''.join(links) + '</nav>'
+
+        content = buttons_pattern.sub(buttons, content)
+        quote_pattern = re.compile(
+            r'(?P<open><blockquote\b[^>]*>)(?P<body>.*?)(?P<close></blockquote>)',
+            flags=re.DOTALL | re.IGNORECASE
+        )
+
+        def quote_buttons(quote_match):
+            def quote_button(button_match):
+                data = button_data(button_match.group(1))
+                if not data:
+                    return button_match.group(0)
+                label, url = data
+                return (
+                    '<span class="quote-action">'
+                    f'<a class="quote-button" href="{html.escape(url, quote=True)}">'
+                    f'{html.escape(label)}</a></span>'
+                )
+
+            body = button_pattern.sub(quote_button, quote_match.group('body'))
+            return quote_match.group('open') + body + quote_match.group('close')
+
+        return quote_pattern.sub(quote_buttons, content)
 
     def home_gen(self, last_post=None, featured_posts=None, home_post=None):
         featured_posts = featured_posts or {}
@@ -689,6 +718,7 @@ class Layout:
         """Développe les shortcodes communs à tous les contenus éditoriaux."""
         if not content:
             return content
+        content = self.button_blocks(content)
         contact_pattern = re.compile(
             r'<p>\s*{%\s*contact\s*%}\s*</p>|{%\s*contact\s*%}',
             flags=re.IGNORECASE
@@ -805,6 +835,63 @@ class Layout:
             "type": 3
         }
         self.special_pages(post, "search/", content_template="search")
+
+    def redirects_gen(self, redirects):
+        """Génère les redirections statiques déclarées dans le YAML du site."""
+        if not redirects:
+            return 0
+
+        changed = 0
+        for source, destination in redirects.items():
+            source_path = str(source).split('?', 1)[0].strip('/')
+            destination = str(destination).strip()
+            if (
+                not source_path
+                or not destination
+                or '..' in source_path.split('/')
+            ):
+                raise ValueError(f"Redirection invalide : {source} → {destination}")
+
+            destination_path = destination.split('?', 1)[0].strip('/')
+            if (
+                not destination.startswith(('http://', 'https://'))
+                and source_path.casefold() == destination_path.casefold()
+            ):
+                raise ValueError(
+                    "Redirection impossible sur un système de fichiers "
+                    f"insensible à la casse : {source} → {destination}"
+                )
+
+            for template in self.templates:
+                if destination.startswith(('http://', 'https://')):
+                    canonical = destination
+                else:
+                    canonical = (
+                        template['domain'].rstrip('/')
+                        + '/'
+                        + destination.lstrip('/')
+                    )
+
+                escaped_destination = html.escape(destination, quote=True)
+                escaped_canonical = html.escape(canonical, quote=True)
+                script_destination = json.dumps(destination, ensure_ascii=False)
+                redirect_html = f'''<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <link rel="canonical" href="{escaped_canonical}">
+  <meta http-equiv="refresh" content="0; url={escaped_destination}">
+  <title>Redirection</title>
+  <script>window.location.replace({script_destination});</script>
+</head>
+<body>
+  <p>Cette page a changé d’adresse. <a href="{escaped_destination}">Continuer</a>.</p>
+</body>
+</html>'''
+                if self.save(template, redirect_html, source_path):
+                    changed += 1
+
+        return changed
 
 
     def save(self, template, html, dir_path, file_name="index.html", context=None):

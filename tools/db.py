@@ -415,6 +415,22 @@ class Db:
         except Exception as e:
             return False
 
+    def un_update_books(self):
+        """Force la régénération de tous les livres du site courant."""
+        try:
+            c = self.conn.cursor()
+            c.execute(
+                '''UPDATE posts SET updated = TRUE
+                   WHERE type = ? AND site = ? AND updated = FALSE''',
+                (2, self.site)
+            )
+            count = c.rowcount
+            self.conn.commit()
+            self.updated_posts += count
+            return count
+        except Exception:
+            return 0
+
     def updated_tag(self, tag):
         try:
             query = '''UPDATE tags

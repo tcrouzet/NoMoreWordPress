@@ -236,7 +236,7 @@ h4 { font-size: var(--heading-4); }
 }
 .home-choice-buttons {
   max-width: 70rem;
-  margin: 2.5rem auto 0;
+  margin: 2.5rem auto;
   padding: 0 var(--gutter);
   display: flex;
   flex-wrap: wrap;
@@ -246,16 +246,19 @@ h4 { font-size: var(--heading-4); }
 .home-choice-buttons + h2 {
   margin-top: clamp(2.5rem, 5vw, 4rem);
 }
-.home-choice-button {
+.home-choice-buttons .home-choice-button {
   min-width: 10rem;
   padding: 1rem 1.5rem;
   border: 1px solid var(--ink);
+  color: var(--ink);
   font: 500 .78rem/1 var(--mono);
   letter-spacing: .08em;
   text-align: center;
+  text-decoration: none;
+  text-underline-offset: 0;
   text-transform: uppercase;
 }
-.home-choice-button:hover {
+.home-choice-buttons .home-choice-button:hover {
   color: var(--paper);
   background: var(--ink);
 }
@@ -656,6 +659,28 @@ h4 { font-size: var(--heading-4); }
 .home-editorial blockquote a:hover {
   color: inherit;
   background: transparent;
+}
+.prose blockquote .quote-action,
+.home-editorial blockquote .quote-action {
+  display: block;
+  margin-top: 2rem;
+}
+.prose blockquote a.quote-button,
+.home-editorial blockquote a.quote-button {
+  display: inline-block;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--ink);
+  color: var(--paper);
+  background: var(--ink);
+  font: 500 .78rem/1 var(--mono);
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.prose blockquote a.quote-button:hover,
+.home-editorial blockquote a.quote-button:hover {
+  color: var(--ink);
+  background: var(--paper);
 }
 .prose blockquote {
   width: 100vw;
