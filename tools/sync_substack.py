@@ -1,4 +1,5 @@
 import subprocess
+import re
 import socket
 import sys
 import time
@@ -48,9 +49,35 @@ class SubstackEditor:
             listener.bind(("127.0.0.1", 0))
             return listener.getsockname()[1]
 
+    def stop_profile_chrome(self):
+        """Arrête uniquement Chrome lancé avec le profil dédié à Substack."""
+        profile = self.config["playwright_profile"]
+        subprocess.run(
+            ["pkill", "-TERM", "-f", profile],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            running = subprocess.run(
+                ["pgrep", "-f", profile],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if running.returncode != 0:
+                return
+            time.sleep(.1)
+
     def start_chrome(self):
         if not self.CHROME.is_file():
             raise SystemExit(f"Google Chrome introuvable : {self.CHROME}")
+
+        # Chrome réutilise sinon une ancienne instance ouverte avec ce profil et
+        # ignore le nouveau port de débogage. Cette instance est exclusivement
+        # réservée à l'automatisation Substack.
+        self.stop_profile_chrome()
 
         port = self.free_port()
         self.chrome_process = subprocess.Popen([
@@ -63,12 +90,16 @@ class SubstackEditor:
         ])
         self.playwright = sync_playwright().start()
         endpoint = f"http://127.0.0.1:{port}"
-        deadline = time.monotonic() + 15
+        deadline = time.monotonic() + 30
         while True:
             try:
                 self.browser = self.playwright.chromium.connect_over_cdp(endpoint)
                 break
             except PlaywrightError:
+                if self.chrome_process.poll() is not None:
+                    raise SystemExit(
+                        "Chrome Substack s’est arrêté avant la connexion Playwright."
+                    )
                 if time.monotonic() >= deadline:
                     raise SystemExit("Impossible de se connecter au Chrome Substack.")
                 time.sleep(.25)
@@ -87,6 +118,16 @@ class SubstackEditor:
             self.playwright = None
         self.context = None
         self.page = None
+        if self.chrome_process is not None:
+            if self.chrome_process.poll() is None:
+                self.chrome_process.terminate()
+                try:
+                    self.chrome_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self.chrome_process.kill()
+                    self.chrome_process.wait(timeout=5)
+            self.chrome_process = None
+        self.stop_profile_chrome()
 
     def login_form_visible(self, timeout=4000):
         if any(part in self.page.url.lower() for part in ("sign-in", "signin", "login")):
@@ -165,24 +206,25 @@ class SubstackEditor:
 
     def paste_title(self, title):
         title_field = self.page.locator("#post-title")
-        self.context.grant_permissions(
-            ["clipboard-read", "clipboard-write"],
-            origin=self.substack_url,
-        )
-        self.page.evaluate(
-            "title => navigator.clipboard.writeText(title)",
-            title,
-        )
-        title_field.click()
-        title_field.press("Meta+A")
-        title_field.press("Meta+V")
+        title = str(title)
+        try:
+            title_field.fill(title)
+        except PlaywrightError:
+            title_field.click()
+            title_field.press("Meta+A")
+            title_field.press("Backspace")
+            title_field.press_sequentially(title, delay=10)
         self.page.wait_for_timeout(300)
 
         inserted_title = title_field.evaluate(
             "field => field.value ?? field.innerText ?? field.textContent"
         )
-        if inserted_title.strip() != title.strip():
-            raise RuntimeError("Le collage du titre Substack a échoué.")
+        normalize = lambda value: re.sub(r'\s+', ' ', value).strip()
+        if normalize(inserted_title) != normalize(title):
+            raise RuntimeError(
+                "La saisie du titre Substack a échoué : "
+                f"attendu={title!r}, obtenu={inserted_title!r}"
+            )
 
     def open_draft(self, post):
         generated, html = self.prepare(post)

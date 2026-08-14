@@ -4,7 +4,8 @@ from PIL import Image
 import shutil
 from bs4 import BeautifulSoup
 import json
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
+from xml.etree import ElementTree
 import frontmatter as ft
 import tools
 
@@ -29,6 +30,23 @@ def is_upcoming_event(frontmatter):
     if date_only:
         event_end += timedelta(days=1)
     return event_end > datetime.now(timezone.utc)
+
+
+def svg_dimensions(path):
+    """Lit les dimensions d'affichage d'un SVG sans le modifier."""
+    root = ElementTree.parse(path).getroot()
+    view_box = root.get('viewBox')
+    if view_box:
+        values = re.split(r'[\s,]+', view_box.strip())
+        if len(values) == 4:
+            return max(1, round(float(values[2]))), max(1, round(float(values[3])))
+
+    def numeric_dimension(name):
+        value = root.get(name, '')
+        match = re.match(r'\s*([0-9]+(?:\.[0-9]+)?)', value)
+        return max(1, round(float(match.group(1)))) if match else None
+
+    return numeric_dimension('width') or 1, numeric_dimension('height') or 1
 
 
 class Web:
@@ -59,7 +77,7 @@ class Web:
 
     
     def media_target_path(self, export_path, url_media_relatif):
-        return os.path.join( export_path, url_media_relatif.strip("/"))
+        return os.path.join(export_path, unquote(url_media_relatif).strip("/"))
 
     def media_source_path(self, post, media_src_file):
         try:
@@ -72,7 +90,9 @@ class Web:
                 return None
             base_dir_name =  post['path_md']
             dirname = os.path.dirname(base_dir_name)
-            return os.path.join( self.config['vault'], dirname, media_src_file )
+            return os.path.join(
+                self.config['vault'], dirname, unquote(media_src_file)
+            )
         except Exception as e:
             print(f"Media source path {e}")
             print(f"{media_src_file} {base_dir_name} {dirname}")
@@ -142,7 +162,9 @@ class Web:
                 media_target_path = self.media_target_path(template['export'], url_media_relatif)
                 # print("target:", media_target_path)
 
-                if media_src_file.endswith('.mp3'):
+                extension = os.path.splitext(media_src_file)[1].lower()
+
+                if extension == '.mp3':
                     self.copy_if_needded(media_source_path, media_target_path)
                     template_image = {
                         "target_path": media_target_path,
@@ -151,13 +173,28 @@ class Web:
                         "legend": legend
                     }
 
-                elif media_src_file.endswith('.pdf'):
+                elif extension == '.pdf':
                     self.copy_if_needded(media_source_path, media_target_path)
                     template_image = {
                         "target_path": media_target_path,
                         "format": "application/pdf",
                         "url": url_media_relatif,
                         "legend": legend
+                    }
+
+                elif extension == '.svg':
+                    width, height = svg_dimensions(media_source_path)
+                    self.copy_if_needded(media_source_path, media_target_path)
+                    template_image = {
+                        "target_path": media_target_path,
+                        "width": width,
+                        "height": height,
+                        "format": "image/svg+xml",
+                        "url": url_media_relatif,
+                        "url_medium": '',
+                        "url_small": '',
+                        "jpeg": url_media_relatif,
+                        "legend": legend,
                     }
 
                 else:
@@ -373,10 +410,18 @@ class Web:
                     continue
                 if img_data:
 
-                    alt_text = img.get('alt','')
+                    alt_text = img.get('alt', '')
+                    width_percent = None
+                    width_match = re.search(r'(?:^|\s)(\d{1,3})%\s*$', alt_text)
+                    if width_match:
+                        requested_width = int(width_match.group(1))
+                        if 1 <= requested_width <= 100:
+                            width_percent = requested_width
+                            alt_text = alt_text[:width_match.start()].rstrip()
                     is_background = alt_text.endswith(' background')
 
                     if img_data["format"].startswith("image/"):
+                        is_svg = img_data["format"] == "image/svg+xml"
 
                         if img_data['width'] <= img_data['height'] or alt_text.endswith(" poster"):
                             myclass = 'portrait'
@@ -384,7 +429,7 @@ class Web:
                         else:
                             myclass = ''
                             myclasslegend = ''
-                        if img_data['width'] < 1024:
+                        if img_data['width'] < 1024 and not is_svg:
                             myclass += ' portrait'
                             myclasslegend = 'legend-center'
 
@@ -417,13 +462,21 @@ class Web:
                             'width': img_data['width'],
                             'height': img_data['height'],
                         }
+                        if width_percent:
+                            img_attrs['style'] = (
+                                'width:100%;'
+                                f'max-width:{width_percent}%;'
+                                'height:auto;'
+                                'margin-left:auto;margin-right:auto'
+                            )
 
                         #Not small web
                         if template['sizes']:
                             img_attrs['loading'] = 'lazy'
                             img_attrs['decoding'] = 'async'
-                            img_attrs['srcset'] = ', '.join(srcset_parts)
-                            img_attrs['sizes'] = template['sizes']
+                            if not is_svg:
+                                img_attrs['srcset'] = ', '.join(srcset_parts)
+                                img_attrs['sizes'] = template['sizes']
 
                         if myclass:
                             img_attrs['class'] = myclass
