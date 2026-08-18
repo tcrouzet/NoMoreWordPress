@@ -201,6 +201,36 @@ article [itemprop="articleBody"] hr{
   max-width: var(--max-width);
 }
 
+article [itemprop="articleBody"] table {
+  display: block;
+  width: calc(100% - 2 * var(--page-gutter));
+  max-width: var(--max-width-wide);
+  margin: 1.6rem auto;
+  border-collapse: collapse;
+  overflow-x: auto;
+}
+article [itemprop="articleBody"] th,
+article [itemprop="articleBody"] td {
+  padding: .55rem .7rem;
+  border-bottom: 1px solid var(--color-medium);
+  text-align: left;
+  vertical-align: top;
+}
+article [itemprop="articleBody"] th:not(:first-child),
+article [itemprop="articleBody"] td:not(:first-child) {
+  white-space: nowrap;
+  text-align: right;
+}
+article [itemprop="articleBody"] .footnote {
+  max-width: var(--max-width);
+  margin: 2rem auto 0;
+  padding: 0 var(--page-gutter);
+  font-size: .85em;
+}
+article [itemprop="articleBody"] .footnote ol { padding-left: 1.5rem; }
+article [itemprop="articleBody"] .footnote li,
+article [itemprop="articleBody"] .footnote p { font-size: .9rem; }
+
 iframe{
   margin:auto;
   padding:1rem 0;

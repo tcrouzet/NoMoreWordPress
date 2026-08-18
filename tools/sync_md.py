@@ -91,6 +91,20 @@ def sync_files(src, dst):
     pbar.close()
 
 
+def is_published_markdown(path):
+    """Indique si un Markdown doit être publié dans le dépôt miroir."""
+    if "/comments/" in path:
+        return True
+    content = tools.read_file(path)
+    return bool(
+        content
+        and re.search(
+            r'#\d{4}-\d{1,2}-\d{1,2}-\d{1,2}h\d{1,2}',
+            content,
+        )
+    )
+
+
 def clean_files(src, dst, preserved_files):
 
     # Étape 2: Nettoyer la destination
@@ -109,8 +123,13 @@ def clean_files(src, dst, preserved_files):
             if file_name.startswith(".") or rel_path.startswith("."):
                 continue
 
-            if os.path.exists( os.path.join(src,rel_path) ):
-                continue
+            source_path = os.path.join(src, rel_path)
+            if os.path.exists(source_path):
+                if not (
+                    file_name.endswith('.md')
+                    and not is_published_markdown(source_path)
+                ):
+                    continue
 
             os.remove(dst_path)
             print(f"Removed {dst_path}")

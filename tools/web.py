@@ -323,7 +323,11 @@ class Web:
         # print(thumb['jpeg'])
         # print(jpeg_path)
 
-        if template['jpeg_thumb'] and image['format'] == "image/webp" and not os.path.exists(jpeg_path) :
+        if (
+            template['jpeg_thumb']
+            and image['format'] in ("image/webp", "image/avif")
+            and not os.path.exists(jpeg_path)
+        ):
             # Make jpeg file
             try:
 

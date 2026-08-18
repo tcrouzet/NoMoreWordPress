@@ -4,6 +4,7 @@ import re
 import json
 import html
 import shlex
+import shutil
 import datetime
 from bs4 import BeautifulSoup
 from datetime import date
@@ -462,7 +463,7 @@ class Db:
             return False
 
     def remove_exported_post(self, post):
-        """Supprime le fichier HTML généré pour un post disparu du vault."""
+        """Supprime tous les fichiers générés pour un post dépublié."""
         url = (post['url'] or '').strip()
         if not url:
             return
@@ -472,26 +473,40 @@ class Db:
             relative_url = url.lstrip('/')
             if relative_url.endswith('.html'):
                 target = os.path.abspath(os.path.join(export_root, relative_url))
+                if os.path.commonpath((export_root, target)) != export_root:
+                    print(f"Refuse deleting outside export: {target}")
+                    continue
+                if os.path.isfile(target):
+                    os.remove(target)
+                    print(f"Deleted export: {target}")
             else:
-                target = os.path.abspath(
-                    os.path.join(export_root, relative_url, 'index.html')
-                )
+                target = os.path.abspath(os.path.join(export_root, relative_url))
+                if (
+                    target == export_root
+                    or os.path.commonpath((export_root, target)) != export_root
+                ):
+                    print(f"Refuse deleting outside export: {target}")
+                    continue
+                if os.path.isdir(target):
+                    shutil.rmtree(target)
+                    print(f"Deleted export directory: {target}")
 
-            if os.path.commonpath((export_root, target)) != export_root:
-                print(f"Refuse deleting outside export: {target}")
-                continue
-
-            if os.path.isfile(target):
-                os.remove(target)
-                print(f"Deleted export: {target}")
-
-                directory = os.path.dirname(target)
-                while directory != export_root:
-                    try:
-                        os.rmdir(directory)
-                    except OSError:
-                        break
-                    directory = os.path.dirname(directory)
+    def remove_exports_replaced_by_reset(self, previous_posts):
+        """Nettoie les anciennes URL après reconstruction du site courant."""
+        current_rows = self.conn.execute(
+            'SELECT path_md, url FROM posts WHERE site = ?',
+            (self.site,)
+        ).fetchall()
+        current_urls = {row['path_md']: row['url'] for row in current_rows}
+        deleted_count = 0
+        for post in previous_posts:
+            current_url = current_urls.get(post['path_md'])
+            if current_url != post['url']:
+                self.remove_exported_post(post)
+            if current_url is None:
+                deleted_count += 1
+        self.deleted_posts += deleted_count
+        return deleted_count
 
     def delete_missing_posts(self, present_paths):
         """Supprime les posts du site courant dont le Markdown n'existe plus."""
@@ -1326,7 +1341,13 @@ class Db:
     def to_html(self, content):
         content = markdown.markdown(
             content, 
-            extensions=['fenced_code', 'pymdownx.mark', 'pymdownx.tilde'],
+            extensions=[
+                'fenced_code',
+                'tables',
+                'footnotes',
+                'pymdownx.mark',
+                'pymdownx.tilde',
+            ],
             extension_configs={
                 'fenced_code': {
                     'lang_prefix': ''  # Supprime le préfixe de langage
@@ -1694,7 +1715,14 @@ class Db:
         if not os.path.isdir(root_dir):
             raise FileNotFoundError(f"Vault directory not found: {root_dir}")
 
-        self.create_tables(reset)
+        self.create_tables(reset=False)
+        previous_posts = []
+        if reset:
+            previous_posts = self.conn.execute(
+                'SELECT id, path_md, url FROM posts WHERE site = ?',
+                (self.site,)
+            ).fetchall()
+            self.reset_site()
 
         total = self.count_md_files(root_dir)
         pbar = logs.DualOutput.dual_tqdm(total=total, desc='Markdonw:')
@@ -1708,11 +1736,11 @@ class Db:
                 if file.endswith('.md'):
                     md_source_path = os.path.join(root, file)
                     path_md = os.path.relpath(md_source_path, root_dir)
-                    present_paths.add(path_md)
                     pub_update = round(os.path.getmtime(md_source_path))
 
                     existiting_post = self.existing_post(path_md)
                     if existiting_post and pub_update <= existiting_post['pub_update']:
+                        present_paths.add(path_md)
                         continue
 
                     #print(root,file,root.replace(root_dir,""))
@@ -1720,6 +1748,8 @@ class Db:
                     if post['pub_date'] == 0:
                         # print("post not ready",post['title'],path_md)
                         continue
+
+                    present_paths.add(path_md)
 
                     status = self.insert_post(post, existiting_post)
                     self.new_posts += status['new']
@@ -1733,6 +1763,8 @@ class Db:
                 pbar.update(1)
 
         self.delete_missing_posts(present_paths)
+        if reset:
+            self.remove_exports_replaced_by_reset(previous_posts)
         self.sync_config_tags()
         self.conn.execute(
             '''DELETE FROM tags WHERE site = ? AND NOT EXISTS (

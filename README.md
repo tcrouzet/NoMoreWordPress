@@ -4,7 +4,7 @@ Création d'un site à partir d'une hiérarchie de fichiers markdown.
 
 Le site est décrit dans site.yml (renommer le fichier site_model.yml et modifier les paramètres).
 
-Son look est défit par un template dans le dossier templates.
+Son look est défini par un template dans le dossier templates.
 
 ### wp_export.py
 
@@ -27,4 +27,18 @@ python3 ./tools/gen.py "727"
 ./gen.sh 727
 ```
 
-### sync.py
+### sync_md.sh
+
+Synchronise le miroir Markdown configuré par `export_github_md` dans
+`sites/<site>.yml`. Ce script peut être lancé indépendamment de la génération
+du site : il recopie les fichiers publiés et supprime du miroir ceux qui ne
+sont plus publiés (par exemple après la suppression du tag de publication).
+
+```sh
+./sync_md.sh tcrouzet
+./sync_md.sh 727
+```
+
+Le site doit définir `export_github_md` dans son fichier YAML. Contrairement à
+`gen.sh`, cette commande est utile lorsque la base n'a pas détecté de
+modification mais que le miroir Markdown doit tout de même être nettoyé.
