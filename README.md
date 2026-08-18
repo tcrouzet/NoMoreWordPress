@@ -16,23 +16,67 @@ NoMoreWordPress/
 └── sync_md.sh             synchronisation autonome du miroir Markdown
 ```
 
-Le vault suit une hiérarchie année/mois pour les billets horodatés :
+Le vault suit une hiérarchie année/mois pour les billets horodatés. Voici une
+structure complète (tous les éléments sont facultatifs, sauf les fichiers que
+vous utilisez réellement) :
 
 ```text
 vault/
-├── 2026/08/mon-billet.md
-├── 727.md                 page à la racine du site
-├── page/                  pages non horodatées (selon `pages`)
-├── books/                 autre dossier de pages (selon `pages`)
-├── _i/                    images référencées par les Markdown
-├── static/                fichiers copiés tels quels (si configuré)
-└── footer.md              contenu du menu/footer (si utilisé par le template)
+├── home.md                page d'accueil (gérée spécialement)
+├── footer.md              footer et source éventuelle du menu haut
+├── contact.md             page racine, donc page non horodatée
+├── 727.md                 page racine, donc page non horodatée
+├── 2026/
+│   └── 08/
+│       ├── billet.md      billet de journal
+│       ├── autre.md       billet en attente de publication possible
+│       └── _i/             images propres à ce mois (optionnel)
+├── page/                  pages non horodatées (dossier déclaré dans `pages`)
+│   └── access.md
+├── books/                 livres (type spécifique)
+│   └── mon-livre.md
+├── routes/                routes (type spécifique)
+│   └── g727.md
+├── _i/                    images partagées ou placées à la racine du vault
+├── static/                fichiers copiés tels quels vers export/static/
+└── comments/              commentaires associés (si `vault_comments` est défini)
 ```
 
-Les chemins d’images sont relatifs au fichier Markdown, par exemple
-`![Paysage](_i/paysage.webp)`. Les pages placées dans les dossiers listés par
-`pages` sont traitées comme pages, et non comme billets datés. Les fichiers
-Markdown sans date de publication ne sont pas envoyés dans le miroir
+### Comment un fichier est classé
+
+Le chemin relatif du fichier détermine son type :
+
+| Emplacement | Type généré | Comportement |
+| --- | --- | --- |
+| `AAAA/MM/fichier.md` | billet (`type: 0`) | URL datée, indexé dans le journal si publié. |
+| Racine du vault (`contact.md`, `727.md`, etc.) | page (`type: 1`) | URL de page ou `permalink` du front matter. |
+| Un dossier listé dans `pages` | page (`type: 1`) | Page non horodatée, même si son nom ressemble à un billet. |
+| `books/` | livre (`type: 2`) | Gabarit et index bibliographique éventuels. |
+| `routes/` | route (`type: 4`) | Gabarit et rubriques de routes. |
+| `home.md` | accueil | Page spéciale de la configuration. |
+| `footer.md` | contenu global | Non affiché comme article ; alimente le footer et le menu configuré. |
+
+Un dossier doit être ajouté à `pages` lorsqu’il contient des pages non
+horodatées. Les fichiers à la racine sont déjà reconnus comme pages ; il n’est
+donc pas nécessaire de les ajouter à `pages`. Le nom et le chemin peuvent être
+différents de l’URL finale : utiliser `permalink` dans le front matter pour
+imposer une URL précise.
+
+Les chemins d’images sont relatifs au fichier Markdown. Ainsi, depuis
+`2026/08/billet.md`, `_i/photo.webp` désigne `2026/08/_i/photo.webp` ; depuis
+une page à la racine, `_i/photo.webp` désigne `vault/_i/photo.webp`. Une image
+peut aussi être placée dans un dossier commun si le chemin relatif est adapté.
+Les médias ne sont pas des billets et ne doivent pas recevoir de tag de
+publication.
+
+`comments/` n’est parcouru que lorsqu’un `vault_comments` est configuré. Les
+fichiers de `static/` ne sont pas interprétés : ils sont copiés tels quels dans
+le dossier cible lorsque `static_folder` est défini.
+
+Un fichier Markdown peut exister dans le vault sans être publié. Pour un
+billet, la publication est activée par le tag date décrit plus bas ; une page
+peut être générée selon son emplacement, son front matter et les règles du
+template. Les fichiers Markdown non publiés ne sont pas copiés dans le miroir
 `export_github_md`.
 
 ## Configuration d’un site
@@ -147,6 +191,20 @@ permet :
 Le texte avant `thumb` ou `background` devient la légende interne. Les images
 sont redimensionnées à la génération selon les options du template ; leur
 rapport largeur/hauteur est conservé.
+
+Pour limiter l’affichage d’une image à une fraction de la largeur disponible,
+terminer son texte alternatif par un pourcentage entre 1 et 100 :
+
+```markdown
+![Carte du parcours 70%](_i/carte.webp)
+```
+
+Le générateur retire alors `70%` de la légende et applique une largeur maximale
+de `70%` à la figure, tout en conservant les proportions de l’image. Cette
+mise à l’échelle concerne l’affichage dans la page ; elle ne modifie pas le
+fichier source ni les versions redimensionnées produites pour les autres
+usages. Le suffixe peut être combiné avec `background` ou `poster` lorsque le
+template les prend en charge, par exemple `Paysage background 80%`.
 
 Les formats Markdown usuels sont acceptés, notamment les tableaux, les notes
 de bas de page et les blocs de code. Les balises éditoriales propres au site
