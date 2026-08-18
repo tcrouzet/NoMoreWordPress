@@ -1,55 +1,130 @@
-build: 1 #O: No update 1:Update new post only 2:update from scratch
-version: 0 #0 dynamic random version for testing only (no minification)
+# Copier ce fichier vers sites/<site>.yml puis adapter les valeurs.
+# Les chemins du vault et de l'export sont propres à chaque machine.
 
-vault: "/Users/thierrycrouzet/Documents/ObsidianLocal/text/tcrouzet"
+build: 1 # 0: inchangé, 1: nouveaux/modifiés, 2: tout, 3: base + site depuis zéro
+version: 0 # 0: cache dynamique pour tests locaux ; incrémenter en production
+
+vault: "/chemin/vers/ObsidianLocal/text/site"
 vault_img: "_i/"
-# Dossier copié tel quel vers le même dossier de chaque export actif
-# Exemple : vault/static/ vers export/static/
-# static_folder: "static"
-export: "/Users/thierrycrouzet/Documents/static"
-images_dir: "/images_tc/"
+vault_comments: "" # dossier des commentaires, facultatif
+static_folder: "static" # copié tel quel vers export/static/, facultatif
+export: "/chemin/vers/export"
+images_dir: "/images/"
 feeds_dir: "/feeds/"
-title: "Thierry Crouzet"
-domain: "https://tcrouzet.com/"
-author: "Thierry Crouzet"
-email: tc@tcrouzet.com
-template: "tcrouzet"
-analytics: False
 
-# Rubriques optionnelles utilisées par le template de la page d'accueil
-home_tags:
-  carnet: carnets
-  bike: velo
-  digest: digest
+title: "Nom du site"
+description: "Description générale du site."
+home_title: "Titre de la page d'accueil"
+canonical_domain: "https://example.org/"
+# domain est accepté pour compatibilité avec les anciennes configurations.
+domain: "https://example.org/"
+author: "Nom de l'auteur"
+author_url: "https://example.org/auteur/"
+email: "contact@example.org"
+analytics: false
 
-# Listes des dossiers où sont les pages qui se retrouvent à la racine du site
+template: "nom-du-template" # ancienne forme, remplacée de préférence par templates
+templates:
+  - name: "nom-du-template"
+    skip: false
+    domain: "https://example.org/"
+    export: "/chemin/vers/export"
+    image_max_size: 2400
+    image_min_size: 300
+    sizes: "(min-width: 60rem) 60rem, 100vw"
+    infinite_scroll: false
+    post_per_page: 0
+    jpeg_thumb: true
+    inline_assets: false
+    comments: 0 # nombre de jours pendant lesquels les commentaires sont ouverts
+    poster: 0 # 1: retirer le thumb du corps et le placer sous le titre
+    code_blocks: "" # ex. testimonials
+    background_images: "" # ex. parallax
+    sync:
+      # - name: github
+      #   repo_name: "nom-du-repo"
+      # - name: aws
+      #   bucket_name: "example.org"
+      #   distribution_id: "XXXXXXXX"
+
+# Pages non horodatées, publiées selon leur chemin/permalink.
 pages:
- - "page"
- - "books"
+  - "page"
+  - "books"
 
+# Rubriques et URL générées. Le slug est le tag utilisé dans les Markdown.
 tags:
-  series:
-    title: "Séries"
-  book:
-    title: "Bibliographie"
-    url: "/bibliographie"
-  carnets:
-    title: "Carnets"
-    url: "carnet-de-route"
-  velo:
-    title: "Vélo"
-    url: "borntobike"
-  ecriture:
-    title: "Écriture"
-  edition:
-    title: "Édition"
-  netlitterature:
-    title: "NetLittérature"
-  netculture:
-    title: "NetCulture"
-  cuisine:
-    title: "Cuisine"
+  blog:
+    title: "Journal"
+    url: "journal"
 
-# AWS sync
-bucket_name: "tcrouzet.com"
-distribution_id: "XXX"
+# Rubriques particulières de la page d'accueil.
+home_tags: {}
+home_exclude: []
+header_menu_filter: "bold"
+# Le contenu est lu automatiquement depuis vault/footer.md.
+footer_content: ""
+no_export:
+  - "comments"
+  - "notes"
+
+# Redirections d'anciennes URL vers les nouvelles.
+redirects: {}
+
+# Formulaire de contact, facultatif.
+contact:
+  text: "Une question, une proposition…"
+  section: "contact"
+  action: "https://formspree.io/f/xxxxxxxx"
+  name: "Nom"
+  email: "Email"
+  message: "Message"
+  subject: "Contact"
+  submit: "Envoyer"
+
+# Valeurs par défaut pour les données structurées Event.
+events:
+  location: {}
+  organizer: {}
+  price: ""
+  priceCurrency: "EUR"
+
+# Diaporamas géolocalisés facultatifs.
+diaporamas:
+  grid_km: 25
+  types:
+    - "vtt"
+    - "gravel"
+
+# Miroir Markdown et export Gemini, facultatifs.
+export_github_md: ""
+gemini_export: ""
+github_raw: ""
+
+# Synchronisations de publication : à définir dans chaque template si besoin.
+bucket_name: ""
+distribution_id: ""
+REPO_OWNER: ""
+# Ne jamais versionner un token réel dans ce fichier.
+GITHUB_TOKEN: ""
+
+# ---------------------------------------------------------------------------
+# Import WordPress historique uniquement (sans utilité pour une génération
+# Markdown normale). Laisser vide si aucune migration n'est prévue.
+IMG_SUB_DIR: "_i"
+WP_DB_HOST: "localhost"
+WP_DB_PORT: "8889"
+WP_DB_PASSWORD: ""
+WP_DB_USER: ""
+WP_DB_PREFIX: ""
+WP_DB_NAME: ""
+OLD_IMG_DIR: ""
+EXCLUDE: []
+
+# Intégrations éditoriales facultatives.
+playwright_profile: ""
+vault_us: ""
+substack_fr: ""
+substack_727: ""
+substack_us: ""
+medium: ""
