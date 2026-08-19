@@ -24,14 +24,14 @@ vous utilisez réellement) :
 vault/
 ├── home.md                page d'accueil (gérée spécialement)
 ├── footer.md              footer et source éventuelle du menu haut
-├── contact.md             page racine, donc page non horodatée
-├── 727.md                 page racine, donc page non horodatée
+├── contact.md             page racine (à publier avec un tag date)
+├── 727.md                 page racine (à publier avec un tag date)
 ├── 2026/
 │   └── 08/
 │       ├── billet.md      billet de journal
 │       ├── autre.md       billet en attente de publication possible
 │       └── _i/             images propres à ce mois (optionnel)
-├── page/                  pages non horodatées (dossier déclaré dans `pages`)
+├── page/                  pages (dossier déclaré dans `pages`)
 │   └── access.md
 ├── books/                 livres (type spécifique)
 │   └── mon-livre.md
@@ -49,18 +49,24 @@ Le chemin relatif du fichier détermine son type :
 | Emplacement | Type généré | Comportement |
 | --- | --- | --- |
 | `AAAA/MM/fichier.md` | billet (`type: 0`) | URL datée, indexé dans le journal si publié. |
-| Racine du vault (`contact.md`, `727.md`, etc.) | page (`type: 1`) | URL de page ou `permalink` du front matter. |
-| Un dossier listé dans `pages` | page (`type: 1`) | Page non horodatée, même si son nom ressemble à un billet. |
+| Racine du vault (`contact.md`, `727.md`, etc.) | page (`type: 1`) | URL de page ou `permalink` du front matter ; publication seulement avec un tag date. |
+| Un dossier listé dans `pages` | page (`type: 1`) | Page non horodatée en interne, mais non publiée sans tag date. |
 | `books/` | livre (`type: 2`) | Gabarit et index bibliographique éventuels. |
 | `routes/` | route (`type: 4`) | Gabarit et rubriques de routes. |
 | `home.md` | accueil | Page spéciale de la configuration. |
 | `footer.md` | contenu global | Non affiché comme article ; alimente le footer et le menu configuré. |
 
-Un dossier doit être ajouté à `pages` lorsqu’il contient des pages non
-horodatées. Les fichiers à la racine sont déjà reconnus comme pages ; il n’est
-donc pas nécessaire de les ajouter à `pages`. Le nom et le chemin peuvent être
-différents de l’URL finale : utiliser `permalink` dans le front matter pour
-imposer une URL précise.
+Un dossier doit être ajouté à `pages` lorsqu’il contient des fichiers qui
+doivent être classés comme pages plutôt que comme billets. Les fichiers à la
+racine sont déjà reconnus comme pages ; il n’est donc pas nécessaire de les
+ajouter à `pages`. Le nom et le chemin peuvent être différents de l’URL finale :
+utiliser `permalink` dans le front matter pour imposer une URL précise.
+
+Le classement « page » ne déclenche pas à lui seul la publication. Toute page
+destinée au site doit porter un tag date `#YYYY-M-D-HhMM`, comme un billet. Une
+page sans ce tag reste dans le vault et n’est pas publiée. `footer.md` est une
+exception technique : il sert à construire le footer et le menu, sans être une
+page publique. `home.md` est également traité par la génération de l’accueil.
 
 Les chemins d’images sont relatifs au fichier Markdown. Ainsi, depuis
 `2026/08/billet.md`, `_i/photo.webp` désigne `2026/08/_i/photo.webp` ; depuis
@@ -165,8 +171,9 @@ ce tag date, le Markdown peut être traité localement mais n’est pas copié d
 `export_github_md`. Retirer le tag date retire donc le fichier du miroir lors
 de la synchronisation.
 
-Les pages non horodatées peuvent également avoir des tags ; elles sont
-classées selon leur dossier ou leur `permalink`.
+Les pages suivent la même règle de publication : elles doivent aussi porter un
+tag date pour être publiées. Leur classement interne dépend ensuite du dossier
+ou de leur `permalink`.
 
 ## Images, thumb et arrière-plans
 
