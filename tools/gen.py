@@ -353,7 +353,10 @@ site_changed = (
     or full_build
 )
 
-if version > 0 and site_changed:
+# build=0 est un mode local sans synchronisation distante. Les fichiers
+# statiques peuvent éventuellement être préparés dans l'export, mais aucune
+# publication Git/AWS ni synchronisation Markdown/Gemini ne doit être lancée.
+if int(config.get('build', 0)) > 0 and version > 0 and site_changed:
     for template in config['templates']:
 
         sync = template['sync'][0]
