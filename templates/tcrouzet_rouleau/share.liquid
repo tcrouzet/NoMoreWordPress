@@ -1,0 +1,43 @@
+{% assign now = 'now' | date: '%s' | plus: 0 %}
+{% assign post_age_days = now | minus: post.pub_date | divided_by: 86400 %}
+{% assign comments_open = post_age_days < template.comments %}
+
+<div>
+  <input type="checkbox" id="com-{{ post.id }}" class="com-toggle" hidden>
+  <label for="com-{{ post.id }}" class="icon_com" title="Commenter"></label>
+  
+  <button class="icon_share" onclick="share()" title="Partager"></button>
+    
+  <a class="icon_money" href="/page/me-soutenir/" title="Me soutenir"></a>
+  
+  <div class="comments">
+
+    {% if post.comments %}{{ post.comments }}{% endif %}
+
+    <form method="POST" action="https://formspree.io/f/mgebvkwn">
+      <input type="hidden" name="postUrl" value="{{ post.url }}">
+      <input type="hidden" name="postTitle" value="{{ post.title }}">
+
+      <input aria-label="Email" autocomplete="on" name="email" type="email" placeholder="Votre email" required>
+      <input aria-label="Nom" autocomplete="on" name="nom" type="text" placeholder="Votre nom" required>  
+      <textarea aria-label="Message" name="message" placeholder="Votre commentaire" required></textarea>
+
+      <fieldset>
+        <legend>Visibilité</legend>
+        <label>
+          <input type="radio" name="messageType" value="private" checked>
+          Privé
+        </label>
+        {% if comments_open %}
+        <label>
+        <input type="radio" name="messageType" value="public">
+          Public (modéré)
+        </label>
+        {% endif %}
+      </fieldset>
+          
+      <button type="submit">Envoyer</button>
+    </form>
+
+  </div>
+</div>

@@ -83,8 +83,6 @@ main{
   margin-top: var(--top-height);
 }
 
-article {margin-bottom: 2rem;}
-
 article header{
   all: revert; 
   padding: 0.5rem var(--page-gutter);
@@ -364,12 +362,8 @@ main[itemtype$="AboutPage"] section h3{
   margin: 0;
 }
 
-footer {text-align: center;}
-
-article > footer {text-align: left;}
-
 /* Footer & Social */
-article > footer > div:first-of-type {
+footer > div:first-of-type {
   display: flex;
   width: 100%;
   max-width: var(--max-width);
@@ -380,9 +374,9 @@ article > footer > div:first-of-type {
   align-items: center;
 }
 
-article > footer > div:first-of-type button,
-article > footer > div:first-of-type a,
-article > footer > div:first-of-type label {
+footer > div:first-of-type button,
+footer > div:first-of-type a,
+footer > div:first-of-type label {
   display: inline;
   width: auto;
   text-align: center;

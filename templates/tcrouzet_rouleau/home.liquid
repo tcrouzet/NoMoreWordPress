@@ -1,0 +1,22 @@
+<main itemscope itemType="https://schema.org/AboutPage">
+  <section>
+    <h2><a href="/bibliographie/">Livres</a></h2>
+    <h3><a href="/books/rush/"><em>Rush</em></a></h3>
+
+    <h2><a href="/blog/">Digressions</a></h2>
+    <h3><a href="{{ post.digressions.url }}">{{ post.digressions.title }}</a></h3>
+
+    <h2><a href="/carnet-de-route/">Carnets</a></h2>
+    <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
+
+    <h2><a href="/tag/digest/">Digest</a></h2>
+    <h3><a href="{{ post.digest.url }}">{{ post.digest.title }}</a></h3>
+
+    <h2><a href="/borntobike/">Vélo</a></h2>
+    <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
+
+    <footer>
+      {{ newsletter }}
+    </footer>
+  </section>
+</main>

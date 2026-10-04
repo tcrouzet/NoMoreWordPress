@@ -69,14 +69,10 @@
 <footer>
     {% if post.type != 3 %}{{ share }}{% endif %}
     {{ newsletter }}
-    {% if post.type == 0 and post.navigation and post.navigation.history and post.navigation.history.size%}
-        <p><a href="{{ post.navigation.url }}">À lire aussi dans {{ post.navigation.title }} :</p>
-        <ul class="history">
-            {% for item in post.navigation.history %}
-                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
-            {% endfor %}
-        </ul>
-    {% endif %}
 </footer>
 
 </article>
+
+{% if post.type == 0 and post.navigation and post.navigation.prev_url != post.navigation.next_url %}
+    <div id="loadMore" data-next-url="{{ post.navigation.prev_url }}" hidden></div>
+{% endif %}

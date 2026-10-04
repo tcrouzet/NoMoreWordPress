@@ -532,62 +532,92 @@ class Web:
 
     def navigation(self, post):
 
-        if not post:
-            raise("Impossible to supercharge - empty post")
+            if not post:
+                raise("Impossible to supercharge - empty post")
 
-        try:
+            try:
 
-            post=dict(post)
+                post=dict(post)
 
-            tagslist = json.loads(post['tagslist'])
+                tagslist = json.loads(post['tagslist'])
 
-            if not tagslist:
-                return {}
-            
-            main_tag = tagslist[0]
+                if not tagslist:
+                    return {}
+                
+                main_tag = tagslist[0]
 
-            tag_posts = self.db.get_posts_by_tag(main_tag['tag_slug'])
-            url_prev_post = ""
-            url_next_post = ""
-            total_posts = len(tag_posts)
-            i = 0
-            # print(total_posts, main_tag['slug'], tagslist)
+                tag_posts = self.db.get_posts_by_tag(main_tag['tag_slug'])
+                url_prev_post = ""
+                url_next_post = ""
+                prev_title = ""
+                next_title = ""
+                total_posts = len(tag_posts)
+                i = 0
+                # print(total_posts, main_tag['slug'], tagslist)
 
-            for i, tag_post in enumerate(tag_posts):
-                # print("OK")
-                # print(dict(tag_post))
-                if post['id'] == tag_post['id']:
-                    # print(i, post['id'], tag_post['id'], total_posts)
-                    if i-1>=0:
-                        # print("next1")
-                        url_next_post =  "/" + tag_posts[i-1]['url'].lstrip("/")
-                    else:
-                        # print("next2")
-                        url_next_post =  "/" + tag_posts[-1]['url'].lstrip("/")
-                    if i==total_posts-1:
-                        # print("prev1")
-                        url_prev_post =  "/" + tag_posts[0]['url'].lstrip("/")
-                    else:
-                        # print("prev2")
-                        url_prev_post =  "/" + tag_posts[i+1]['url'].lstrip("/")
-                    break
+                for i, tag_post in enumerate(tag_posts):
+                    # print("OK")
+                    # print(dict(tag_post))
+                    if post['id'] == tag_post['id']:
+                        # print(i, post['id'], tag_post['id'], total_posts)
+                        if i-1>=0:
+                            # print("next1")
+                            url_next_post =  "/" + tag_posts[i-1]['url'].lstrip("/")
+                            next_title = tag_posts[i-1]['title']
+                        else:
+                            # print("next2")
+                            url_next_post =  "/" + tag_posts[-1]['url'].lstrip("/")
+                            next_title = tag_posts[-1]['title']
+                        if i==total_posts-1:
+                            # print("prev1")
+                            url_prev_post =  "/" + tag_posts[0]['url'].lstrip("/")
+                            prev_title = tag_posts[0]['title']
+                        else:
+                            # print("prev2")
+                            url_prev_post =  "/" + tag_posts[i+1]['url'].lstrip("/")
+                            prev_title = tag_posts[i+1]['title']
+                        break
 
-            r = {"total_posts": total_posts,
-                    "prev_url": url_prev_post,
-                    "next_url": url_next_post,
-                    "order": total_posts-i,
-                    "slug": main_tag['tag_slug'],
-                    "title": main_tag['tag_title'],
-                    "url": main_tag['tag_url']
-                }
-            r_post = {}
-            r_post['navigation'] = r
+                # Historique des 5 derniers articles du même tag, hors post courant
+                # (tag_posts est supposé trié du plus récent au plus ancien)
+                history = []
+                for tag_post in tag_posts:
+                    if tag_post['id'] == post['id']:
+                        continue
+                    history.append({
+                        "title": tag_post['title'],
+                        "url": "/" + tag_post['url'].lstrip("/")
+                    })
+                    if len(history) == 5:
+                        break
 
-            return r_post
-            
-        except Exception as e:
-            print(f"Navigation {e}")
-            exit()    
+                # if len(history) > 0:
+                #     rest = total_posts - len(history)
+                #     if rest >0:
+                #         history.append({
+                #             "title": f"<stong>{rest} autres articles dans " + main_tag['tag_title'] +"</strong>",
+                #             "url": "/" + main_tag['tag_slug'].lstrip("/")
+                #         })
+
+                r = {"total_posts": total_posts,
+                        "prev_url": url_prev_post,
+                        "next_url": url_next_post,
+                        "prev_title": prev_title,
+                        "next_title": next_title,
+                        "order": total_posts-i,
+                        "slug": main_tag['tag_slug'],
+                        "title": main_tag['tag_title'],
+                        "url": main_tag['tag_url'],
+                        "history": history
+                    }
+                r_post = {}
+                r_post['navigation'] = r
+
+                return r_post
+                
+            except Exception as e:
+                print(f"Navigation {e}")
+                exit()
 
     def supercharge_posts(self, template, posts):
         enriched_posts = []
