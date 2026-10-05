@@ -13,6 +13,7 @@ import markdown
 import frontmatter as ft
 import tools
 import logs as logs
+import substack as substack
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -50,6 +51,9 @@ class Db:
         self.new_tags = 0
         self.updated_tags = 0
         self.used_years = set()
+
+        self.substack = substack.Substack(config)
+
 
     def test_init(self):
         return "test db ok"
@@ -100,6 +104,7 @@ class Db:
             type INTEGER CHECK(type IN (0, 1, 2, 4)),  -- 0 post, 1 page, 2 livre, 4 route
             tags TEXT DEFAULT '', -- dic
             url TEXT,
+            substack_url TEXT,
             content TEXT,
             frontmatter TEXT, -- dict json
             description TEXT,
@@ -114,6 +119,15 @@ class Db:
         )'''
 
         c.execute(posts_schema.format(table_name='posts'))
+
+        # Les bases existantes conservent leur schéma avec CREATE TABLE IF NOT
+        # EXISTS. Ajouter les colonnes introduites depuis leur création.
+        post_columns = {
+            row['name']
+            for row in c.execute('PRAGMA table_info(posts)').fetchall()
+        }
+        if 'substack_url' not in post_columns:
+            c.execute('ALTER TABLE posts ADD COLUMN substack_url TEXT')
 
         # Accélère recherche par path_md
         c.execute('''CREATE INDEX IF NOT EXISTS idx_posts_path ON posts(path_md)''')
@@ -242,6 +256,7 @@ class Db:
                         tags = :tags,
                         tagslist = :tagslist,
                         url = :url,
+                        substack_url = :substack_url,
                         pub_date_str = :pub_date_str,
                         pub_update_str = :pub_update_str,
                         path_md = :path_md,
@@ -264,8 +279,8 @@ class Db:
             # New post
 
             query = '''INSERT INTO posts 
-                    (site,  source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  pub_date_str,  pub_update_str,  tagslist,  github,  datelink, comments)
-             VALUES (:site, :source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink, :comments);
+                    (site,  source_path,  title,   path_md,  pub_date,  pub_update,  thumb_path,  thumb_legend,  type,  tags,  content,  frontmatter,  description,  url,  substack_url, pub_date_str,  pub_update_str,  tagslist,  github,  datelink, comments)
+             VALUES (:site, :source_path, :title, :path_md, :pub_date, :pub_update, :thumb_path, :thumb_legend, :type, :tags, :content, :frontmatter, :description, :url, :substack_url, :pub_date_str, :pub_update_str, :tagslist, :github, :datelink, :comments);
             '''
             c.execute(query, post)
             self.conn.commit()
@@ -1684,6 +1699,7 @@ class Db:
                 "frontmatter": frontmatter,
                 "type": post_type,
                 "url": url,
+                "substack_url": "",
                 "pub_date_str": pub_date_str,
                 "pub_update_str": pub_update_str,
                 "path_md": path_md,
@@ -1745,6 +1761,8 @@ class Db:
 
                     #print(root,file,root.replace(root_dir,""))
                     post = self.markdown_extract(md_source_path, path_md, pub_update)
+                    post['substack_url'] = self.substack.guess(post)
+
                     if post['pub_date'] == 0:
                         # print("post not ready",post['title'],path_md)
                         continue

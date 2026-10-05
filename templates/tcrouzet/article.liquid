@@ -67,11 +67,12 @@
 </div>
 
 <footer>
+
     {% if post.type != 3 %}{{ share }}{% endif %}
-    {{ newsletter }}
+
     {% if post.type == 0 and post.navigation and post.navigation.history and post.navigation.history.size%}
-        <p><a href="{{ post.navigation.url }}">À lire aussi dans {{ post.navigation.title }} :</p>
-        <ul class="history">
+        <p>À lire aussi dans <a href="{{ post.navigation.url }}">{{ post.navigation.title }}</a> :</p>
+        <ul>
             {% for item in post.navigation.history %}
                 <li><a href="{{ item.url }}">{{ item.title }}</a></li>
             {% endfor %}

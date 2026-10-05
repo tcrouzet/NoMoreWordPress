@@ -53,9 +53,10 @@ sitemap = sitemap.Sitemap(config, web)
 feed = feed.Feed(config, web)
 
 # testing
-# db.un_updated_by_path("2025/11/social-et-toxique.md")
-# db.un_updated(462)
-# db.un_update_books()
+if config['build'] == 1 and config.get("force_update"):
+    db.un_updated_by_path(config.get("force_update"))
+    # db.un_updated(462)
+    # db.un_update_books()
 
 if config['build'] > 0:
 
