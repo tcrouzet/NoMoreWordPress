@@ -578,26 +578,18 @@ class Web:
                             prev_title = tag_posts[i+1]['title']
                         break
 
-                # Historique des 5 derniers articles du même tag, hors post courant
-                # (tag_posts est supposé trié du plus récent au plus ancien)
+                # Historique : les 5 articles qui suivent "prev" (prev+1, +2, +3, +4, +5)
                 history = []
-                for tag_post in tag_posts:
+                for offset in range(1, 6):
+                    idx = (i + offset) % total_posts
+                    tag_post = tag_posts[idx]
                     if tag_post['id'] == post['id']:
                         continue
                     history.append({
                         "title": tag_post['title'],
                         "url": "/" + tag_post['url'].lstrip("/")
                     })
-                    if len(history) == 5:
-                        break
 
-                # if len(history) > 0:
-                #     rest = total_posts - len(history)
-                #     if rest >0:
-                #         history.append({
-                #             "title": f"<stong>{rest} autres articles dans " + main_tag['tag_title'] +"</strong>",
-                #             "url": "/" + main_tag['tag_slug'].lstrip("/")
-                #         })
 
                 r = {"total_posts": total_posts,
                         "prev_url": url_prev_post,

@@ -60,6 +60,9 @@
 <body>
 
 <header>
+  {% if not post.is_home %}
+    <a href="/" aria-label="Top"></a>
+  {% endif %}
   <a aria-label="Menu" href="/menu/"></a>
   <a aria-label="Accueil"
     href="{% if post.is_home %}/page/informations/{% else %}/{% endif %}"

@@ -1,4 +1,4 @@
-<div>
+<menu>
 {% if post.substack_url and post.substack_url.size>0 %}
   {% comment %} {% assign comments = post.substack_url | append: "/comments" %} {% endcomment %}
   <a href="{{ post.substack_url }}/comments">Commenter</a>
@@ -12,4 +12,4 @@
 {% else %}
   <a href="/page/abonnement-par-mail/">S’abonner</a>
 {% endif %}
-</div>
+</menu>
