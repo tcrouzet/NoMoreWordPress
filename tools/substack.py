@@ -47,65 +47,46 @@ class Substack:
             return None
         return text[:10]
 
-    def _load_csv_entries(self):
-        """
-        Parcourt le CSV d'export Substack et retourne la liste des
-        entrées {'slug': ..., 'date_key': ...}, le slug étant extrait
-        de post_id ("<id>.<slug>" -> "<slug>") et la date de post_date.
-        """
-        entries = []
-        if not self.substack_post_csv:
-            return entries
-        try:
-            with open(self.substack_post_csv, newline="", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    post_id = (row.get("post_id") or "").strip()
-                    if not post_id or "." not in post_id:
-                        continue
-                    # post_id = "<numeric_id>.<slug>"
-                    real_slug = post_id.split(".", 1)[1]
-                    if not real_slug:
-                        continue
-                    date_key = self._extract_date_key(row.get("post_date"))
-                    entries.append({"slug": real_slug, "date_key": date_key})
-        except (OSError, csv.Error):
-            return []
-        return entries
 
-    def _lookup_csv_slug(self, title, date=None):
-        """
-        On calcule d'abord le slug deviné (heuristique, comme avant),
-        puis on cherche dans le CSV le slug réel le plus PROCHE de
-        cette estimation — pas une égalité stricte, car la vraie URL
-        est presque toujours une troncature imprévisible du titre
-        complet, donc rarement identique au slug calculé.
-
-        En cas d'ambiguïté (plusieurs slugs proches), la date du post
-        permet de lever le doute : si fournie, on restreint d'abord
-        la recherche aux entrées CSV publiées le même jour.
-        """
+    def _lookup_csv_slug(self, title, date=None, window_days=7):
         if self._csv_entries is None:
             self._csv_entries = self._load_csv_entries()
 
         if not title or not self._csv_entries:
             return None
 
-        guessed_slug = self.slugify(title)
         date_key = self._extract_date_key(date)
+        if not date_key:
+            # Pas de date fiable -> pas de recherche CSV, on fabrique direct.
+            return None
 
-        candidates = self._csv_entries
-        if date_key:
-            same_day = [e for e in candidates if e["date_key"] == date_key]
-            if same_day:
-                candidates = same_day
+        try:
+            target_date = datetime.date.fromisoformat(date_key)
+        except ValueError:
+            return None
 
+        candidates = []
+        for e in self._csv_entries:
+            if not e["date_key"]:
+                continue
+            try:
+                entry_date = datetime.date.fromisoformat(e["date_key"])
+            except ValueError:
+                continue
+            if abs((entry_date - target_date).days) <= window_days:
+                candidates.append(e)
+
+        if not candidates:
+            return None
+
+        guessed_slug = self.slugify(title)
         slug_pool = [e["slug"] for e in candidates]
 
         matches = difflib.get_close_matches(
             guessed_slug, slug_pool, n=1, cutoff=self.FUZZY_MATCH_THRESHOLD
         )
         return matches[0] if matches else None
+
 
     def _strip_accents(self, text):
         nfkd = unicodedata.normalize("NFKD", text)
@@ -158,3 +139,29 @@ class Substack:
             slug = self.slugify(title)
 
         return base.rstrip("/") + f"/p/{slug}"
+
+    def _load_csv_entries(self):
+        """
+        Parcourt le CSV d'export Substack et retourne la liste des
+        entrées {'slug': ..., 'date_key': ...}, le slug étant extrait
+        de post_id ("<id>.<slug>" -> "<slug>") et la date de post_date.
+        """
+        entries = []
+        if not self.substack_post_csv:
+            return entries
+        try:
+            with open(self.substack_post_csv, newline="", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    post_id = (row.get("post_id") or "").strip()
+                    if not post_id or "." not in post_id:
+                        continue
+                    # post_id = "<numeric_id>.<slug>"
+                    real_slug = post_id.split(".", 1)[1]
+                    if not real_slug:
+                        continue
+                    date_key = self._extract_date_key(row.get("post_date"))
+                    entries.append({"slug": real_slug, "date_key": date_key})
+        except (OSError, csv.Error):
+            return []
+        return entries

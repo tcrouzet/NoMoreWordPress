@@ -27,10 +27,42 @@ class JsonLD:
     def _build(self, post=None) -> list:
         if not post:
             return []
-        schemas = [self._blogposting(post)]
+        if post.get('is_home'):
+            schemas = [self._website(post)]
+        elif post.get('is_tag'):
+            schemas = [self._collection_page(post)]
+        else:
+            schemas = [self._blogposting(post)]
         if post.get('event_schema'):
             schemas.append(post['event_schema'])
         return schemas
+
+    def _website(self, post) -> dict:
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": self.site_name,
+            "url": post.get('canonical') or self.site_url,
+            "description": post.get('description'),
+            "author": self._author(),
+        }
+        thumb = post.get('thumb')
+        if thumb and thumb.get('jpeg'):
+            schema["image"] = self.site_url + thumb['jpeg']
+        return schema
+
+    def _collection_page(self, post) -> dict:
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": post.get('tag_title') or post.get('title'),
+            "url": post.get('canonical'),
+            "description": post.get('description'),
+        }
+        thumb = post.get('thumb')
+        if thumb and thumb.get('jpeg'):
+            schema["image"] = self.site_url + thumb['jpeg']
+        return schema
 
     def _author(self) -> dict:
         author = {"@type": "Person", "name": self.author_name}
@@ -52,7 +84,7 @@ class JsonLD:
             "url": post.get('canonical'),
             "mainEntityOfPage": {"@type": "WebPage", "@id": post.get('canonical')},
             "author": self._author(),
-            "publisher": {"@type": "Organization", "name": self.site_name},
+            "publisher": self._author(),
         }
         if post.get('pub_date'):
             schema["datePublished"] = tools.format_timestamp_to_paris_time(
