@@ -14,6 +14,7 @@ import json
 import re
 import shlex
 import tools
+import jsonld
 
 def make_liquid_loader(base_dir):
     def make(fname):
@@ -39,6 +40,8 @@ class Layout:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(script_dir) + os.sep
         script_dir = parent_dir
+
+        self.jsonld = jsonld.JsonLD(self.config)
 
         self.web = web_instance
 
@@ -311,7 +314,7 @@ class Layout:
                             supercharged['content']
                         )
 
-            header_html = self.get_html(template["header"], post=supercharged, blog=self.config, template=template)
+            header_html = self.header_html(header=template["header"], post=supercharged, blog=self.config, template=template)
             footer_html = self.footer_html(template, supercharged)
             share_html = self.get_html(template["share"], post=supercharged, blog=self.config, template=template)
             newsletter_html = self.get_html(template["newsletter"], post=supercharged, blog=self.config)
@@ -419,6 +422,15 @@ class Layout:
         return str(wrapper)
 
 
+    def header_html(self,header, post, blog, template):
+        header_html = self.get_html(header, post=post, blog=blog, template=template)
+        if post and '</head>' in header_html:
+            scripts = self.jsonld.render(post=post)
+            if scripts:
+                header_html = header_html.replace('</head>', scripts + '</head>', 1)
+        return header_html
+
+
     def tag_gen_serie(self, series, tags):
         """Génère une page listant tous les tags avec leur dernier post"""
                 
@@ -436,7 +448,7 @@ class Layout:
             new_series = self.web.supercharge_tag(template, series, tags_super[0])
             
             # Générer le HTML
-            header_html = self.get_html(template["header"], post=new_series, blog=self.config, template=template)
+            header_html = self.header_html(header=template["header"], post=new_series, blog=self.config, template=template)
             footer_html = self.footer_html(template, new_series)
             tags_list_html = self.get_html(template["tags_list"], post=new_series, tags=tags_super, blog=self.config)
             tag_html = self.get_html(template["tag"], post=new_series, tags={"list": tags_list_html})
@@ -453,7 +465,7 @@ class Layout:
                 exit("Strange pas de posts_super")
             tag_super = self.web.supercharge_tag(template, tag, posts_super[0])
 
-            header_html = self.get_html(template["header"], post=tag_super, blog=self.config, template=template)
+            header_html = self.header_html(header=template["header"], post=tag_super, blog=self.config, template=template)
             footer_html = self.footer_html(template, tag_super)
 
             post_per_page = template["post_per_page"]
@@ -495,7 +507,7 @@ class Layout:
             year_super = self.web.supercharge_tag(template, year, super_posts[0])
             
             # Générer le HTML
-            header_html = self.get_html(template["header"], post=year_super, blog=self.config, template=template)
+            header_html = self.header_html(header=template["header"], post=year_super, blog=self.config, template=template)
             footer_html = self.footer_html(template, year_super)
             tags_list_html = self.get_html(template["tags_list"], post=year_super, tags=super_posts, blog=self.config)
             tag_html = self.get_html(template["tag"], post=year_super, tags={"list": tags_list_html})
@@ -641,7 +653,7 @@ class Layout:
             home['description'] = home.get('description') or self.config['description']
             home['is_home'] = True
 
-            header_html = self.get_html(template["header"], post=home, blog=self.config, template=template)
+            header_html = self.header_html(header=template["header"], post=home, blog=self.config, template=template)
             footer_html = self.footer_html(template, home)
             newsletter_html = self.get_html(template["newsletter"], post=home, blog=self.config)
             home_html = self.get_html(template["home"], post=home, blog=self.config, newsletter=newsletter_html)
@@ -655,7 +667,7 @@ class Layout:
                 page_post['content'] = self.get_html(
                     template[content_template], blog=self.config
                 )
-            header_html = self.get_html(template["header"], post=page_post, blog=self.config, template=template)
+            header_html = self.header_html(header=template["header"], post=page_post, blog=self.config, template=template)
             footer_html = self.footer_html(template, page_post)
             article_html = self.get_html(template["article"], post=page_post, blog=self.config)
             page_html = self.get_html(template["single"], post=page_post, blog=self.config, article=article_html)
@@ -699,20 +711,8 @@ class Layout:
             ctx["blog"] = blog
         if extra_ctx:
             ctx.update(extra_ctx)
-        rendered = tpl.render(**ctx)
-        if post and post.get('event_schema') and '</head>' in rendered:
-            event_json = json.dumps(
-                post['event_schema'],
-                ensure_ascii=False,
-                separators=(',', ':'),
-            ).replace('</', '<\\/')
-            event_script = (
-                '<script type="application/ld+json">'
-                + event_json
-                + '</script>'
-            )
-            rendered = rendered.replace('</head>', event_script + '</head>', 1)
-        return rendered
+
+        return tpl.render(**ctx)
 
     def content_blocks(self, template, content):
         """Développe les shortcodes communs à tous les contenus éditoriaux."""
