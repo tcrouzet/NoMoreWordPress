@@ -5,24 +5,24 @@
 {% else %}
   {% set thumb_url = '' %}
 {% endif %}
-
 <!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% if template.inlinecss %}<style>{{ template.inlinecss }}{% if post.css %}{{ post.css }}{% endif %}</style>{% endif %}
+    {% if template.inlinecss %}<style>{{ template.inlinecss }}</style>{% endif %}
+    {% comment %} <link rel=preload href='/style.css?ver={{ blog.version }}' as=style>
+    <link rel=stylesheet href='/style.css?ver={{ blog.version }}'> {% endcomment %}
+    
     <title>{{ title }}</title>
     <link rel="shortcut icon" href="/favicon.ico">
     <link rel="alternate" type="application/rss+xml" title="Thierry Crouzet" href="/feeds/feed.xml" />
-
     <meta name='robots' content='index, follow' />
     <meta name="google-site-verification" content="EmtKKbIk2-Tz3Nyp7hJRPjcMbgf68Vwq6yJYs1hvsqA" />
     <meta name="msvalidate.01" content="805E5BFBA891A41968028F5C97A228D3" />
     <meta name="description" content="{{ description }}" />
     <meta name="author" content="{{ blog.title }}" />
     <link rel="canonical" href="{{ post.canonical }}" />
-    <link rel="human-json" href="/human.json" />
 
     <link rel="me" href="https://mamot.fr/@tcrouzet">
     <meta name="fediverse:creator" content="@tcrouzet@mamot.fr">
@@ -47,25 +47,12 @@
 
 </head>
 
-{% if blog.analytics %}
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-47YLN2LHVB"></script>
-<script data-cfasync=”false”>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-47YLN2LHVB');
-</script>
-{% endif %}
-
 <body>
 
 <header>
-  {% if not post.is_home %}
-    <a href="/" aria-label="Top"></a>
-  {% endif %}
-  <a aria-label="Menu" href="/menu/"></a>
+  <a aria-label="Menu" href="/menu/">≡</a>
   <a aria-label="Accueil"
     href="{% if post.is_home %}/page/informations/{% else %}/{% endif %}"
     title="{% if post.is_home %}Informations{% else %}Accueil{% endif %}">Thierry <b>CROUZET</b></a>
-  <a aria-label="Recherche" href="/search/"></a>
+  <a aria-label="Recherche" href="/search/">⌕</a>
 </header>

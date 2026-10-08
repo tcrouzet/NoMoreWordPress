@@ -581,6 +581,9 @@ text-align: center;
   #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
   div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);}
+  menu a[href*="utm_content=share"] {
+    display: none;
+  }
 }
 
 /* Dark solarised */

@@ -1,43 +1,15 @@
-{% assign now = 'now' | date: '%s' | plus: 0 %}
-{% assign post_age_days = now | minus: post.pub_date | divided_by: 86400 %}
-{% assign comments_open = post_age_days < template.comments %}
+<menu>
+{% if post.substack_url and post.substack_url.size>0 %}
+  {% comment %} {% assign comments = post.substack_url | append: "/comments" %} {% endcomment %}
+  <a href="{{ post.substack_url }}/comments">Commenter</a>
+  {% comment %} {% assign shareurl = post.substack_url | append: "?utm_source=substack&utm_medium=email&utm_content=share&action=share" %} {% endcomment %}
+  <a href="{{ post.substack_url }}?utm_source=substack&utm_medium=email&utm_content=share&action=share">Partager</a>
 
-<div>
-  <input type="checkbox" id="com-{{ post.id }}" class="com-toggle" hidden>
-  <label for="com-{{ post.id }}" title="Commenter">Commenter</label>
+  {% assign parts = post.substack_url | split: "/" %}
+  {% assign subscribe = parts[0] | append: "//" | append: parts[2] | append: "/subscribe" %}
+  <a href="{{ subscribe }}">S’abonner</a>
+
+{% else %}
   <a href="/page/abonnement-par-mail/">S’abonner</a>
-  
-  <div class="comments">
-
-    {% if post.comments %}{{ post.comments }}{% endif %}
-
-    <form method="POST" action="https://formspree.io/f/mgebvkwn">
-      <input type="hidden" name="postUrl" value="{{ post.url }}">
-      <input type="hidden" name="postTitle" value="{{ post.title }}">
-
-      <label>Votre email
-      <input aria-label="Email" autocomplete="on" name="email" type="email" required></label>
-      <label>Votre nom
-      <input aria-label="Nom" autocomplete="on" name="nom" type="text" required></label>
-      <label>Votre commentaire
-      <textarea aria-label="Message" name="message" required></textarea></label>
-
-      <fieldset>
-        <legend>Visibilité</legend>
-        <label>
-          <input type="radio" name="messageType" value="private" checked>
-          Privé
-        </label>
-        {% if comments_open %}
-        <label>
-        <input type="radio" name="messageType" value="public">
-          Public (modéré)
-        </label>
-        {% endif %}
-      </fieldset>
-          
-      <button type="submit">Envoyer</button>
-    </form>
-
-  </div>
-</div>
+{% endif %}
+</menu>

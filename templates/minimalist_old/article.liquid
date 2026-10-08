@@ -63,20 +63,12 @@
         {% if post.frontmatter.isbne %}<li>ISBN ebook: {{ post.frontmatter.isbne }}</li>{% endif %}
     </ul>
     {% endif %}
-
-    {% if post.type != 3 %}{{ share }}{% endif %}
-
+    
 </div>
 
 <footer>
-    {% if post.type == 0 and post.navigation and post.navigation.history and post.navigation.history.size%}
-        <p>Aussi dans <a href="{{ post.navigation.url }}">{{ post.navigation.title }}</a></p>
-        <ul>
-            {% for item in post.navigation.history %}
-                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    {% if post.type != 3 %}{{ share }}{% endif %}
+    {{ newsletter }}
 </footer>
 
 </article>

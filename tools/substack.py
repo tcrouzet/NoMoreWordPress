@@ -1,10 +1,10 @@
 import re
 import csv
 import json
+import os
 import difflib
 import datetime
 import unicodedata
-
 
 class Substack:
     """
@@ -32,6 +32,15 @@ class Substack:
         self.substack_727 = config.get('substack_727', '')
         self.substack_post_csv = config.get('substack_post_csv', '')
         self._csv_entries = None  # cache: [{'slug':..., 'date_key':...}, ...]
+        self._slug_map = None     # cache: {slug_source: slug_substack}
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.parent_dir = os.path.dirname(script_dir) + os.sep
+
+        self.slug_path = None
+        if config.get('substack_slug_csv'):
+            self.slug_path=os.path.join(self.parent_dir, config.get('substack_slug_csv'))
+
 
     def _extract_date_key(self, value):
         """
@@ -87,10 +96,19 @@ class Substack:
         )
         return matches[0] if matches else None
 
+    def _lookup_csv_path(self, post):
+        if self._slug_map is None:
+            self._slug_map = self._load_slug_map()
+
+        title = (post.get('title') or '').strip()
+        # print("slug", self._slug_map.get(title, ""))
+        return self._slug_map.get(title, "")
+
 
     def _strip_accents(self, text):
         nfkd = unicodedata.normalize("NFKD", text)
         return "".join(c for c in nfkd if not unicodedata.combining(c))
+
 
     def slugify(self, title):
         # Substack ne coupe PAS au premier ':' ',' ';' etc.
@@ -129,15 +147,15 @@ class Substack:
         if not (base and title):
             return ""
 
-        # On cherche d'abord le slug réel le plus proche dans le CSV
-        # (la date du post lève l'ambiguïté si plusieurs slugs sont
-        # proches) ; si rien d'assez proche, on garde le slug deviné
-        # par l'heuristique.
-        post_date = post.get('post_date')
-        slug = self._lookup_csv_slug(title, post_date)
+        # Priorité 1 : correction manuelle (titre_source -> slug_substack)
+        slug = self._lookup_csv_path(post)
         if not slug:
-            slug = self.slugify(title)
-
+            # Priorité 2 : fuzzy-match sur l'export CSV Substack (±7 jours)
+            post_date = post.get('post_date')
+            slug = self._lookup_csv_slug(title, post_date)
+            if not slug:
+                # Priorité 3 : slug fabriqué par l'heuristique
+                slug = self.slugify(title)
         return base.rstrip("/") + f"/p/{slug}"
 
     def _load_csv_entries(self):
@@ -165,3 +183,19 @@ class Substack:
         except (OSError, csv.Error):
             return []
         return entries
+
+    def _load_slug_map(self):
+        mapping = {}
+        if not self.slug_path:
+            return mapping
+        try:
+            with open(self.slug_path, newline="", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    titre_source = (row.get("titre_source") or "").strip()
+                    slug_substack = (row.get("slug_substack") or "").strip()
+                    if titre_source and slug_substack:
+                        mapping[titre_source] = slug_substack
+        except (OSError, csv.Error):
+            return {}
+        return mapping
