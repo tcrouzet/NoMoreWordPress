@@ -6,6 +6,7 @@ import difflib
 import datetime
 import unicodedata
 
+
 class Substack:
     """
     Trouve l'URL Substack d'un billet.
@@ -36,6 +37,8 @@ class Substack:
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
+
+        self.STOP_WORDS = {"un", "une", "le", "la", "les", "de", "des", "du", "et", "a", "en", "au", "aux", "ou", "ce", "se", "sa", "son"}
 
         self.slug_path = None
         if config.get('substack_slug_csv'):
@@ -100,8 +103,7 @@ class Substack:
         if self._slug_map is None:
             self._slug_map = self._load_slug_map()
 
-        title = (post.get('title') or '').strip()
-        # print("slug", self._slug_map.get(title, ""))
+        title = self._normalize_title((post.get('title') or '').strip())
         return self._slug_map.get(title, "")
 
 
@@ -110,7 +112,7 @@ class Substack:
         return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
-    def slugify(self, title):
+    def slugifyOld(self, title):
         # Substack ne coupe PAS au premier ':' ',' ';' etc.
         # Il slugifie le titre entier puis tronque au nombre de
         # caractères max, en revenant au dernier tiret complet.
@@ -128,6 +130,25 @@ class Substack:
                 truncated = truncated.rsplit("-", 1)[0]
             head = truncated.strip("-")
         return head
+
+
+    def slugify(self, title):
+        head = self._strip_accents(title).lower()
+        head = head.replace("'", "").replace("’", "")
+        head = re.sub(r"[^a-z0-9]+", "-", head)
+        head = re.sub(r"-{2,}", "-", head).strip("-")
+        if len(head) > self.MAX_SLUG_LENGTH:
+            truncated = head[: self.MAX_SLUG_LENGTH]
+            cuts_mid_word = head[self.MAX_SLUG_LENGTH] != "-"
+            if cuts_mid_word and "-" in truncated:
+                truncated = truncated.rsplit("-", 1)[0]
+            # recule encore tant que le dernier segment est un mot-outil
+            parts = truncated.strip("-").split("-")
+            while len(parts) > 1 and parts[-1] in self.STOP_WORDS:
+                parts = parts[:-1]
+            head = "-".join(parts)
+        return head
+
 
     def guess(self, post):
 
@@ -195,7 +216,17 @@ class Substack:
                     titre_source = (row.get("titre_source") or "").strip()
                     slug_substack = (row.get("slug_substack") or "").strip()
                     if titre_source and slug_substack:
-                        mapping[titre_source] = slug_substack
+                        key = self._normalize_title(titre_source)
+                        mapping[key] = slug_substack
         except (OSError, csv.Error):
             return {}
         return mapping
+
+    def _normalize_title(self, text):
+        if not text:
+            return ""
+        text = unicodedata.normalize("NFKC", text)
+        text = text.replace("\u00a0", " ").replace("\u202f", " ")  # NBSP, NNBSP
+        text = text.replace("’", "'")
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
