@@ -13,7 +13,7 @@ tqdm
 requests
 csscompressor
 feedgen
-htmlmin
+htmlmin2
 boto3
 GitPython
 md2gemini

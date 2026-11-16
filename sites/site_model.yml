@@ -4,11 +4,11 @@
 build: 1 # 0: inchangé, 1: nouveaux/modifiés, 2: tout, 3: base + site depuis zéro
 version: 0 # 0: cache dynamique pour tests locaux ; incrémenter en production
 
-vault: "/chemin/vers/ObsidianLocal/text/site"
+vault: "~/Documents/ObsidianLocal/text/site"
 vault_img: "_i/"
 vault_comments: "" # dossier des commentaires, facultatif
 static_folder: "static" # copié tel quel vers export/static/, facultatif
-export: "/chemin/vers/export"
+export: "~/Documents/export"
 images_dir: "/images/"
 feeds_dir: "/feeds/"
 

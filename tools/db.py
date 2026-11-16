@@ -964,8 +964,10 @@ class Db:
         try:
             c = self.conn.cursor()
             
-            media_source_path = data_dict['media_source_path']
-            data_json = json.dumps(data_dict)
+            cache_data = dict(data_dict)
+            media_source_path = self.image_cache_key(cache_data['media_source_path'])
+            cache_data['media_source_path'] = media_source_path
+            data_json = json.dumps(cache_data)
             
             c.execute('''INSERT OR REPLACE INTO images_cache (media_source_path, data) 
                         VALUES (?, ?)''', (media_source_path, data_json))
@@ -979,6 +981,14 @@ class Db:
             self.conn.rollback()
             return False
 
+    def image_cache_key(self, media_source_path):
+        path = os.path.abspath(os.path.expanduser(media_source_path))
+        vault = os.path.abspath(os.path.expanduser(self.config['vault']))
+        relative = os.path.relpath(path, vault)
+        if relative == '..' or relative.startswith(f'..{os.sep}'):
+            relative = path
+        return f'{self.site}:{relative}'
+
     def get_image_cache(self, template_name, media_source_path):
         # print("get_image_cache")
         try:
@@ -988,8 +998,22 @@ class Db:
 
             c = self.conn.cursor()
             
-            c.execute('SELECT data FROM images_cache WHERE media_source_path = ?', (media_source_path,))
+            cache_key = self.image_cache_key(media_source_path)
+            c.execute('SELECT data FROM images_cache WHERE media_source_path = ?', (cache_key,))
             result = c.fetchone()
+
+            if not result:
+                vault = os.path.abspath(os.path.expanduser(self.config['vault']))
+                relative = os.path.relpath(os.path.abspath(media_source_path), vault)
+                legacy_key = f'%/{self.site}/{relative}'
+                c.execute('SELECT data, media_source_path FROM images_cache WHERE media_source_path LIKE ?', (legacy_key,))
+                result = c.fetchone()
+                if result:
+                    c.execute(
+                        'UPDATE images_cache SET media_source_path = ? WHERE media_source_path = ?',
+                        (cache_key, result['media_source_path']),
+                    )
+                    self.conn.commit()
             
             if result:
                 img_data = json.loads(result[0])

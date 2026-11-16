@@ -7,7 +7,7 @@ import tools
 import logs
 import sync_github as github
 import sync_files
-from md2gemini import md2gemini
+from gemini_compat import md2gemini
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw
 
 import numpy as np
@@ -277,7 +277,7 @@ def sync_images(gmi, source_dir, output_dir):
             gmi = gmi.replace(img_path, f"i/{output_filename}")
             
         except Exception as e:
-            print(f"Erreur lors du traitement de l'image {input_path}: {e}")
+            print(f"Erreur lors du traitement de l'image {input_path}: {e}", file=sys.stdout.log, flush=True)
 
     return gmi
 

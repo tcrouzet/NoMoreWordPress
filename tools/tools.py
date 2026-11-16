@@ -16,6 +16,13 @@ def site_yml(site):
     try:
         with open(path, 'r') as file:
             config = yaml.safe_load(file)
+            def expand_user(value):
+                if isinstance(value, dict):
+                    return {key: expand_user(item) for key, item in value.items()}
+                if isinstance(value, list):
+                    return [expand_user(item) for item in value]
+                return os.path.expanduser(value) if isinstance(value, str) else value
+            config = expand_user(config)
             config['site'] = site
             return config
     except:

@@ -5,7 +5,6 @@ import os
 import shutil
 import tools
 import subprocess
-import time
 
 class SyncFiles:
 
@@ -14,7 +13,7 @@ class SyncFiles:
         if not self.mount_synology_volume():
             return
 
-        self.source_directory = source_directory
+        self.source_directory = os.path.abspath(os.path.expanduser(source_directory))
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
@@ -22,13 +21,19 @@ class SyncFiles:
         
         self.state_file = "gmi_state.json"
         self.previous_state_path = os.path.join(self.temp_dir, self.state_file)
-        self.previous_state = tools.load_json(self.previous_state_path)
-        self.previous_state = {k: float(v) for k, v in self.previous_state.items()}
+        self.previous_state = {}
+        for path, timestamp in tools.load_json(self.previous_state_path).items():
+            if os.path.isabs(path):
+                # Legacy state used absolute paths under the same source folder.
+                _, separator, path = path.partition(f'/{os.path.basename(self.source_directory)}/')
+                if not separator:
+                    continue
+            self.previous_state[path] = max(float(timestamp), self.previous_state.get(path, 0))
 
         # print(self.previous_state)
         # exit()
 
-        self.current_state = self.get_file_state(source_directory)
+        self.current_state = self.get_file_state(self.source_directory)
         tools.save_json( os.path.join(self.temp_dir,"gmi_current_state.json"), self.current_state)
 
         # Identifier les fichiers modifiés avec tolérance
@@ -54,13 +59,13 @@ class SyncFiles:
                 if file.startswith('.') or file == self.state_file:
                     continue
                 filepath = os.path.join(root, file)
-                state[filepath] = os.path.getmtime(filepath)
+                state[os.path.relpath(filepath, directory)] = os.path.getmtime(filepath)
         return state
 
     def transfer_files(self, changed_files, remote_path):
-        for filepath in changed_files:
+        for relative_path in changed_files:
             # Compute the destination path on the mapped drive
-            relative_path = os.path.relpath(filepath, start=self.source_directory)
+            filepath = os.path.join(self.source_directory, relative_path)
             destination_path = os.path.join(remote_path, relative_path)
 
             # Ensure the destination directory exists
@@ -68,8 +73,6 @@ class SyncFiles:
 
             # Copy the file
             shutil.copy2(filepath, destination_path)
-            self.current_state[filepath] = time.time()
-            print(f"Copied {filepath} to {destination_path}")
 
     def mount_synology_volume(self):
         server_address = "smb://NasZone._smb._tcp.local/docker"
