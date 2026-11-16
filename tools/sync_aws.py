@@ -94,7 +94,6 @@ class SyncAWS:
 
                 root = tools.get_root(directory)
                 if root == "/":
-                    print(root)
                     for file in files:
                         path = "/" + file
                         invalidation_paths.add(path)
@@ -129,7 +128,5 @@ class SyncAWS:
                     DistributionId=self.config['distribution_id'],
                     InvalidationBatch=invalidation_data
                 )
-                #print("Invalidation créée:", response)
-                print("Invalidation créée…")
         else:
             print("Aucun fichier modifié, aucune invalidation nécessaire.")

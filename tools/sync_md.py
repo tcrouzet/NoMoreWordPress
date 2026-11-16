@@ -156,5 +156,6 @@ dossier = config['export_github_md']
 current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 subprocess.run(["git", "add", "."], cwd=dossier)
-subprocess.run(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
-subprocess.run(["git", "push", "-u", "origin", "main"], cwd=dossier)
+if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=dossier).returncode == 1:
+    tools.run_quiet(["git", "commit", "-m", f"sync {current_date}"], cwd=dossier)
+tools.run_quiet(["git", "push", "-u", "origin", "main"], cwd=dossier)

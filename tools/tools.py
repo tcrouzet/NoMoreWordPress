@@ -37,6 +37,13 @@ def run_script(script_name, *args):
         print(f"An error occurred while running {script_name}: {e}")
         return False
 
+def run_quiet(command, cwd):
+    result = subprocess.run(command, cwd=cwd, capture_output=True, text=True)
+    if result.returncode:
+        print(result.stdout, end='', file=sys.stderr)
+        print(result.stderr, end='', file=sys.stderr)
+        result.check_returncode()
+
 def calculate_hash(filepath):
     hasher = hashlib.sha256()
     with open(filepath, 'rb') as f:

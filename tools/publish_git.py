@@ -23,15 +23,13 @@ def publish_export(export_dir):
         return False
 
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    subprocess.run(
+    tools.run_quiet(
         ["git", "commit", "-m", f"sync {current_date}"],
         cwd=export_dir,
-        check=True,
     )
-    subprocess.run(
+    tools.run_quiet(
         ["git", "push", "-u", "origin", "HEAD"],
         cwd=export_dir,
-        check=True,
     )
     return True
 
