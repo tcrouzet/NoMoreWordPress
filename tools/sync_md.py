@@ -138,16 +138,16 @@ def clean_files(src, dst, preserved_files):
 def index():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(script_dir) + os.sep
-    src_path = os.path.join(parent_dir, "templates", "md", "md.html")
-    dst_path = os.path.join(config['export_github_md'], "index.html")
-
-    if not os.path.exists(dst_path) or tools.calculate_hash(src_path) != tools.calculate_hash(dst_path):
-        shutil.copy2(src_path, dst_path)
+    for source, target in (("md.html", "index.html"), ("CNAME", "CNAME"), (".nojekyll", ".nojekyll")):
+        src_path = os.path.join(parent_dir, "templates", "md", source)
+        dst_path = os.path.join(config['export_github_md'], target)
+        if not os.path.exists(dst_path) or tools.calculate_hash(src_path) != tools.calculate_hash(dst_path):
+            shutil.copy2(src_path, dst_path)
 
 
 # Quand des fichiers montent pas
 
-preserved_files = ["CNAME", "LICENSE", "README.md", "SECURITY.md"]
+preserved_files = ["CNAME", ".nojekyll", "LICENSE", "README.md", "SECURITY.md"]
 sync_files(config['vault'], config['export_github_md'])
 clean_files(config['vault'], config['export_github_md'], preserved_files)
 index()
