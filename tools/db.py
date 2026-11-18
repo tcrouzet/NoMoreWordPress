@@ -638,11 +638,16 @@ class Db:
         return self.get_posts("type<5")
 
 
-    def get_blog_posts(self, exclude_tags=None):
+    def get_blog_posts(self, exclude_tags=None, limit=None):
         """
         Retourne tous les posts de blog (type=0) avec les infos de leur premier tag associé.
         Exclut les posts qui contiennent les tags spécifiés.
         """
+        if limit is not None and (
+            not isinstance(limit, int) or isinstance(limit, bool) or limit < 0
+        ):
+            raise ValueError("limit must be a non-negative integer")
+
         c = self.conn.cursor()
         
         where_clause = "WHERE p.site = ? AND p.type = 0"
@@ -652,6 +657,11 @@ class Db:
             placeholders = ','.join('?' for _ in exclude_tags)
             where_clause += f" AND p.id NOT IN (SELECT DISTINCT c.con_post_id FROM connectors c INNER JOIN tags t ON c.con_tag_id = t.tag_id WHERE t.tag_slug IN ({placeholders}))"
             params.extend(exclude_tags)
+
+        limit_clause = ""
+        if limit is not None:
+            limit_clause = "LIMIT ?"
+            params.append(limit)
         
         query = f'''
             SELECT 
@@ -673,10 +683,22 @@ class Db:
             )
             GROUP BY p.id
             ORDER BY p.pub_date DESC
+            {limit_clause}
         '''
         
         c.execute(query, tuple(params))
         return c.fetchall()
+
+    def get_last_posts(self, limit=15, exclude_tags=None):
+        """Retourne les derniers articles publics, du plus récent au plus ancien."""
+        excluded_tags = ["private", "invisible"]
+        excluded_tags.extend(
+            tag for tag in (exclude_tags or []) if tag not in excluded_tags
+        )
+        return self.get_blog_posts(
+            exclude_tags=excluded_tags,
+            limit=limit,
+        )
 
 
     def get_posts_by_year(self, year, exclude_tags=None):

@@ -1,0 +1,17 @@
+main{text-align: center;}
+figure {
+    width: 15ch;
+    overflow: hidden;
+    border: 1px solid var(----color-medium);
+    margin: 1rem auto;
+}
+main[itemtype$="CollectionPage"] article {
+    display: inline-block;
+    margin: 0 auto;
+    max-width: var(--max-width);
+    padding: 0 var(--page-gutter);
+}
+figure img{
+    border: none;
+    height: 23ch;
+}

@@ -5,33 +5,35 @@
 {% endif %}
 
 {% for tag_post in tags %}
-
+  {% if post.tag_slug == "book" %}
     <article>
-        {% if post.tag_slug == "series"  %}
-            <data value="{{ tag_post.navigation.total_posts }}"><a href="{{ tag_post.url }}">{{ tag_post.navigation.total_posts }}</a></data>
-            <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title }}</a></h3>
-            <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
-        {% elsif post.tag_slug == "blog"  %}
-            <data value="{{ blog_order }}"><a href="{{ tag_post.url }}">{{  tag_post.ordre }}</a></data>
-            <h3><a href="{{ tag_post.url }}">{{ tag_post.month }}</a></h3>
-            <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
-        {% elsif post.tag_slug == "carnets"  %}
-            <data value="{{ blog_order }}"><a href="{{ tag_post.url }}">{{  tag_post.ordre }}</a></data>
-            <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
-        {% elsif post.tag_slug == "book" %}
-            <a href="{{ tag_post.url }}"><figure><img width="250" height="auto"
-            src="{% if tag_post.thumb.url_small%}{{ tag_post.thumb.url_small }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
-            alt="{{ tag_post.thumb_legend }}" loading="lazy" decoding="async"
+      <a href="{{ tag_post.url }}">
+        <figure>
+          <img width="250" height="auto"
+            src="{% if tag_post.thumb.url_small %}{{ tag_post.thumb.url_small }}{% else %}{{ tag_post.thumb.url }}{% endif %}"
+            alt="{{ tag_post.thumb_legend }}"
+            loading="lazy"
+            decoding="async"
             srcset="{% if tag_post.thumb.url_small %}{{ tag_post.thumb.url_small }} 300w{% endif %}{% if tag_post.thumb.url_1024 %}, {{ tag_post.thumb.url_1024 }} 1024w{% endif %}"
-            sizes="(min-width: 48rem) 300px, calc(100vw - 2rem)"
-            /></figure></a>
-        {% else %}
-            <data value="{{ tag_post.ordre }}"><a href="{{ tag_post.url }}">{{ tag_post.ordre }}</a></data>
-            <h3><a href="{{ tag_post.url }}">{{ tag_post.month }}</a></h3>
-            <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
-        {% endif %}
+            sizes="(min-width: 48rem) 300px, calc(100vw - 2rem)">
+        </figure>
+      </a>
     </article>
-    
+  {% else %}
+    {% assign tag_category = tag_post.tag_title | default: tag_post.tag_slug | default: post.tag_title | default: post.tag_slug %}
+    {% if tag_post.navigation and tag_post.navigation.title %}
+      {% assign tag_category = tag_post.navigation.title %}
+    {% endif %}
+    <article>
+      {% if tag_post.pub_date_str %}
+        <time datetime="{{ tag_post.pub_date_str }}">{{ tag_post.pub_date_str | slice: 8, 2 }}.{{ tag_post.pub_date_str | slice: 5, 2 }}.{{ tag_post.pub_date_str | slice: 0, 4 }}</time>
+      {% elsif tag_post.pub_date %}
+        <time datetime="{{ tag_post.pub_date | date: '%Y-%m-%d' }}">{{ tag_post.pub_date | date: '%d.%m.%Y' }}</time>
+      {% else %}
+        <time></time>
+      {% endif %}
+      <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
+      <span>{{ tag_category }}</span>
+    </article>
+  {% endif %}
 {% endfor %}
-
-<div id="loadMore" data-next-url="{{ post.navigation.next_url }}" hidden></div>

@@ -6,6 +6,34 @@
   {% set thumb_url = '' %}
 {% endif %}
 
+{% assign current_carnets = false %}
+{% assign current_velo = false %}
+{% assign current_blog = false %}
+{% assign current_books = false %}
+
+{% set current_tag_slug = post.get('tag_slug', '') %}
+{% set current_post_type = post.get('type') %}
+{% set current_navigation = post.get('navigation') or {} %}
+{% set current_navigation_slug = current_navigation.get('slug', '') %}
+{% set current_navigation_title = current_navigation.get('title', '') %}
+
+{% if current_tag_slug == "carnets" or current_navigation_slug == "carnets" or current_navigation_title == "Carnets" %}
+  {% assign current_carnets = true %}
+{% endif %}
+{% if current_tag_slug == "velo" or current_navigation_slug == "velo" or current_navigation_title == "Vélo" %}
+  {% assign current_velo = true %}
+{% endif %}
+{% if current_tag_slug == "blog" or current_post_type == 0 %}
+  {% assign current_blog = true %}
+{% endif %}
+{% if current_tag_slug == "book" or current_post_type == 2 %}
+  {% assign current_books = true %}
+{% endif %}
+
+{% if current_carnets or current_velo %}
+  {% assign current_blog = false %}
+{% endif %}
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -60,12 +88,28 @@
 <body>
 
 <header>
+
   {% if not post.is_home %}
     <a href="/" aria-label="Top"></a>
   {% endif %}
-  <a aria-label="Menu" href="/menu/"></a>
-  <a aria-label="Accueil"
-    href="{% if post.is_home %}/page/informations/{% else %}/{% endif %}"
-    title="{% if post.is_home %}Informations{% else %}Accueil{% endif %}">Thierry <b>CROUZET</b></a>
-  <a aria-label="Recherche" href="/search/"></a>
+
+  <a href="/page/informations/" aria-label="Informations">
+    <img src="/assets/portrait.webp" alt="Thierry Crouzet">
+  </a>
+
+  {% if post.is_home %}
+    <span aria-label="Accueil">Thierry <b>Crouzet</b></span>
+  {% else %}
+    <a href="/" aria-label="Accueil">Thierry <b>Crouzet</b></a>
+  {% endif %}
+
+  <a href="/search/" aria-label="Recherche"></a>
+
+  <nav aria-label="Navigation principale">
+    <a href="/"{% if post.is_home %} aria-current="page"{% endif %}>Accueil</a>
+    <a href="/blog/"{% if current_blog %} aria-current="page"{% endif %}>Digressions</a>
+    <a href="/carnet-de-route/"{% if current_carnets %} aria-current="page"{% endif %}>Carnets</a>
+    <a href="/borntobike/"{% if current_velo %} aria-current="page"{% endif %}>Vélo</a>
+    <a href="/bibliographie/"{% if current_books %} aria-current="page"{% endif %}>Livres</a>
+  </nav>
 </header>

@@ -1,7 +1,7 @@
 # Copier ce fichier vers sites/<site>.yml puis adapter les valeurs.
 # Les chemins du vault et de l'export sont propres à chaque machine.
 
-build: 1 # 0: inchangé, 1: nouveaux/modifiés, 2: tout, 3: base + site depuis zéro
+build: 1 # 0: génération locale sans sync, 1: nouveaux/modifiés + sync, 2: site complet, 3: base + site depuis zéro
 version: 0 # 0: cache dynamique pour tests locaux ; incrémenter en production
 
 vault: "~/Documents/ObsidianLocal/text/site"

@@ -1,0 +1,82 @@
+{% if post.type == 3 %}
+    <article itemscope itemType="https://schema.org/CollectionPage">
+{% elsif post.type == 2 %}
+    <article itemscope itemType="https://schema.org/Book">
+{% elsif post.type == 1 %}
+    <article itemscope itemType="https://schema.org/WebPage">
+{% else %}
+    <article itemscope itemType="https://schema.org/BlogPosting">
+{% endif %}
+
+<header>
+    
+    {% if post.type != 3 %}
+        <h1 itemprop="headline">{{ post.title }}</h1>
+    {% endif %}    
+
+    {% if post.type == 0 and post.navigation %}
+        <nav>
+            <a href="{{ post.navigation.prev_url }}" class="prev" rel="prev">&lt; </a>
+            {% if post.navigation.url %}
+                <a href="{{ post.navigation.url }}" itemprop="articleSection">{{ post.navigation.title }} {{ post.navigation.order }}</a> - 
+            {% endif %}
+            {{ post.datelink }}
+            <a href="{{ post.navigation.next_url }}" class="next" rel="next"> &gt;</a>
+        </nav>
+    {% elsif post.frontmatter.baseline %}
+        <nav><span>{{ post.frontmatter.genre }} </span>{{ post.frontmatter.baseline }}</nav>
+    {% endif %}
+</header>
+    
+
+<div itemprop="articleBody">
+
+    {% if post.type == 2 and post.thumb %}
+        <figure>
+            <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
+            class="book" 
+            alt="{{ post.thumb.legend }}" fetchpriority="high" decoding="async" itemprop="image"
+            srcset="{% if post.thumb.url_small %}{{ post.thumb.url_small }} 300w,{% endif %}{% if post.thumb.url_medium %}{{ post.thumb.url_medium }} 1024w,{% endif %}{{ post.thumb.url }} {{ post.thumb.width }}w"
+            sizes="{{ template.sizes }}" />
+        </figure>
+    {% endif %}
+
+    {% if post.frontmatter.lire %}
+        <h6><a href="{{ post.frontmatter.lire }}">Extrait</a></h6>
+    {% endif %}
+    {% if post.frontmatter.papier %}
+        <h6>{{ post.frontmatter.papier }}</h6>
+    {% endif %}
+    {% if post.frontmatter.ebook %}
+        <h6>{{ post.frontmatter.ebook }}</h6>
+    {% endif %}
+
+    {{ post.content }}
+
+    {% if post.frontmatter.editor %}
+    <h3>Fiche produit</h3>
+    <ul>
+        <li>Éditeur : {{ post.frontmatter.editor }}</li>
+        {% if post.frontmatter.date %}<li>Sortie : {{ post.frontmatter.date }}</li>{% endif %}
+        {% if post.frontmatter.pages %}<li>Pages: {{ post.frontmatter.pages }}</li>{% endif %}
+        {% if post.frontmatter.isbn %}<li>ISBN papier: {{ post.frontmatter.isbn }}</li>{% endif %}
+        {% if post.frontmatter.isbne %}<li>ISBN ebook: {{ post.frontmatter.isbne }}</li>{% endif %}
+    </ul>
+    {% endif %}
+
+    {% if post.type != 3 %}{{ share }}{% endif %}
+
+</div>
+
+<footer>
+    {% if post.type == 0 and post.navigation and post.navigation.history and post.navigation.history.size%}
+        <p>Aussi dans <a href="{{ post.navigation.url }}">{{ post.navigation.title }}</a></p>
+        <ul>
+            {% for item in post.navigation.history %}
+                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</footer>
+
+</article>

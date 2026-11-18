@@ -95,7 +95,7 @@ Les principales options sont :
 
 | Clé | Rôle |
 | --- | --- |
-| `build` | `0` : mode local sans mise à jour ni synchronisation ; `1` : nouveaux/modifiés ; `2` : régénération complète sans recréer le schéma ; `3` : reconstruction complète de la base et du site. |
+| `build` | `0` : détecte et génère localement les nouveaux/modifiés sans synchronisation distante ; `1` : nouveaux/modifiés avec synchronisation ; `2` : régénération complète sans recréer le schéma ; `3` : reconstruction complète de la base et du site. |
 | `version` | Version des CSS/JS/assets. En local, `0` produit une version dynamique ; en production, incrémenter après une modification d’asset. |
 | `vault` / `vault_img` | Vault source et dossier des images, généralement `_i/`. |
 | `export` | Dossier de sortie du site statique. |

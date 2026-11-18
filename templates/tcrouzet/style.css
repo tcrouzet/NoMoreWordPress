@@ -9,7 +9,7 @@ button,select{text-transform:none} */
   --color-bg: #ffffff; /* Base3 ancien #fdf6e3 */
   --color-contrast: #242424; /* Base03 ancien #002b36 */
   --color-medium: #839496; /* Base0 ancien aaa */
-  --color-light: #eee8d5; /* Base2 fancien afafa */
+  --color-light: #f0f0f0;
   --color-link: #cb4b16; /* Orange ancien e30613 */
   --font-size: 1.18rem;
   --line-height: calc(1ex/0.32);
@@ -17,6 +17,7 @@ button,select{text-transform:none} */
   --font-size-h3: 1.7rem;
   --max-width: 40rem;
   --max-width-wide: 55rem;
+  --max-width-ultra: 75rem;
   --page-gutter: 1rem;
   --top-height: 3rem;
 }
@@ -43,17 +44,8 @@ h4{color:var(--color-contrast);font-weight:bold}
 button,a{cursor:pointer}
 a,a:visited,a:active,a:hover{color:inherit;text-decoration:none;border:none}
 
-/* Header */
-header {
-  inset-inline: 0;
-  align-items: baseline;
-  display: flex;
-  gap: 0.8rem;
-  padding: 0.5rem var(--page-gutter);
-  line-height: 1.7rem;
-}
-
-header > a[aria-label="Top"] {
+/* Header — structure minimale, sans noms de classe */
+body > header > a[aria-label="Top"] {
   position: fixed;
   top: 0;
   left: 2px;
@@ -65,8 +57,8 @@ header > a[aria-label="Top"] {
   animation-range: 0 700px;
 }
 
-header > a[aria-label="Top"]::after {
-  content: "⌂"; /* ↑ */
+body > header > a[aria-label="Top"]::after {
+  content: "⌂";
   font-size: 1.3em;
   font-weight: bold;
   color: var(--color-contrast);
@@ -77,27 +69,99 @@ header > a[aria-label="Top"]::after {
   to { opacity: 1; }
 }
 
-header > a[aria-label="Menu"]::after {
-  content: "≡";
-  font-size: 1.8em;
-  font-weight: bold;
-  color: var(--color-medium);
+body > header {
+  align-items: center;
+  border-bottom: 1px solid var(--color-light);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: 6.4rem 3.1rem;
+  line-height: normal;
+  padding: 0 var(--page-gutter);
+  position: relative;
 }
 
-header > a[aria-label="Accueil"]{
+body > header > a[aria-label="Informations"] {
+  align-items: center;
+  border-radius: 0.7rem;
+  display: flex;
+  height: 2.8rem;
+  justify-self: start;
+  overflow: hidden;
+  width: 2.8rem;
+}
+
+body > header > a[aria-label="Informations"] img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+body > header > a[aria-label="Accueil"],
+body > header > span[aria-label="Accueil"] {
   color: var(--color-contrast);
-  font-size: 1.35rem;
+  font-size: clamp(1.8rem, 4vw, 3.25rem);
+  font-weight: 400;
+  justify-self: center;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-header > a[aria-label="Recherche"]{
-  margin-left: auto;
+body > header > a[aria-label="Accueil"] b,
+body > header > span[aria-label="Accueil"] b {
+  font-weight: 700;
 }
-header > a[aria-label="Recherche"]::after {
-  content: "⌕";
-  font-size: 2.6em;
-  font-weight: bold;
+
+body > header > a[aria-label="Recherche"] {
   color: var(--color-medium);
-  vertical-align: text-bottom;
+  justify-self: auto;
+  line-height: 1;
+  position: absolute;
+  right: var(--page-gutter);
+  top: 3.2rem;
+  transform: translateY(-50%);
+}
+
+body > header > a[aria-label="Recherche"]::after {
+  color: var(--color-medium);
+  content: "⌕";
+  display: block;
+  font-family: var(--font-normal);
+  font-size: 2.3em;
+  font-weight: normal;
+  line-height: 1;
+}
+
+body > header > nav[aria-label="Navigation principale"] {
+  align-items: center;
+  border-top: 1px solid var(--color-light);
+  display: flex;
+  font-variant: normal;
+  gap: clamp(0.9rem, 2.4vw, 2rem);
+  grid-column: 1 / -1;
+  justify-content: center;
+  margin: 0 calc(-1 * var(--page-gutter));
+  min-height: 3.1rem;
+  overflow: hidden;
+  padding: 0 var(--page-gutter);
+  white-space: nowrap;
+}
+
+body > header > nav[aria-label="Navigation principale"] a {
+  border-bottom: 0.18rem solid transparent;
+  color: var(--color-contrast);
+  font-size: 0.98rem;
+  line-height: 3.1rem;
+}
+
+body > header > nav[aria-label="Navigation principale"] a:hover,
+body > header > nav[aria-label="Navigation principale"] a[aria-current="page"] {
+  border-bottom-color: var(--color-contrast);
+}
+
+body > header > nav[aria-label="Navigation principale"] a[aria-current="page"] {
+  font-weight: 700;
 }
 
 /* Article */
@@ -105,30 +169,68 @@ header > a[aria-label="Recherche"]::after {
 /* article {margin-bottom: 2rem;} */
 
 article[itemscope]{
-  display: grid;
+  display: block;
   margin-top: 3rem;
   margin-bottom: 2rem;
-  grid-template-columns: minmax(12rem, 25%) minmax(auto, var(--max-width-wide));
-  column-gap: var(--page-gutter);
-  align-items: start;
-  grid-template-areas:
-    "header body"
-    ".      body"
-    "footer body";
 }
 
 article > header {
-  all: revert; 
-  grid-area: header;
-  text-align: left;
-}
-
-article > [itemprop="articleBody"] {
-  grid-area: body;
+  all: revert;
+  text-align: center;
 }
 
 article > footer {
-  grid-area: footer;
+  text-align: left;
+  margin-top: 2rem;
+}
+
+/* Footer & Social */
+article > footer > div:first-of-type {
+  display: flex;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 1rem auto;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Liens visibles dans "À lire aussi" (pied d'article) */
+article > footer ul a,
+article > footer ul a:visited,
+article > footer p a,
+article > footer p a:visited,
+article > footer p a:active,
+article > footer p a:hover {
+  color: var(--color-link);
+}
+
+article > footer ul {
+  padding: 0 var(--page-gutter);
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+article > footer ul li {
+  line-height: 1.5rem;
+  padding: 0.3rem 0;
+  margin-top: 0;
+  border-top: 1px solid var(--color-medium);
+}
+
+article > footer ul li:first-child {
+  border-top: 1px solid var(--color-medium);
+}
+
+article > footer ul li:last-child {
+  border-bottom: 1px solid var(--color-medium);
+}
+
+article > footer ul li::before {
+  content: none;
 }
 
 h1{
@@ -320,12 +422,15 @@ code{
 }
 
 /* Collection Pages */
-main[itemtype$="CollectionPage"] nav *{
-    margin:0;
+main[itemtype$="CollectionPage"]:not(#search) {
+  margin-top: 2rem;
 }
 
-main[itemtype$="CollectionPage"] nav{
-  /* background-color: var(--color-light); */
+main[itemtype$="CollectionPage"] nav * {
+  margin: 0;
+}
+
+main[itemtype$="CollectionPage"] nav {
   display: flex;
   align-items: baseline;
   gap: 1.5rem;
@@ -334,43 +439,70 @@ main[itemtype$="CollectionPage"] nav{
   padding: 1rem var(--page-gutter) 2rem;
 }
 
-main[itemtype$="CollectionPage"] article{
+main[itemtype$="CollectionPage"] article {
+  margin: 2rem auto;
   max-width: var(--max-width);
   padding: 0 var(--page-gutter);
-  margin: 2rem auto;
 }
 
-main[itemtype$="CollectionPage"] data{
-  font-weight: bold;
-  background-color: var(--color-medium);
-  color: var(--color-bg);
-  padding: 0.1rem;
+main[itemtype$="CollectionPage"] article:has(> time) {
+  align-items: baseline;
+  border-bottom: 1px solid var(--color-light);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 7rem minmax(0, 1fr) 9rem;
+  margin: 0 auto;
+  max-width: var(--max-width-wide);
+  padding: 1.1rem 0;
+  width: 100%;
 }
 
-main[itemtype$="CollectionPage"] h2{
-  font-size: var(--font-size-h3);
+main[itemtype$="CollectionPage"] article:has(> time) > time {
+  background: none;
+  color: var(--color-medium);
+  display: block;
+  font-size: 0.9rem;
   font-weight: normal;
-  margin: 0;
-  line-height: 1.2;
+  padding: 0;
 }
 
-main[itemtype$="CollectionPage"] h3{
-  display: inline;
-  font-size: 1.2rem;
-  margin-left: 0.5rem;
-  font-variant: small-caps;
+main[itemtype$="CollectionPage"] article:has(> time) > h3,
+main[itemtype$="CollectionPage"] article:has(> time) > h2 {
+  display: block;
+  font-weight: normal;
+  line-height: 1.15;
+  margin: 0;
+  max-width: none;
+  width: 100%;
+}
+
+main[itemtype$="CollectionPage"] article:has(> time) > h3 {
   color: var(--color-medium);
   font-family: var(--font-normal);
-  font-weight: normal;
+  font-size: 0.9rem;
+  font-variant: normal;
+  text-transform: uppercase;
+}
+
+main[itemtype$="CollectionPage"] article:has(> time) > h2 {
+  font-family: var(--font-headings);
+  font-size: 1.6rem;
+  grid-column: 2;
+}
+
+main[itemtype$="CollectionPage"] article:has(> time) > span {
+  color: var(--color-medium);
+  font-size: 0.9rem;
+  text-align: right;
+  text-transform: uppercase;
 }
 
 /* Books */
-
-figure img.book{
+figure img.book {
   max-width: 40ch;
 }
 
-h6{
+h6 {
   max-width: var(--max-width);
   font-size: var(--font-size);
   text-align: center;
@@ -379,19 +511,132 @@ h6{
 }
 
 /* Home */
-main[itemtype$="AboutPage"]{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 90vh;
-  text-align: center;
+main[itemtype$="AboutPage"] {
+  display: block;
+  height: auto;
+  text-align: left;
 }
 
-main[itemtype$="AboutPage"] section{
+main[itemtype$="AboutPage"] section {
   max-width: var(--max-width-wide);
+  margin: 2rem auto 4rem;
+  padding: 0 var(--page-gutter);
 }
 
-main[itemtype$="AboutPage"] section h2{
+main[itemtype$="AboutPage"] section:first-child {
+  max-width: var(--max-width-ultra);
+}
+
+main[itemtype$="AboutPage"] section > a:first-child {
+  color: #fff;
+  display: block;
+  margin-bottom: 3rem;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article {
+  align-items: flex-end;
+  background-color: #111;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border-radius: 0.25rem;
+  display: flex;
+  min-height: 24rem;
+  overflow: hidden;
+  padding: 3rem;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article > div {
+  max-width: 42rem;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article p:first-child {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article h1 {
+  color: #fff;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  line-height: 1;
+  margin: 0 0 1rem;
+  max-width: 22ch;
+  text-align: left;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article p:not(:first-child) {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.05rem;
+  line-height: 1.35;
+  margin: 0 0 1.5rem;
+  max-width: 48ch;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article span {
+  color: #fff;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+main[itemtype$="AboutPage"] > menu {
+  margin: 0 auto 2rem;
+}
+
+main[itemtype$="AboutPage"] ol {
+  border-top: 1px solid var(--color-light);
+  list-style: none;
+  margin: 0 0 4rem;
+  max-width: none;
+  padding: 0;
+  width: 100%;
+}
+
+main[itemtype$="AboutPage"] ol li {
+  border-bottom: 1px solid var(--color-light);
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  width: 100%;
+}
+
+main[itemtype$="AboutPage"] ol li::before {
+  content: none;
+}
+
+main[itemtype$="AboutPage"] ol li {
+  align-items: baseline;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 7rem minmax(0, 1fr) 9rem;
+  padding: 1.1rem 0;
+}
+
+main[itemtype$="AboutPage"] ol time,
+main[itemtype$="AboutPage"] ol li > span {
+  color: var(--color-medium);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+main[itemtype$="AboutPage"] ol li > span {
+  text-align: right;
+}
+
+main[itemtype$="AboutPage"] ol h3 {
+  font-family: var(--font-headings);
+  font-size: 1.6rem;
+  font-weight: normal;
+  line-height: 1.15;
+  margin: 0;
+  max-width: none;
+  text-wrap: wrap;
+  width: 100%;
+}
+
+main[itemtype$="AboutPage"] section h2 {
   font-variant: small-caps;
   font-weight: normal;
   color: var(--color-medium);
@@ -399,78 +644,54 @@ main[itemtype$="AboutPage"] section h2{
   margin: 2rem 0 0.5rem;
 }
 
-main[itemtype$="AboutPage"] section h3{
+main[itemtype$="AboutPage"] section h3 {
   font-size: var(--font-size-h3);
   font-weight: normal;
   margin: 0;
 }
 
 body > footer {
+  background: var(--color-light);
+  color: var(--color-medium);
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  text-align: left;
-  padding: 0 var(--page-gutter);
-}
-
-/* body > footer a[href="/menu/"] {
-  margin-left: auto;
-} */
-
-body > footer div:last-of-type {
-  font-size: 1.2rem;
-}
-
-
-article > footer {
-  text-align: left;
-  margin-top: 2rem;
-}
-
-/* Footer & Social */
-article > footer > div:first-of-type {
-  display: flex;
-  width: 100%;
-  max-width: var(--max-width);
-  margin: 1rem auto;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
+  gap: 0.35rem;
+  margin-top: 3rem;
+  padding: 1rem var(--page-gutter) 1.25rem;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 
-/* Liens visibles dans "À lire aussi" (pied d'article) */
-article > footer ul a, article > footer ul a:visited, article > footer p a, article > footer p a:visited, article > footer p a:active, article > footer p a:hover{
-  color: var(--color-link);
+body > footer > div:first-child a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
-article > footer ul {
-  padding: 0 var(--page-gutter);
-  max-width: var(--max-width);
-  margin: 0 auto 0 auto;
+body > footer > div:nth-child(2) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
-article > footer ul li {
-  line-height: 1.5rem;
-  padding: 0.3rem 0;
-  margin-top: 0;
-  border-top: 1px solid var(--color-medium);
+body > footer > div:nth-child(2) a {
+  display: grid;
+  place-items: center;
+  min-width: 2rem;
+  min-height: 2rem;
 }
 
-article > footer ul li:first-child {
-  border-top: 1px solid var(--color-medium);
+body > footer > div:last-child {
+  margin-top: 0.25rem;
 }
 
-article > footer ul li:last-child {
-  border-bottom: 1px solid var(--color-medium);
-}
-
-article > footer ul li::before {
-  content: none;
+body > footer a:hover,
+body > footer a:focus-visible {
+  color: var(--color-contrast);
 }
 
 
@@ -561,10 +782,94 @@ text-align: center;
 @media (max-width: 40ch){
   :root{--font-size: 1rem}
   label{margin-right: 0.5em}
+
+  body > header > a[aria-label="Accueil"],
+  body > header > span[aria-label="Accueil"] {
+    font-size: 1.45rem;
+  }
+
+  body > header > nav[aria-label="Navigation principale"] a {
+    font-size: 0.9rem;
+  }
 }
  
 /* Écrans moyens (moins de 70ch ≈ 560-700px) - Mobile/Tablette portrait */
 @media (max-width: 70ch){
+  body > header {
+    grid-template-rows: 4.5rem 2.8rem;
+    padding-inline: 0.5rem;
+  }
+
+  body > header > a[aria-label="Informations"] {
+    height: 2.35rem;
+    width: 2.35rem;
+  }
+
+  body > header > a[aria-label="Informations"] {
+    border-radius: 0.55rem;
+  }
+
+  body > header > a[aria-label="Recherche"] {
+    right: var(--page-gutter);
+    top: 2.25rem;
+  }
+
+  body > header > nav[aria-label="Navigation principale"] {
+    gap: 0.25rem;
+    justify-content: space-between;
+    margin-inline: -0.5rem;
+    min-height: 2.8rem;
+    padding-inline: 0.5rem;
+  }
+
+  body > header > nav[aria-label="Navigation principale"] a {
+    font-size: 1rem;
+    line-height: 2.8rem;
+  }
+
+  main[itemtype$="AboutPage"] section > a:first-child article {
+    min-height: 20rem;
+    padding: 1.5rem;
+  }
+
+  main[itemtype$="AboutPage"] section > a:first-child article h1 {
+    font-size: 2.2rem;
+  }
+
+  main[itemtype$="AboutPage"] ol li {
+    gap: 0.45rem;
+    grid-template-columns: 5.2rem minmax(0, 1fr) 5.4rem;
+    padding: 0.9rem 0;
+  }
+
+  main[itemtype$="AboutPage"] ol time,
+  main[itemtype$="AboutPage"] ol li > span {
+    font-size: 0.72rem;
+  }
+
+  main[itemtype$="AboutPage"] ol h3 {
+    font-size: 1.15rem;
+  }
+
+  main[itemtype$="CollectionPage"] article:has(> time) {
+    gap: 0.45rem;
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+    padding: 0.9rem 0;
+  }
+
+  main[itemtype$="CollectionPage"] article:has(> time) > time,
+  main[itemtype$="CollectionPage"] article:has(> time) > h3 {
+    font-size: 0.72rem;
+  }
+
+  main[itemtype$="CollectionPage"] > article > span {
+    display: none;
+  }
+
+  main[itemtype$="CollectionPage"] article:has(> time) > h2 {
+    font-size: 1.15rem;
+  }
+
   article[itemscope]{
     display: block;
   }

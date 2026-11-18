@@ -630,9 +630,33 @@ class Layout:
 
         return quote_pattern.sub(quote_buttons, content)
 
-    def home_gen(self, last_post=None, featured_posts=None, home_post=None):
+    def home_gen(self, last_post=None, featured_posts=None, home_post=None, lastposts=None):
         featured_posts = featured_posts or {}
+        lastposts = lastposts or []
+        mainposts = self.web.db.get_last_posts(
+            limit=1,
+            exclude_tags=self.config.get('home_main_post_exclude', []),
+        )
+        mainpost = dict(mainposts[0]) if mainposts else None
+        mainpost_id = mainpost.get('id') if mainpost else None
         for template in self.templates:
+            posts_for_template = []
+            for lastpost in lastposts:
+                post = dict(lastpost)
+                if mainpost_id is not None and post.get('id') == mainpost_id:
+                    continue
+                post.pop('content', None)
+                posts_for_template.append(post)
+            template_lastposts = self.web.supercharge_posts(
+                template, posts_for_template
+            )
+            template_mainpost = None
+            if mainpost:
+                template_mainpost_data = dict(mainpost)
+                template_mainpost_data.pop('content', None)
+                template_mainpost = self.web.supercharge_post(
+                    template, template_mainpost_data
+                )
 
             if home_post:
                 home = self.web.supercharge_post(template, home_post)
@@ -652,11 +676,18 @@ class Layout:
             home['canonical'] = template['domain']
             home['description'] = home.get('description') or self.config['description']
             home['is_home'] = True
+            home['mainpost'] = template_mainpost
 
             header_html = self.header_html(header=template["header"], post=home, blog=self.config, template=template)
             footer_html = self.footer_html(template, home)
             newsletter_html = self.get_html(template["newsletter"], post=home, blog=self.config)
-            home_html = self.get_html(template["home"], post=home, blog=self.config, newsletter=newsletter_html)
+            home_html = self.get_html(
+                template["home"],
+                post=home,
+                blog=self.config,
+                newsletter=newsletter_html,
+                lastposts=template_lastposts,
+            )
             self.save(template, header_html + home_html + footer_html, "", "index.html")
 
 

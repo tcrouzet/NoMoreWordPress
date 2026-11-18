@@ -1,18 +1,45 @@
 <main itemscope itemType="https://schema.org/AboutPage">
   <section>
-    <h2><a href="/bibliographie/">Livres</a></h2>
-    <h3><a href="/books/rush/"><em>Rush</em></a></h3>
+    {% if post.mainpost %}
+      {% assign mainpost_section = post.mainpost.tag_title | default: post.mainpost.tag_slug | default: "Digressions" %}
+      {% if post.mainpost.navigation and post.mainpost.navigation.title %}
+        {% assign mainpost_section = post.mainpost.navigation.title %}
+      {% endif %}
 
-    <h2><a href="/blog/">Digressions</a></h2>
-    <h3><a href="{{ post.digressions.url }}">{{ post.digressions.title }}</a></h3>
+      {% assign mainpost_description = post.mainpost.description %}
+      {% if post.mainpost.frontmatter and post.mainpost.frontmatter.metadescription %}
+        {% assign mainpost_description = post.mainpost.frontmatter.metadescription %}
+      {% endif %}
 
-    <h2><a href="/carnet-de-route/">Carnets</a></h2>
-    <h3><a href="{{ post.carnet.url }}">{{ post.carnet.title }}</a></h3>
+      <a href="{{ post.mainpost.url }}" aria-label="Lire l'article : {{ post.mainpost.title }}">
+        <article{% if post.mainpost.thumb and post.mainpost.thumb.url and post.mainpost.thumb.format contains "image/" %} style="background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.96) 0%, rgba(0, 0, 0, 0.88) 34%, rgba(0, 0, 0, 0.46) 61%, rgba(0, 0, 0, 0.04) 100%), url('{{ post.mainpost.thumb.url }}');"{% endif %}>
+          <div>
+            <p>À la une · {{ mainpost_section }}</p>
+            <h1>{{ post.mainpost.title }}</h1>
+            {% if mainpost_description %}<p>{{ mainpost_description }}</p>{% endif %}
+            <span>→&nbsp; Lire l’article</span>
+          </div>
+        </article>
+      </a>
+    {% endif %}
+  </section>
 
-    <h2><a href="/borntobike/">Vélo</a></h2>
-    <h3 style="margin-bottom:2rem"><a href="{{ post.bike.url }}">{{ post.bike.title }}</a></h3>
+  {{ newsletter }}
 
-    {{ newsletter }}
-    
+  <section>
+    <h2>Derniers textes</h2>
+    <ol>
+      {% for item in lastposts limit: 10 %}
+        {% assign section_title = item.tag_title | default: item.tag_slug | default: "Digressions" %}
+        {% if item.navigation and item.navigation.title %}
+          {% assign section_title = item.navigation.title %}
+        {% endif %}
+        <li>
+          <time datetime="{{ item.pub_date_str }}">{{ item.pub_date_str | slice: 8, 2 }}.{{ item.pub_date_str | slice: 5, 2 }}.{{ item.pub_date_str | slice: 0, 4 }}</time>
+          <h3><a href="{{ item.url }}">{{ item.title }}</a></h3>
+          <span>{% if item.tag_url %}<a href="{{ item.tag_url }}">{{ section_title }}</a>{% else %}{{ section_title }}{% endif %}</span>
+        </li>
+      {% endfor %}
+    </ol>
   </section>
 </main>

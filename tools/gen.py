@@ -22,8 +22,6 @@ force = False
 sys.stdout = logs.DualOutput("_log.txt")
 sys.stderr = sys.stdout
 
-os.system('clear')
-
 if len(sys.argv) < 2 or not sys.argv[1].strip():
     exit('Usage: python3 ./tools/gen.py "nom_du_site"')
 
@@ -58,10 +56,10 @@ if config['build'] == 1 and config.get("force_update"):
     # db.un_updated(462)
     # db.un_update_books()
 
-if config['build'] > 0:
+if config['build'] >= 0:
 
     print(f"Updating data status: {config['build']}")
-    if config['build'] == 1 or config['build'] == 2:
+    if config['build'] in (0, 1, 2):
         #Load new posts only
         print("Just new/updated posts")
         db.db_builder(config['vault'],reset=False)
@@ -198,7 +196,8 @@ if (
             if tagged_posts:
                 home_posts[section] = tagged_posts[0]
         last_post = blog_posts[0] if blog_posts else None
-        layout.home_gen(last_post, home_posts, home_post)
+        lastposts = [dict(post) for post in db.get_last_posts(15)]
+        layout.home_gen(last_post, home_posts, home_post, lastposts)
 
         sitemap.add_post(
             {"url": "/", "pub_update_str": tools.now_datetime_str(), "thumb": None},
@@ -343,39 +342,41 @@ print("Gen ended")
 #STATIC FILES
 updated_static_files = static_sync.StaticSync(config).run()
 
-#EXPORT
-site_changed = (
-    db.new_posts
-    + db.updated_posts
-    + db.deleted_posts
-    + updated_static_files > 0
-    or updated_redirects > 0
-    or assets_changed
-    or full_build
-)
 
-# build=0 est un mode local sans synchronisation distante. Les fichiers
-# statiques peuvent éventuellement être préparés dans l'export, mais aucune
-# publication Git/AWS ni synchronisation Markdown/Gemini ne doit être lancée.
-if int(config.get('build', 0)) > 0 and version > 0 and site_changed:
-    for template in config['templates']:
+# build=0 est un mode local sans synchronisation distante.
+print(int(config.get('build', 0)))
+if int(config.get('build', 0)) > 0:
 
-        sync = template['sync'][0]
-        sync['export'] = template['export']
+    #EXPORT
+    site_changed = (
+        db.new_posts
+        + db.updated_posts
+        + db.deleted_posts
+        + updated_static_files > 0
+        or updated_redirects > 0
+        or assets_changed
+    )
 
-        if sync['name'] == "aws":
-            import sync_aws as aws
-            run_aws = aws.SyncAWS(sync)
-            run_aws.sync()
+    if site_changed:
 
-        elif sync['name'] == "github":
-            import publish_git
-            publish_git.publish_export(template['export'])
+        for template in config['templates']:
 
-    if config.get('export_github_md'):
-        tools.run_script('tools/sync_md.py', site)
+            sync = template['sync'][0]
+            sync['export'] = template['export']
 
-    if config.get('export_github_md') and config.get('gemini_export'):
-        tools.run_script('tools/sync_gmi.py', site)
+            if sync['name'] == "aws":
+                import sync_aws as aws
+                run_aws = aws.SyncAWS(sync)
+                run_aws.sync()
+
+            elif sync['name'] == "github":
+                import publish_git
+                publish_git.publish_export(template['export'])
+
+        if config.get('export_github_md'):
+            tools.run_script('tools/sync_md.py', site)
+
+        if config.get('export_github_md') and config.get('gemini_export'):
+            tools.run_script('tools/sync_gmi.py', site)
 else:
     print("No export")
