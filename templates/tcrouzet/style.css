@@ -422,10 +422,6 @@ code{
 }
 
 /* Collection Pages */
-main[itemtype$="CollectionPage"]:not(#search) {
-  margin-top: 2rem;
-}
-
 main[itemtype$="CollectionPage"] nav * {
   margin: 0;
 }
@@ -445,19 +441,36 @@ main[itemtype$="CollectionPage"] article {
   padding: 0 var(--page-gutter);
 }
 
-main[itemtype$="CollectionPage"] article:has(> time) {
+main[itemtype$="AboutPage"] ol,
+main[itemtype$="CollectionPage"] ol {
+  border-top: 1px solid var(--color-light);
+  list-style: none;
+  margin: 0 0 4rem;
+  max-width: none;
+  padding: 0;
+  width: 100%;
+}
+
+main[itemtype$="AboutPage"] ol li,
+main[itemtype$="CollectionPage"] ol li {
   align-items: baseline;
   border-bottom: 1px solid var(--color-light);
   display: grid;
   gap: 1rem;
   grid-template-columns: 7rem minmax(0, 1fr) 9rem;
-  margin: 0 auto;
-  max-width: var(--max-width-wide);
+  margin: 0;
+  max-width: none;
   padding: 1.1rem 0;
   width: 100%;
 }
 
-main[itemtype$="CollectionPage"] article:has(> time) > time {
+main[itemtype$="AboutPage"] ol li::before,
+main[itemtype$="CollectionPage"] ol li::before {
+  content: none;
+}
+
+main[itemtype$="AboutPage"] ol time,
+main[itemtype$="CollectionPage"] ol time {
   background: none;
   color: var(--color-medium);
   display: block;
@@ -466,35 +479,32 @@ main[itemtype$="CollectionPage"] article:has(> time) > time {
   padding: 0;
 }
 
-main[itemtype$="CollectionPage"] article:has(> time) > h3,
-main[itemtype$="CollectionPage"] article:has(> time) > h2 {
+main[itemtype$="AboutPage"] section ol h3,
+main[itemtype$="CollectionPage"] ol h3 {
   display: block;
+  font-family: var(--font-headings);
+  font-size: 1.6rem;
   font-weight: normal;
+  grid-column: 2;
   line-height: 1.15;
   margin: 0;
   max-width: none;
+  text-wrap: wrap;
   width: 100%;
 }
 
-main[itemtype$="CollectionPage"] article:has(> time) > h3 {
-  color: var(--color-medium);
-  font-family: var(--font-normal);
-  font-size: 0.9rem;
-  font-variant: normal;
-  text-transform: uppercase;
-}
-
-main[itemtype$="CollectionPage"] article:has(> time) > h2 {
-  font-family: var(--font-headings);
-  font-size: 1.6rem;
-  grid-column: 2;
-}
-
-main[itemtype$="CollectionPage"] article:has(> time) > span {
+main[itemtype$="AboutPage"] ol li > span,
+main[itemtype$="CollectionPage"] ol li > span {
   color: var(--color-medium);
   font-size: 0.9rem;
   text-align: right;
   text-transform: uppercase;
+}
+
+/* Home — entrées du carnet */
+main[itemtype$="AboutPage"] ol li[data-rubrique="carnet"],
+main[itemtype$="AboutPage"] ol li[data-rubrique="carnets"] {
+  background-color: var(--color-light);
 }
 
 /* Books */
@@ -510,14 +520,53 @@ h6 {
   padding: 0 var(--page-gutter);
 }
 
+/* Book collections */
+main[itemtype="https://schema.org/CollectionPage"]:has(> article > a > figure) {
+  box-sizing: border-box;
+  display: grid !important;
+  gap: var(--page-gutter);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: var(--max-width-wide) !important;
+  width: 100% !important;
+}
+
+main[itemtype$="CollectionPage"]:has(> article > a > figure) > nav {
+  grid-column: 1 / -1;
+}
+
+main[itemtype="https://schema.org/CollectionPage"]:has(> article > a > figure) > article {
+  display: block !important;
+  margin: 0 !important;
+  max-width: none !important;
+  min-width: 0;
+  padding: 0 !important;
+  width: auto !important;
+}
+
+main[itemtype$="CollectionPage"]:has(> article > a > figure) figure {
+  aspect-ratio: 2 / 3;
+  margin: 0;
+  width: 100%;
+}
+
+main[itemtype$="CollectionPage"]:has(> article > a > figure) img {
+  display: block;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  width: 100%;
+}
+
 /* Home */
-main[itemtype$="AboutPage"] {
+main[itemtype$="AboutPage"],
+main[itemtype$="CollectionPage"]:not(#search) {
   display: block;
   height: auto;
   text-align: left;
 }
 
-main[itemtype$="AboutPage"] section {
+main[itemtype$="AboutPage"] section,
+main[itemtype$="CollectionPage"]:not(#search) {
   max-width: var(--max-width-wide);
   margin: 2rem auto 4rem;
   padding: 0 var(--page-gutter);
@@ -544,10 +593,20 @@ main[itemtype$="AboutPage"] section > a:first-child article {
   min-height: 24rem;
   overflow: hidden;
   padding: 3rem;
+  position: relative;
+}
+
+main[itemtype$="AboutPage"] section > a:first-child article::before {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.96) 0%, rgba(0, 0, 0, 0.72) 36%, rgba(0, 0, 0, 0.18) 70%, rgba(0, 0, 0, 0) 100%);
+  content: "";
+  inset: 0;
+  position: absolute;
 }
 
 main[itemtype$="AboutPage"] section > a:first-child article > div {
   max-width: 42rem;
+  position: relative;
+  z-index: 1;
 }
 
 main[itemtype$="AboutPage"] section > a:first-child article p:first-child {
@@ -583,57 +642,6 @@ main[itemtype$="AboutPage"] section > a:first-child article span {
 
 main[itemtype$="AboutPage"] > menu {
   margin: 0 auto 2rem;
-}
-
-main[itemtype$="AboutPage"] ol {
-  border-top: 1px solid var(--color-light);
-  list-style: none;
-  margin: 0 0 4rem;
-  max-width: none;
-  padding: 0;
-  width: 100%;
-}
-
-main[itemtype$="AboutPage"] ol li {
-  border-bottom: 1px solid var(--color-light);
-  margin: 0;
-  max-width: none;
-  padding: 0;
-  width: 100%;
-}
-
-main[itemtype$="AboutPage"] ol li::before {
-  content: none;
-}
-
-main[itemtype$="AboutPage"] ol li {
-  align-items: baseline;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 7rem minmax(0, 1fr) 9rem;
-  padding: 1.1rem 0;
-}
-
-main[itemtype$="AboutPage"] ol time,
-main[itemtype$="AboutPage"] ol li > span {
-  color: var(--color-medium);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-}
-
-main[itemtype$="AboutPage"] ol li > span {
-  text-align: right;
-}
-
-main[itemtype$="AboutPage"] ol h3 {
-  font-family: var(--font-headings);
-  font-size: 1.6rem;
-  font-weight: normal;
-  line-height: 1.15;
-  margin: 0;
-  max-width: none;
-  text-wrap: wrap;
-  width: 100%;
 }
 
 main[itemtype$="AboutPage"] section h2 {
@@ -777,6 +785,82 @@ text-align: center;
 #search ul li::before {content: none}
 
 
+/* Home — frise des livres, navigation native sans JavaScript */
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] {
+  margin-bottom: 2rem;
+  max-width: var(--max-width-ultra);
+  overflow: visible;
+}
+
+main[itemtype$="AboutPage"] > section > h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+main[itemtype$="AboutPage"] > section > h2 > a {
+  color: var(--color-medium);
+  font-family: var(--font-normal);
+  font-size: 0.9rem;
+  font-variant: normal;
+  font-weight: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] > div {
+  display: flex;
+  gap: var(--page-gutter);
+  margin-left: calc(-1 * var(--page-gutter));
+  margin-right: calc(-1 * var(--page-gutter));
+  max-width: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0.5rem var(--page-gutter) 1.25rem;
+  scroll-behavior: smooth;
+  scroll-padding-inline: var(--page-gutter);
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  width: auto;
+}
+
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] > div:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 0.25rem;
+}
+
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] article {
+  flex: 0 0 clamp(9rem, 17vw, 12rem);
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  scroll-snap-align: start;
+}
+
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] article > a {
+  display: block;
+}
+
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] figure {
+  aspect-ratio: 2 / 3;
+  margin: 0;
+  max-width: none;
+  overflow: hidden;
+  width: 100%;
+}
+
+main[itemtype$="AboutPage"] > section[aria-label="Livres"] figure img {
+  border: 0;
+  display: block;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  width: 100%;
+}
+
 /* Media Queries */
 /* Petits écrans (moins de 40ch ≈ 320-400px) */
 @media (max-width: 40ch){
@@ -827,46 +911,48 @@ text-align: center;
     line-height: 2.8rem;
   }
 
+  main[itemtype$="CollectionPage"]:has(> article > a > figure) {
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   main[itemtype$="AboutPage"] section > a:first-child article {
-    min-height: 20rem;
+    min-height: 28rem;
     padding: 1.5rem;
+  }
+
+  main[itemtype$="AboutPage"] section > a:first-child article::before {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.52) 28%, rgba(0, 0, 0, 0.86) 58%, rgba(0, 0, 0, 0.98) 78%, #000 100%);
+  }
+
+  main[itemtype$="AboutPage"] section > a:first-child article > div {
+    max-width: none;
+    width: 100%;
   }
 
   main[itemtype$="AboutPage"] section > a:first-child article h1 {
     font-size: 2.2rem;
   }
 
-  main[itemtype$="AboutPage"] ol li {
-    gap: 0.45rem;
-    grid-template-columns: 5.2rem minmax(0, 1fr) 5.4rem;
-    padding: 0.9rem 0;
-  }
-
-  main[itemtype$="AboutPage"] ol time,
-  main[itemtype$="AboutPage"] ol li > span {
-    font-size: 0.72rem;
-  }
-
-  main[itemtype$="AboutPage"] ol h3 {
-    font-size: 1.15rem;
-  }
-
-  main[itemtype$="CollectionPage"] article:has(> time) {
+  main[itemtype$="AboutPage"] ol li,
+  main[itemtype$="CollectionPage"] ol li {
     gap: 0.45rem;
     grid-template-columns: 5.2rem minmax(0, 1fr);
     padding: 0.9rem 0;
   }
 
-  main[itemtype$="CollectionPage"] article:has(> time) > time,
-  main[itemtype$="CollectionPage"] article:has(> time) > h3 {
+  main[itemtype$="AboutPage"] ol time,
+  main[itemtype$="CollectionPage"] ol time {
     font-size: 0.72rem;
   }
 
-  main[itemtype$="CollectionPage"] > article > span {
+  main[itemtype$="AboutPage"] ol li > span,
+  main[itemtype$="CollectionPage"] ol li > span {
     display: none;
   }
 
-  main[itemtype$="CollectionPage"] article:has(> time) > h2 {
+  main[itemtype$="AboutPage"] section ol h3,
+  main[itemtype$="CollectionPage"] ol h3 {
     font-size: 1.15rem;
   }
 
@@ -888,6 +974,15 @@ text-align: center;
   div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);}
   menu a[href*="utm_content=share"] {
     display: none;
+  }
+
+  main[itemtype$="AboutPage"] > section[aria-label="Livres"] > div {
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  main[itemtype$="AboutPage"] > section[aria-label="Livres"] article {
+    flex-basis: min(42vw, 11rem);
   }
 }
 

@@ -4,6 +4,10 @@
   {% assign series = false %}
 {% endif %}
 
+{% if post.tag_slug != "book" %}
+  <ol>
+{% endif %}
+
 {% for tag_post in tags %}
   {% if post.tag_slug == "book" %}
     <article>
@@ -20,11 +24,12 @@
       </a>
     </article>
   {% else %}
-    {% assign tag_category = tag_post.tag_title | default: tag_post.tag_slug | default: post.tag_title | default: post.tag_slug %}
+    {% assign tag_category = tag_post.tag_title | default: tag_post.tag_slug | default: "Digressions" %}
     {% if tag_post.navigation and tag_post.navigation.title %}
       {% assign tag_category = tag_post.navigation.title %}
     {% endif %}
-    <article>
+    {% assign tag_category_url = tag_post.tag_url | default: tag_post.navigation.url %}
+    <li>
       {% if tag_post.pub_date_str %}
         <time datetime="{{ tag_post.pub_date_str }}">{{ tag_post.pub_date_str | slice: 8, 2 }}.{{ tag_post.pub_date_str | slice: 5, 2 }}.{{ tag_post.pub_date_str | slice: 0, 4 }}</time>
       {% elsif tag_post.pub_date %}
@@ -32,8 +37,18 @@
       {% else %}
         <time></time>
       {% endif %}
-      <h2><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h2>
-      <span>{{ tag_category }}</span>
-    </article>
+      <h3><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h3>
+      <span>
+        {% if tag_category_url %}
+          <a href="{{ tag_category_url }}">{{ tag_category }}</a>
+        {% else %}
+          {{ tag_category }}
+        {% endif %}
+      </span>
+    </li>
   {% endif %}
 {% endfor %}
+
+{% if post.tag_slug != "book" %}
+  </ol>
+{% endif %}

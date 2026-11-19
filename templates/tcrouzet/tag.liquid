@@ -1,14 +1,3 @@
 <main itemscope itemType="https://schema.org/CollectionPage">
-    {% comment %} <nav>
-        {% for menu in post.menu %}
-            {% if forloop.index == 1 %}
-                <h1 itemprop="headline">{{ menu.tag_title }}</h1>
-            {% else %}
-                <a href="{{ menu.tag_url }}">{{ menu.tag_title }}</a>
-            {% endif %}
-        {% endfor %}
-    </nav> {% endcomment %}
-
     {{ tags.list }}
-
 </main>

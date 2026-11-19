@@ -41,7 +41,7 @@ for template in config['templates']:
         filtered_templates.append(template)
 config['templates'] = filtered_templates
 
-version = int(config['version'])
+version = int(config.get('version', 0))
 db = db.Db(config)
 web = web.Web(config, db)
 layout = layout.Layout(config, web)
@@ -197,7 +197,8 @@ if (
                 home_posts[section] = tagged_posts[0]
         last_post = blog_posts[0] if blog_posts else None
         lastposts = [dict(post) for post in db.get_last_posts(15)]
-        layout.home_gen(last_post, home_posts, home_post, lastposts)
+        books_slider = db.get_books("slider=1")
+        layout.home_gen(last_post, home_posts, home_post, lastposts, books_slider)
 
         sitemap.add_post(
             {"url": "/", "pub_update_str": tools.now_datetime_str(), "thumb": None},
@@ -344,8 +345,7 @@ updated_static_files = static_sync.StaticSync(config).run()
 
 
 # build=0 est un mode local sans synchronisation distante.
-print(int(config.get('build', 0)))
-if int(config.get('build', 0)) > 0:
+if int(config.get('build', 0)) > 0 and version > 0:
 
     #EXPORT
     site_changed = (

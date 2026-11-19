@@ -12,7 +12,7 @@
       {% endif %}
 
       <a href="{{ post.mainpost.url }}" aria-label="Lire l'article : {{ post.mainpost.title }}">
-        <article{% if post.mainpost.thumb and post.mainpost.thumb.url and post.mainpost.thumb.format contains "image/" %} style="background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.96) 0%, rgba(0, 0, 0, 0.88) 34%, rgba(0, 0, 0, 0.46) 61%, rgba(0, 0, 0, 0.04) 100%), url('{{ post.mainpost.thumb.url }}');"{% endif %}>
+        <article{% if post.mainpost.thumb and post.mainpost.thumb.url and post.mainpost.thumb.format contains "image/" %} style="background-image: url('{{ post.mainpost.thumb.url }}');"{% endif %}>
           <div>
             <p>À la une · {{ mainpost_section }}</p>
             <h1>{{ post.mainpost.title }}</h1>
@@ -27,19 +27,47 @@
   {{ newsletter }}
 
   <section>
-    <h2>Derniers textes</h2>
+    <h2>
+      Derniers textes
+      <a href="/blog/">Tous les textes&nbsp;→</a>
+    </h2>
     <ol>
       {% for item in lastposts limit: 10 %}
         {% assign section_title = item.tag_title | default: item.tag_slug | default: "Digressions" %}
         {% if item.navigation and item.navigation.title %}
           {% assign section_title = item.navigation.title %}
         {% endif %}
-        <li>
+        <li data-rubrique="{{ section_title | downcase | escape }}">
           <time datetime="{{ item.pub_date_str }}">{{ item.pub_date_str | slice: 8, 2 }}.{{ item.pub_date_str | slice: 5, 2 }}.{{ item.pub_date_str | slice: 0, 4 }}</time>
           <h3><a href="{{ item.url }}">{{ item.title }}</a></h3>
           <span>{% if item.tag_url %}<a href="{{ item.tag_url }}">{{ section_title }}</a>{% else %}{{ section_title }}{% endif %}</span>
         </li>
       {% endfor %}
     </ol>
+  </section>
+
+  <section aria-label="Livres">
+    <h2>
+      Livres
+      <a href="/bibliographie/">Toute la bibliographie&nbsp;→</a>
+    </h2>
+    <div tabindex="0" aria-label="Frise des livres">
+      {% for item in books %}
+        {% assign cover_url = item.thumb.url_small | default: item.thumb.url %}
+        {% if cover_url %}
+          <article id="book-{{ forloop.index }}">
+            <a href="{{ item.url }}" aria-label="Voir le livre : {{ item.title }}">
+              <figure>
+                <img
+                  src="{{ cover_url }}"
+                  alt="{{ item.thumb_legend | default: item.title }}"
+                  loading="lazy"
+                  decoding="async">
+              </figure>
+            </a>
+          </article>
+        {% endif %}
+      {% endfor %}
+    </div>
   </section>
 </main>

@@ -630,7 +630,7 @@ class Layout:
 
         return quote_pattern.sub(quote_buttons, content)
 
-    def home_gen(self, last_post=None, featured_posts=None, home_post=None, lastposts=None):
+    def home_gen(self, last_post=None, featured_posts=None, home_post=None, lastposts=None, books=None):
         featured_posts = featured_posts or {}
         lastposts = lastposts or []
         mainposts = self.web.db.get_last_posts(
@@ -639,6 +639,12 @@ class Layout:
         )
         mainpost = dict(mainposts[0]) if mainposts else None
         mainpost_id = mainpost.get('id') if mainpost else None
+        books_for_template = []
+        for book in books or []:
+            book_data = dict(book)
+            book_data.pop('content', None)
+            books_for_template.append(book_data)
+
         for template in self.templates:
             posts_for_template = []
             for lastpost in lastposts:
@@ -649,6 +655,9 @@ class Layout:
                 posts_for_template.append(post)
             template_lastposts = self.web.supercharge_posts(
                 template, posts_for_template
+            )
+            template_books = self.web.supercharge_posts(
+                template, books_for_template
             )
             template_mainpost = None
             if mainpost:
@@ -687,6 +696,7 @@ class Layout:
                 blog=self.config,
                 newsletter=newsletter_html,
                 lastposts=template_lastposts,
+                books=template_books,
             )
             self.save(template, header_html + home_html + footer_html, "", "index.html")
 

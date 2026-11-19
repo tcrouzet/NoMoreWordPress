@@ -637,6 +637,54 @@ class Db:
     def get_all_posts_and_pages(self):
         return self.get_posts("type<5")
 
+    def get_books(self, condition=None):
+        """Retourne les livres, avec un filtre facultatif sur leur frontmatter."""
+        cursor = self.conn.cursor()
+        query = '''
+            SELECT *,
+                (COUNT(*) OVER ()) - ROW_NUMBER() OVER (ORDER BY pub_date DESC) + 1 AS ordre
+            FROM posts
+            WHERE site = ? AND type = 2
+        '''
+        params = [self.site]
+
+        if condition is not None:
+            if not isinstance(condition, str):
+                raise ValueError("condition must have the form '<field>=<JSON value>'")
+
+            match = re.fullmatch(
+                r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*",
+                condition,
+            )
+            if not match:
+                raise ValueError("condition must have the form '<field>=<JSON value>'")
+
+            try:
+                value = json.loads(match.group(2))
+            except json.JSONDecodeError as error:
+                raise ValueError(
+                    "condition value must be a JSON scalar"
+                ) from error
+            if isinstance(value, (dict, list)):
+                raise ValueError("condition value must be a JSON scalar")
+
+            field_path = f"$.{match.group(1)}"
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                query += """
+                    AND (
+                        json_extract(frontmatter, ?) = ?
+                        OR json_extract(frontmatter, ?) = ?
+                    )
+                """
+                params.extend((field_path, value, field_path, str(value)))
+            else:
+                query += " AND json_extract(frontmatter, ?) = ?"
+                params.extend((field_path, value))
+
+        query += " ORDER BY pub_date DESC"
+        cursor.execute(query, tuple(params))
+        return cursor.fetchall()
+
 
     def get_blog_posts(self, exclude_tags=None, limit=None):
         """
