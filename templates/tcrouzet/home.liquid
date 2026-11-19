@@ -1,5 +1,5 @@
 <main itemscope itemType="https://schema.org/AboutPage">
-  <section>
+  <section aria-label="Une">
     {% if post.mainpost %}
       {% assign mainpost_section = post.mainpost.tag_title | default: post.mainpost.tag_slug | default: "Digressions" %}
       {% if post.mainpost.navigation and post.mainpost.navigation.title %}
@@ -11,7 +11,7 @@
         {% assign mainpost_description = post.mainpost.frontmatter.metadescription %}
       {% endif %}
 
-      <a href="{{ post.mainpost.url }}" aria-label="Lire l'article : {{ post.mainpost.title }}">
+      <a href="{{ post.mainpost.url }}" aria-label="{{ post.mainpost.title | escape }}">
         <article{% if post.mainpost.thumb and post.mainpost.thumb.url and post.mainpost.thumb.format contains "image/" %} style="background-image: url('{{ post.mainpost.thumb.url }}');"{% endif %}>
           <div>
             <p>À la une · {{ mainpost_section }}</p>
@@ -31,7 +31,7 @@
       Derniers textes
       <a href="/blog/">Tous les textes&nbsp;→</a>
     </h2>
-    <ol>
+    <ol aria-label="Textes">
       {% for item in lastposts limit: 10 %}
         {% assign section_title = item.tag_title | default: item.tag_slug | default: "Digressions" %}
         {% if item.navigation and item.navigation.title %}
@@ -51,12 +51,12 @@
       Livres
       <a href="/bibliographie/">Toute la bibliographie&nbsp;→</a>
     </h2>
-    <div tabindex="0" aria-label="Frise des livres">
+    <div tabindex="0" aria-label="Livres">
       {% for item in books %}
         {% assign cover_url = item.thumb.url_small | default: item.thumb.url %}
         {% if cover_url %}
           <article id="book-{{ forloop.index }}">
-            <a href="{{ item.url }}" aria-label="Voir le livre : {{ item.title }}">
+            <a href="{{ item.url }}" aria-label="{{ item.title | escape }}">
               <figure>
                 <img
                   src="{{ cover_url }}"

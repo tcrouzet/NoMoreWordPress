@@ -1,10 +1,5 @@
 <footer>
-    <div>
-        © 2026 <a href="/page/informations/">Thierry Crouzet</a> ·
-        <a href="/page/confidentialite/">Confidentialité</a> ∙
-        <a href="/page/conditions/">Conditions</a>
-    </div>
-    <div>
+    <div role="group" aria-label="Liens">
         {% if not post.is_home %}
             <a href="/" aria-label="Accueil">⌂</a>
         {% endif %}
@@ -13,6 +8,11 @@
         <a href="/page/mail/" aria-label="Contact">✎</a>
     </div>
     <div>Je suis un écrivain humain même quand j'utilise l'IA.</div>
+    <div>
+        © 2026 <a href="/page/informations/">Thierry Crouzet</a> ·
+        <a href="/page/confidentialite/">Confidentialité</a> ∙
+        <a href="/page/conditions/">Conditions</a>
+    </div>
 </footer>
 </body>
 </html>

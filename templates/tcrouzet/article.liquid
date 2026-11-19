@@ -31,7 +31,9 @@
 
 <div itemprop="articleBody">
 
+    {% assign article_content = post.content %}
     {% if post.type == 2 and post.thumb %}
+        {% assign article_content = article_content | without_image: post.thumb.url %}
         <figure>
             <img width="{{ post.thumb.width }}" height="{{ post.thumb.height }}" src="{{ post.thumb.url }}"
             class="book" 
@@ -51,7 +53,7 @@
         <h6>{{ post.frontmatter.ebook }}</h6>
     {% endif %}
 
-    {{ post.content }}
+    {{ article_content }}
 
     {% if post.frontmatter.editor %}
     <h3>Fiche produit</h3>

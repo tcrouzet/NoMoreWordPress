@@ -4,8 +4,10 @@
   {% assign series = false %}
 {% endif %}
 
-{% if post.tag_slug != "book" %}
-  <ol>
+{% if series %}
+  <ol aria-label="Catégories">
+{% elsif post.tag_slug != "book" %}
+  <ol aria-label="Textes">
 {% endif %}
 
 {% for tag_post in tags %}
@@ -24,11 +26,6 @@
       </a>
     </article>
   {% else %}
-    {% assign tag_category = tag_post.tag_title | default: tag_post.tag_slug | default: "Digressions" %}
-    {% if tag_post.navigation and tag_post.navigation.title %}
-      {% assign tag_category = tag_post.navigation.title %}
-    {% endif %}
-    {% assign tag_category_url = tag_post.tag_url | default: tag_post.navigation.url %}
     <li>
       {% if tag_post.pub_date_str %}
         <time datetime="{{ tag_post.pub_date_str }}">{{ tag_post.pub_date_str | slice: 8, 2 }}.{{ tag_post.pub_date_str | slice: 5, 2 }}.{{ tag_post.pub_date_str | slice: 0, 4 }}</time>
@@ -37,14 +34,23 @@
       {% else %}
         <time></time>
       {% endif %}
-      <h3><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h3>
-      <span>
-        {% if tag_category_url %}
-          <a href="{{ tag_category_url }}">{{ tag_category }}</a>
-        {% else %}
-          {{ tag_category }}
+      {% if series %}
+        <h3><a href="{{ tag_post.tag_url }}">{{ tag_post.tag_title | escape }}</a></h3>
+      {% else %}
+        {% assign tag_category = tag_post.tag_title | default: tag_post.tag_slug | default: "Digressions" %}
+        {% if tag_post.navigation and tag_post.navigation.title %}
+          {% assign tag_category = tag_post.navigation.title %}
         {% endif %}
-      </span>
+        {% assign tag_category_url = tag_post.tag_url | default: tag_post.navigation.url %}
+        <h3><a href="{{ tag_post.url }}">{{ tag_post.title }}</a></h3>
+        <span>
+          {% if tag_category_url %}
+            <a href="{{ tag_category_url }}">{{ tag_category }}</a>
+          {% else %}
+            {{ tag_category }}
+          {% endif %}
+        </span>
+      {% endif %}
     </li>
   {% endif %}
 {% endfor %}

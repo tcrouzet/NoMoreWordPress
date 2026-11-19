@@ -16,6 +16,29 @@ import shlex
 import tools
 import jsonld
 
+
+def without_image(content, url):
+    if not content or not url:
+        return content
+    soup = BeautifulSoup(content, "html.parser")
+    images = soup.find_all("img", src=url)
+    if not images:
+        return content
+    for image in images:
+        figure = image.find_parent("figure")
+        element = figure if figure and len(figure.find_all("img")) == 1 else image
+        parent = element.parent
+        element.decompose()
+        while parent and parent.name in ("a", "p") and not parent.get_text(strip=True) and not parent.find():
+            ancestor = parent.parent
+            parent.decompose()
+            parent = ancestor
+    return str(soup)
+
+
+LIQUID_FILTERS = {"without_image": without_image}
+
+
 def make_liquid_loader(base_dir):
     def make(fname):
         # garantir l’extension
@@ -24,7 +47,7 @@ def make_liquid_loader(base_dir):
         path = os.path.join(base_dir, fname)
         if not os.path.isfile(path):
             return None
-        return Liquid(path)
+        return Liquid(path, filters=LIQUID_FILTERS)
     return make
 
 
@@ -55,6 +78,11 @@ class Layout:
                 raise FileNotFoundError(f"Template dir not found: {base_dir}")
             
             make = make_liquid_loader(base_dir)
+            css = {
+                os.path.splitext(name)[0]: tools.get_css(os.path.join(base_dir, name))
+                for name in os.listdir(base_dir)
+                if name.endswith(".css")
+            }
 
             self.templates.append({
                 "name": template['name'],
@@ -70,11 +98,8 @@ class Layout:
                 'comments': int(template.get('comments', 0)),
                 'code_blocks': template.get('code_blocks'),
                 'background_images': template.get('background_images'),
-                "inlinecss": (
-                    self.inlinecss(base_dir)
-                    if template.get('inline_assets', True)
-                    else ""
-                ),
+                "css": css,
+                "inlinecss": css.get("style", "") if template.get('inline_assets', True) else "",
                 "inlinejs": (
                     self.inlinejs(base_dir)
                     if template.get('inline_assets', True)
@@ -228,11 +253,6 @@ class Layout:
             shutil.copy2(source, target)
             return True
 
-    def inlinecss(self, base_dir):
-        css_path = os.path.join(base_dir, "style.css")
-        return tools.get_css(css_path)
-
-
     def inlinejs(self, base_dir):
         content = ""
         js_path = os.path.join(base_dir, "toggle.js")
@@ -308,7 +328,7 @@ class Layout:
             if layout_name and re.fullmatch(r'[a-zA-Z0-9_-]+', layout_name):
                 layout_path = os.path.join(template['dir'], f'{layout_name}.liquid')
                 if os.path.isfile(layout_path):
-                    article_template = Liquid(layout_path)
+                    article_template = Liquid(layout_path, filters=LIQUID_FILTERS)
                     if layout_name == 'timeline':
                         supercharged['content'] = self.timeline_blocks(
                             supercharged['content']
@@ -752,6 +772,7 @@ class Layout:
             ctx["blog"] = blog
         if extra_ctx:
             ctx.update(extra_ctx)
+        ctx["css"] = ctx.get("template", {}).get("css", {})
 
         return tpl.render(**ctx)
 
