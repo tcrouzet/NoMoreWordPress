@@ -221,10 +221,6 @@ article > footer ul li {
   border-top: 1px solid var(--color-medium);
 }
 
-article > footer ul li:first-child {
-  border-top: 1px solid var(--color-medium);
-}
-
 article > footer ul li:last-child {
   border-bottom: 1px solid var(--color-medium);
 }
@@ -234,7 +230,6 @@ article > footer ul li::before {
 }
 
 h1{
-  padding: 0.5rem var(--page-gutter);
   font-size: var(--font-size-h1);
   line-height: 1.1;
   max-width: var(--max-width-wide);
@@ -729,32 +724,6 @@ menu a:last-of-type {
   border: 2px solid var(--color-link);
 }
 
-/* Page menu */
-#menu{
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 var(--page-gutter);
-}
-
-#menu h1{
-  font-size: var(--font-size);
-  text-transform: uppercase;
-  font-weight: normal;
-  margin: 1.5rem 0 0.5rem 0;
-  padding: 0;
-  text-align: left;
-}
-
-#menu ul{margin: 0;padding: 0;max-width: 100%;}
-
-#menu ul li{
-  display: inline-block;
-  margin: 0 1rem 0 0;
-  padding: 0;
-}
-
-#menu ul li::before {content: none}
-
 /* Search */
 #search{
 max-width: var(--max-width);
@@ -887,9 +856,6 @@ main[itemtype$="AboutPage"] > section[aria-label="Livres"] figure img {
   body > header > a[aria-label="Informations"] {
     height: 2.35rem;
     width: 2.35rem;
-  }
-
-  body > header > a[aria-label="Informations"] {
     border-radius: 0.55rem;
   }
 
@@ -956,20 +922,10 @@ main[itemtype$="AboutPage"] > section[aria-label="Livres"] figure img {
     font-size: 1.15rem;
   }
 
-  article[itemscope]{
-    display: block;
-  }
-  article > header {
-    text-align: center;
-  }
   h1 {font-size:calc(var(--font-size-h1)*0.7);text-align: left;}
   nav{font-size: smaller;text-align: left;}
-  main[itemtype$="CollectionPage"] nav{gap: 0.5rem}
   main[itemtype$="CollectionPage"] nav h1{padding: 0}
   main[itemtype$="AboutPage"] section h3{font-size: calc(var(--font-size-h3)*0.8);}
-  #menu div{display: block}
-  #menu ul li {display: block}
-  #menu div a{width: 100%;min-height: 15vh;margin-bottom: 1em}
   main[itemtype$="CollectionPage"] nav{gap: 0.5rem;font-size: smaller}
   div.comments form{margin: 1rem auto;padding: 0 var(--page-gutter);}
   menu a[href*="utm_content=share"] {
