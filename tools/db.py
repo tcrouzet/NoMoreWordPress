@@ -1601,6 +1601,7 @@ class Db:
         thumb_path = None
         thumb_legend = None
         frontmatter = None
+        frontmatter_image = None
         frontmatter_lines = []
         content = None
         content_lines = []
@@ -1651,6 +1652,17 @@ class Db:
                     if line.strip().startswith('---'):
                         in_frontmatter = False
                         frontmatter = ft.Frontmatter(frontmatter_lines)()
+                        frontmatter_image = frontmatter.get('image')
+                        if frontmatter_image is not None and not isinstance(frontmatter_image, str):
+                            raise ValueError("Le champ image doit contenir un chemin d’image.")
+                        frontmatter_image = (frontmatter_image or '').strip()
+                        if frontmatter_image:
+                            thumb_path = frontmatter_image
+                            caption = frontmatter.get('caption')
+                            if caption is not None and not isinstance(caption, str):
+                                raise ValueError("Le champ caption doit contenir du texte.")
+                            thumb_legend = (caption or '').strip()
+                            thumb_found = True
                     else:
                         frontmatter_lines.append(line)
                     i += 1
@@ -1681,7 +1693,8 @@ class Db:
                 
                 # Extraction du thumb
                 if (
-                    '![' in line
+                    not frontmatter_image
+                    and '![' in line
                     and (
                         not thumb_found
                         or explicit_thumb_pattern.search(line)

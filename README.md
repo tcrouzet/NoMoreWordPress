@@ -177,9 +177,20 @@ ou de leur `permalink`.
 
 ## Images, thumb et arrière-plans
 
-Par défaut, la première image placée juste après le titre devient le thumb du
-billet. Pour choisir explicitement une autre image, ajouter `thumb` à son texte
-alternatif :
+Pour choisir une vignette indépendamment des images du texte, définir son chemin dans le front matter :
+
+```yaml
+---
+image: _i/vignette.webp
+caption: "Légende facultative de la vignette"
+---
+```
+
+Ce chemin est relatif au fichier Markdown. Le champ `image` est prioritaire sur les images du texte, leur marqueur `thumb` et le champ `background`. Il n’ajoute aucune image au corps du texte et conserve toutes celles qui y figurent déjà. Un champ absent ou vide conserve la sélection habituelle.
+
+Avec une `image` définie dans le YAML, `caption` permet de préciser sa légende. Si `caption` est absent ou vide, le titre du billet est utilisé. Sans `image` dans le YAML, la légende reste issue du texte alternatif de l’image sélectionnée.
+
+Sans ce champ, la première image placée juste après le titre devient le thumb du billet. Pour choisir explicitement une autre image, ajouter `thumb` à son texte alternatif :
 
 ```markdown
 ![Photo de couverture thumb](_i/couverture.webp)

@@ -1,5 +1,0 @@
-User-agent: *
-Disallow: /images_css/*
-Allow: /
-
-Sitemap: https://tcrouzet.com/sitemap/sitemap.xml
