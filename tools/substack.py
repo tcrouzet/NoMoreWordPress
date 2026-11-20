@@ -8,18 +8,7 @@ import unicodedata
 
 
 class Substack:
-    """
-    Trouve l'URL Substack d'un billet.
-
-    Priorité 1 : on calcule le slug deviné (heuristique de troncature)
-                 puis on cherche, dans l'export CSV des posts Substack
-                 (colonne post_id = "<id>.<slug-réel>"), le slug réel
-                 le plus PROCHE de cette estimation (pas une égalité
-                 stricte : la vraie troncature Substack est imprévisible).
-    Priorité 2 : si rien d'assez proche n'est trouvé dans le CSV
-                 (post pas encore publié, pas dans l'export...), on
-                 garde directement le slug deviné par l'heuristique.
-    """
+    """Résout l'URL par correction manuelle, export publié puis heuristique."""
 
     MAX_SLUG_LENGTH = 36  # <-- corrigé (était 48)
 
@@ -32,32 +21,37 @@ class Substack:
         self.substack_fr = config.get('substack_fr', '')
         self.substack_727 = config.get('substack_727', '')
         self.substack_post_csv = config.get('substack_post_csv', '')
-        self._csv_entries = None  # cache: [{'slug':..., 'date_key':...}, ...]
+        self._csv_entries = None  # cache: [{'slug':..., 'title':..., 'date_key':...}, ...]
         self._slug_map = None     # cache: {slug_source: slug_substack}
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(script_dir) + os.sep
+        if self.substack_post_csv:
+            self.substack_post_csv = os.path.join(self.parent_dir, os.path.expanduser(self.substack_post_csv))
 
         self.STOP_WORDS = {"un", "une", "le", "la", "les", "de", "des", "du", "et", "a", "en", "au", "aux", "ou", "ce", "se", "sa", "son"}
 
         self.slug_path = None
         if config.get('substack_slug_csv'):
-            self.slug_path=os.path.join(self.parent_dir, config.get('substack_slug_csv'))
+            self.slug_path = os.path.join(self.parent_dir, os.path.expanduser(config['substack_slug_csv']))
 
 
     def _extract_date_key(self, value):
-        """
-        Normalise une date (objet date/datetime ou chaîne ISO type
-        "2026-10-04T09:46:48.555Z") en clé "YYYY-MM-DD" comparable.
-        """
+        """Normalise un timestamp, une date ou une chaîne ISO en jour UTC."""
         if not value:
             return None
-        if isinstance(value, (datetime.date, datetime.datetime)):
-            return value.strftime("%Y-%m-%d")
-        text = str(value).strip()
-        if len(text) < 10:
+        try:
+            if isinstance(value, (int, float)):
+                value = datetime.datetime.fromtimestamp(value, datetime.timezone.utc)
+            elif isinstance(value, str):
+                value = datetime.datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+            if isinstance(value, datetime.datetime):
+                if value.tzinfo:
+                    value = value.astimezone(datetime.timezone.utc)
+                value = value.date()
+            return value.isoformat() if isinstance(value, datetime.date) else None
+        except (ValueError, TypeError, OverflowError, OSError):
             return None
-        return text[:10]
 
 
     def _lookup_csv_slug(self, title, date=None, window_days=7):
@@ -67,37 +61,38 @@ class Substack:
         if not title or not self._csv_entries:
             return None
 
+        normalized_title = self._normalize_title(title)
+        exact = [entry for entry in self._csv_entries if entry["title"] == normalized_title]
+        exact_slugs = {entry["slug"] for entry in exact}
+        if len(exact_slugs) == 1:
+            return exact_slugs.pop()
+
         date_key = self._extract_date_key(date)
         if not date_key:
-            # Pas de date fiable -> pas de recherche CSV, on fabrique direct.
             return None
 
-        try:
-            target_date = datetime.date.fromisoformat(date_key)
-        except ValueError:
-            return None
-
-        candidates = []
-        for e in self._csv_entries:
-            if not e["date_key"]:
-                continue
-            try:
-                entry_date = datetime.date.fromisoformat(e["date_key"])
-            except ValueError:
-                continue
-            if abs((entry_date - target_date).days) <= window_days:
-                candidates.append(e)
-
-        if not candidates:
-            return None
-
+        target_date = datetime.date.fromisoformat(date_key)
+        matches = []
         guessed_slug = self.slugify(title)
-        slug_pool = [e["slug"] for e in candidates]
+        for entry in exact or self._csv_entries:
+            if not entry["date_key"]:
+                continue
+            entry_date = datetime.date.fromisoformat(entry["date_key"])
+            distance = abs((entry_date - target_date).days)
+            if distance > window_days:
+                continue
+            if entry["title"]:
+                score = difflib.SequenceMatcher(None, normalized_title, entry["title"], autojunk=False).ratio()
+            else:
+                score = difflib.SequenceMatcher(None, guessed_slug, entry["slug"], autojunk=False).ratio()
+            if score >= self.FUZZY_MATCH_THRESHOLD:
+                matches.append((score, -distance, entry["slug"]))
 
-        matches = difflib.get_close_matches(
-            guessed_slug, slug_pool, n=1, cutoff=self.FUZZY_MATCH_THRESHOLD
-        )
-        return matches[0] if matches else None
+        if not matches:
+            return None
+        best = max(matches, key=lambda match: match[:2])
+        best_slugs = {slug for score, distance, slug in matches if (score, distance) == best[:2]}
+        return best_slugs.pop() if len(best_slugs) == 1 else None
 
     def _lookup_csv_path(self, post):
         if self._slug_map is None:
@@ -171,8 +166,8 @@ class Substack:
         # Priorité 1 : correction manuelle (titre_source -> slug_substack)
         slug = self._lookup_csv_path(post)
         if not slug:
-            # Priorité 2 : fuzzy-match sur l'export CSV Substack (±7 jours)
-            post_date = post.get('post_date')
+            # Priorité 2 : titre exact, puis titre proche à ±7 jours.
+            post_date = post.get('pub_date') or post.get('pub_date_str') or post.get('post_date')
             slug = self._lookup_csv_slug(title, post_date)
             if not slug:
                 # Priorité 3 : slug fabriqué par l'heuristique
@@ -182,16 +177,18 @@ class Substack:
     def _load_csv_entries(self):
         """
         Parcourt le CSV d'export Substack et retourne la liste des
-        entrées {'slug': ..., 'date_key': ...}, le slug étant extrait
+        entrées {'slug': ..., 'title': ..., 'date_key': ...}, le slug étant extrait
         de post_id ("<id>.<slug>" -> "<slug>") et la date de post_date.
         """
         entries = []
         if not self.substack_post_csv:
             return entries
         try:
-            with open(self.substack_post_csv, newline="", encoding="utf-8") as f:
+            with open(self.substack_post_csv, newline="", encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
+                    if (row.get("is_published", "true") or "").strip().casefold() not in ("true", "1"):
+                        continue
                     post_id = (row.get("post_id") or "").strip()
                     if not post_id or "." not in post_id:
                         continue
@@ -200,7 +197,7 @@ class Substack:
                     if not real_slug:
                         continue
                     date_key = self._extract_date_key(row.get("post_date"))
-                    entries.append({"slug": real_slug, "date_key": date_key})
+                    entries.append({"slug": real_slug, "title": self._normalize_title(row.get("title")), "date_key": date_key})
         except (OSError, csv.Error):
             return []
         return entries
@@ -227,6 +224,7 @@ class Substack:
             return ""
         text = unicodedata.normalize("NFKC", text)
         text = text.replace("\u00a0", " ").replace("\u202f", " ")  # NBSP, NNBSP
-        text = text.replace("’", "'")
+        text = text.replace("’", "'").replace("‘", "'")
         text = re.sub(r"\s+", " ", text).strip()
-        return text
+        text = re.sub(r"\s+([?!:;])", r"\1", text)
+        return text.casefold()
